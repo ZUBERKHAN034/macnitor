@@ -202,13 +202,35 @@ final class AppModel {
         }
     }
 
+    /// Whether the Mectrics logo item is in the menu bar at all. This is the master
+    /// switch; `dashboardItemEnabled` only decides whether the icon stays while the
+    /// Dashboard is empty, and a grouped card still brings it back while this is on.
+    var dashboardIconVisible: Bool {
+        didSet {
+            defaults.set(dashboardIconVisible, forKey: Self.dashboardIconVisibleKey)
+            guard dashboardIconVisible != oldValue else { return }
+            // The logo item's presence is exactly this flag, so hiding or showing it
+            // changes the list of status items.
+            onModulesChanged?()
+        }
+    }
+
+    /// What clicking a module's menu bar item opens. Read at click time — never baked
+    /// into a status item — so changing it never rebuilds the menu bar.
+    var moduleClickBehavior: ModuleClickBehavior {
+        didSet {
+            defaults.set(moduleClickBehavior.rawValue, forKey: Self.moduleClickBehaviorKey)
+        }
+    }
+
     /// Whether the Dashboard is in the menu bar: because something is grouped into it,
-    /// or because it was asked to stay while empty.
+    /// or because it was asked to stay while empty, and never when it has been hidden.
     var showsDashboardItem: Bool {
-        Self.showsDashboardItem(
-            grouped: groupedModules,
-            keptWhenEmpty: dashboardItemEnabled
-        )
+        dashboardIconVisible
+            && Self.showsDashboardItem(
+                grouped: groupedModules,
+                keptWhenEmpty: dashboardItemEnabled
+            )
     }
 
     private static func showsDashboardItem(
@@ -216,6 +238,38 @@ final class AppModel {
         keptWhenEmpty: Bool
     ) -> Bool {
         keptWhenEmpty || !grouped.isEmpty
+    }
+
+    /// Whether the Dashboard icon may be hidden right now. It may not while an alert
+    /// rule routes to health — the icon is where that rule alerts — or while nothing
+    /// else would be left in the menu bar.
+    var canHideDashboardIcon: Bool {
+        MenuBarPlacement.canHideDashboardIcon(
+            healthRoutedMetricIDs: healthMetricIDs,
+            orderedOwnItems: orderedEnabledItems
+        )
+    }
+
+    /// Hides or shows the Dashboard icon, refusing to hide it while doing so would
+    /// leave the menu bar without a health badge or without any item at all.
+    func setDashboardIconVisible(_ visible: Bool) {
+        guard visible || canHideDashboardIcon else { return }
+        dashboardIconVisible = visible
+    }
+
+    /// Why the Dashboard icon cannot be hidden right now, if it cannot.
+    var dashboardIconHiddenBlockedReason: String? {
+        guard !canHideDashboardIcon else { return nil }
+        if !healthMetricIDs.isEmpty {
+            return String(
+                localized: "builder.dashboardIcon.healthReason",
+                defaultValue: "The Dashboard icon cannot be hidden while an alert rule is on — it is where a rule alerts. Turn the rule off first."
+            )
+        }
+        return String(
+            localized: "builder.dashboardIcon.emptyReason",
+            defaultValue: "Give at least one module its own menu bar item first, so the menu bar still has something to click."
+        )
     }
 
     /// Whether the dashboard shows the card for the Mac itself — its macOS version and
@@ -554,6 +608,8 @@ final class AppModel {
     private static let accentKey = "accentChoice"
     private static let menuBarIconsKey = "showMenuBarIcons"
     private static let dashboardItemEnabledKey = "dashboardItemEnabled"
+    private static let dashboardIconVisibleKey = "dashboardIconVisible"
+    private static let moduleClickBehaviorKey = "moduleClickBehavior"
     /// Read only to carry an upgrading Mac's Compact Health item over to the Dashboard.
     private static let legacyCompactHealthEnabledKey = "compactHealthEnabled"
     private static let groupedModulesKey = "groupedModules"
@@ -613,6 +669,14 @@ final class AppModel {
                     forKey: Self.legacyCompactHealthEnabledKey
                 )
             )
+        // On by default, so nothing about today's menu bar changes for anyone who has
+        // not asked for it. Hiding the icon is a deliberate choice made in Settings.
+        self.dashboardIconVisible =
+            defaults.object(forKey: Self.dashboardIconVisibleKey) as? Bool ?? true
+        // Clicking a module item opens its own detail unless asked otherwise.
+        self.moduleClickBehavior = ModuleClickBehavior(
+            rawValue: defaults.string(forKey: Self.moduleClickBehaviorKey) ?? ""
+        ) ?? .ownDetail
         // On unless it was turned off, so the dashboard has something to say about the
         // Mac even before a module is grouped into it.
         self.showsDeviceCard =
