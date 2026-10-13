@@ -259,7 +259,7 @@ final class AppModel {
 
     /// Why the Dashboard icon cannot be hidden right now, if it cannot.
     var dashboardIconHiddenBlockedReason: String? {
-        guard !canHideDashboardIcon else { return nil }
+        guard dashboardIconVisible, !canHideDashboardIcon else { return nil }
         if !healthMetricIDs.isEmpty {
             return String(
                 localized: "builder.dashboardIcon.healthReason",

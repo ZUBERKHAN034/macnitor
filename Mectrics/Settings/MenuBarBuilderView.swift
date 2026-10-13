@@ -32,6 +32,49 @@ struct MenuBarBuilderView: View {
             }
 
             Section {
+                Toggle(
+                    String(
+                        localized: "builder.dashboardIcon.show",
+                        defaultValue: "Show Dashboard icon"
+                    ),
+                    isOn: Binding(
+                        get: { model.dashboardIconVisible },
+                        set: { model.setDashboardIconVisible($0) }
+                    )
+                )
+                if let reason = model.dashboardIconHiddenBlockedReason {
+                    Text(reason)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Picker(
+                    String(
+                        localized: "builder.clickBehavior.label",
+                        defaultValue: "Clicking a menu bar item opens"
+                    ),
+                    selection: $model.moduleClickBehavior
+                ) {
+                    ForEach(ModuleClickBehavior.allCases) { behavior in
+                        Text(behavior.localizedName).tag(behavior)
+                    }
+                }
+            } header: {
+                Text(
+                    String(
+                        localized: "builder.dashboard.section",
+                        defaultValue: "Dashboard"
+                    )
+                )
+            } footer: {
+                Text(
+                    String(
+                        localized: "builder.clickBehavior.footer",
+                        defaultValue: "With the Dashboard chosen, clicking any module item opens the Dashboard; click a card for that module's detail."
+                    )
+                )
+            }
+
+            Section {
                 // The Dashboard is one of the things in the menu bar, so it reads
                 // as a row in the same list rather than as a switch somewhere else.
                 DashboardItemRow(model: model)
@@ -184,9 +227,10 @@ struct MenuBarBuilderView: View {
 /// chips, this shows as the readings grouped into it — added and taken out from right
 /// here, which is where someone looking at this row expects to do it.
 ///
-/// It is the one row with no placement control, because it is the one item that cannot
-/// move: its health badge is the only thing in the app that speaks up unasked, and a
-/// menu bar that could be emptied completely would leave no way back into Settings.
+/// It is the one row with no per-module placement control of its own: its place is
+/// decided by the "Show Dashboard icon" switch above, and while it is shown it leads
+/// the menu bar as the health indicator. Its row here manages its contents — the
+/// readings grouped into it — not where it sits.
 private struct DashboardItemRow: View {
     @Bindable var model: AppModel
 
@@ -205,8 +249,12 @@ private struct DashboardItemRow: View {
             LabeledContent {
                 // With cards inside there is nothing to decide — they would have
                 // nowhere to be shown — so the place is stated as text and the pop-up
-                // appears once it is empty (AGENTS.md §4: disclose, never dim).
-                if grouped.isEmpty {
+                // appears once it is empty (AGENTS.md §4: disclose, never dim). When
+                // the icon has been hidden outright there is no placement to pick.
+                if !model.dashboardIconVisible {
+                    Text(MenuBarPlacement.off.localizedName)
+                        .foregroundStyle(.secondary)
+                } else if grouped.isEmpty {
                     Picker(
                         String(
                             localized: "builder.placement.label",
