@@ -161,4 +161,16 @@ extension MenuBarPlacement {
     ) -> Bool {
         healthRoutedMetricIDs.isEmpty && !orderedOwnItems.isEmpty
     }
+
+    /// Whether the Dashboard icon is in the menu bar, from the three things that decide
+    /// it: the master visibility switch, the kept-when-empty flag, and whether anything
+    /// is grouped into it. With the master switch on (its default) this is exactly the
+    /// behavior Mectrics had before the icon could be hidden.
+    static func showsDashboardItem(
+        grouped: Set<MetricID>,
+        keptWhenEmpty: Bool,
+        iconVisible: Bool
+    ) -> Bool {
+        iconVisible && (keptWhenEmpty || !grouped.isEmpty)
+    }
 }

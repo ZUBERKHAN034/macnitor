@@ -68,9 +68,10 @@ final class AppModel {
                 forKey: Self.groupedModulesKey
             )
             guard groupedModules != oldValue else { return }
-            let hadItem = Self.showsDashboardItem(
+            let hadItem = MenuBarPlacement.showsDashboardItem(
                 grouped: oldValue,
-                keptWhenEmpty: dashboardItemEnabled
+                keptWhenEmpty: dashboardItemEnabled,
+                iconVisible: dashboardIconVisible
             )
             resetFailuresForNewlyWatchedModules(
                 previouslyWatched: MenuBarPlacement.watchedModules(
@@ -226,18 +227,11 @@ final class AppModel {
     /// Whether the Dashboard is in the menu bar: because something is grouped into it,
     /// or because it was asked to stay while empty, and never when it has been hidden.
     var showsDashboardItem: Bool {
-        dashboardIconVisible
-            && Self.showsDashboardItem(
-                grouped: groupedModules,
-                keptWhenEmpty: dashboardItemEnabled
-            )
-    }
-
-    private static func showsDashboardItem(
-        grouped: Set<MetricID>,
-        keptWhenEmpty: Bool
-    ) -> Bool {
-        keptWhenEmpty || !grouped.isEmpty
+        MenuBarPlacement.showsDashboardItem(
+            grouped: groupedModules,
+            keptWhenEmpty: dashboardItemEnabled,
+            iconVisible: dashboardIconVisible
+        )
     }
 
     /// Whether the Dashboard icon may be hidden right now. It may not while an alert
