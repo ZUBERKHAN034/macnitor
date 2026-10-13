@@ -35,6 +35,7 @@ struct ReleaseHighlight: Identifiable {
 enum ReleaseHighlights {
     static func notes(for version: String) -> [ReleaseHighlight] {
         switch version {
+        case "1.10.0": return oneTenZero
         case "1.9.1": return oneNineZero + oneNineOne
         case "1.9.0": return oneNineZero
         case "1.8.0": return oneEightZero
@@ -48,6 +49,23 @@ enum ReleaseHighlights {
 
     static var current: [ReleaseHighlight] {
         notes(for: Bundle.main.marketingVersion)
+    }
+
+    private static var oneTenZero: [ReleaseHighlight] {
+        [
+            ReleaseHighlight(
+                id: "dashboardFromModules",
+                symbol: "square.grid.2x2",
+                title: String(
+                    localized: "whatsNew.1_10_0.dashboard.title",
+                    defaultValue: "The Dashboard, without the icon"
+                ),
+                description: String(
+                    localized: "whatsNew.1_10_0.dashboard.description",
+                    defaultValue: "Hide the Dashboard icon and open the Dashboard from any module in the menu bar instead. Click CPU or Network and every reading appears as a card — choose what a click opens in Settings → Menu Bar."
+                )
+            )
+        ]
     }
 
     private static var oneNineOne: [ReleaseHighlight] {

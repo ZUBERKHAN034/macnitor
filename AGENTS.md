@@ -97,20 +97,27 @@ pinned to an exact version in `Package.swift`, so nothing rests on the file.
   CPU and memory, as cards; no module takes an item of its own until it is asked for. The
   menu bar is the scarce surface, and a first run that fills it with readings nobody
   picked spends it before the user has said anything.
-- **The Dashboard can be switched off, but only once it is empty.** With cards inside
-  there is nothing to decide — they would have nowhere to be shown — so its row states its
-  place as text and the pop-up appears when the last card leaves. Empty it first, then
-  turn it off. It is not locked in place: emptying the menu bar completely is recoverable,
-  because launching Mectrics again opens Settings
-  (`applicationShouldHandleReopen`), and locking the icon would spend the scarce surface
-  on someone who only wants CPU there. The preview strip says how to come back, because a
-  blank menu bar that is recoverable only if you know how is not recoverable. Do not
-  justify this item with the health badge: every alert rule ships disabled, so on a clean
-  install it never fires until a rule is configured.
+- **The Dashboard icon can be hidden, and a module click can open the Dashboard.** A
+  master `dashboardIconVisible` switch (default on) takes the logo item out of the menu
+  bar even when cards are grouped into it, and `moduleClickBehavior` decides what a module
+  item opens — its own detail (the default) or the Dashboard, anchored to the clicked item
+  and showing every watched module as a card. Both live in **Settings → Menu Bar**, and the
+  defaults reproduce the pre-hiding menu bar exactly. Hiding the icon changes the item
+  list and goes through the rebuild path; changing the click behavior never does, because
+  it is read at click time and never baked into a status item.
+- **The icon may only be hidden while it has nothing to say and something remains.** Never
+  while an alert rule routes to health — the icon is where a rule alerts — and never while
+  no module takes an item of its own. The pane states the reason as plain text instead of
+  dimming the switch. A badge on a module item is future work; any badge must never change
+  an item's width. The icon is still not locked in place: an empty menu bar is recoverable
+  by relaunching (`applicationShouldHandleReopen`), and the preview strip says how to come
+  back.
 - **The Dashboard is a row in the modules list, not a switch elsewhere.** It is one
   of the things the menu bar holds, so it reads like the modules beside it: a name, its
   place, and its contents underneath — the readings grouped into it, added and removed
-  from that row. Placement is a pop-up and never a segmented control: three segments
+  from that row. Its on/off state is the single "Show Dashboard icon" switch in the
+  Dashboard section above: the row manages *contents*, the switch manages *presence*.
+  Placement is a pop-up and never a segmented control: three segments
   repeated down a list of modules read as a wall, and only one of them is ever the answer.
   The grouped placement is named for **where a module goes** ("Dashboard"), never for what
   happens to it ("Grouped"), which left the obvious question unanswered on screen.
@@ -166,7 +173,8 @@ pinned to an exact version in `Package.swift`, so nothing rests on the file.
   is gone. It read the same `healthConditions` and showed the same worst condition as the
   dashboard's banner, so it was two icons answering one question — the duplication that
   retired the floating panel. The state now rides on the Dashboard as a badge, and the
-  switch that used to add that item is gone with it: the Dashboard is always there.
+  switch that used to add that item is gone with it. That is also why the Dashboard icon
+  cannot be hidden while an alert rule is on: the badge has nowhere else to live.
 - **Removing is on the surface; adding is in Settings.** The dashboard can take its own
   cards off, because that is the common errand and the card is right there. It never
   offers the modules it is *not* showing — a popover that did would become the pane it

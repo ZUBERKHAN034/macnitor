@@ -7,6 +7,18 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.10.0] — 2026-10-13
+
+### Added
+
+- **Hide the Dashboard icon and open the Dashboard from any module.** The Mectrics logo
+  item can now be switched off, and a menu bar module can be told to open the Dashboard
+  instead of its own detail — click CPU or Network and every watched reading appears as
+  a card, with a click drilling into a module's full detail as before. Both live in
+  **Settings → Menu Bar**, and the defaults keep the menu bar exactly as it is. The icon
+  stays put while an alert rule is on — it is where a rule alerts — or while nothing else
+  would remain to click, and the pane says why.
+
 ## [1.9.1] — 2026-09-30
 
 ### Fixed
@@ -324,7 +336,12 @@ roughly one idle wake per second.
 - Automatic update checks are disabled; the Sparkle appcast is fetched only on an explicit
   **Check for Updates…** and verified against a pinned EdDSA public key.
 
-[Unreleased]: https://github.com/farukkamcici/mectrics/compare/v1.6.1...HEAD
+[Unreleased]: https://github.com/farukkamcici/mectrics/compare/v1.10.0...HEAD
+[1.10.0]: https://github.com/farukkamcici/mectrics/compare/v1.9.1...v1.10.0
+[1.9.1]: https://github.com/farukkamcici/mectrics/compare/v1.9.0...v1.9.1
+[1.9.0]: https://github.com/farukkamcici/mectrics/compare/v1.8.0...v1.9.0
+[1.8.0]: https://github.com/farukkamcici/mectrics/compare/v1.7.0...v1.8.0
+[1.7.0]: https://github.com/farukkamcici/mectrics/compare/v1.6.1...v1.7.0
 [1.6.1]: https://github.com/farukkamcici/mectrics/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/farukkamcici/mectrics/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/farukkamcici/mectrics/compare/v1.4.0...v1.5.0

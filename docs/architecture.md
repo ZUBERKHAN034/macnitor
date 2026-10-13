@@ -161,18 +161,20 @@ them. A module in the Dashboard alone therefore contributes nothing to
 nothing: a stored `enabledComponents` is read as it always was, and `groupedModules`
 starts empty for anyone who already had a menu bar.
 
-**The Dashboard can be switched off, once it is empty.** With cards inside it there is
-nothing to decide, because they would have nowhere to be shown, so its row in Settings
-states its place as text and offers the pop-up when the last card leaves. It was briefly
-locked in place on the grounds that an `LSUIElement` agent with an empty menu bar is
-invisible — true, but not decisive: launching Mectrics again opens Settings, so the state
-is recoverable, and locking the icon spends the scarce surface on someone who only wants
-CPU there. What the lock was really protecting against is not knowing that, so the
-Settings preview strip says it when the menu bar is empty. The health badge is not a
-reason to keep it either: every alert rule ships disabled, so on a clean install it never
-fires until someone configures one. So `MenuBarPlacement.itemKeys`
-always leads with it, its row in Settings carries no placement control — its place is
-stated as text — and grouping a module can never create or remove a status item.
+**The Dashboard icon can be hidden, and a module click can open the Dashboard.** A master
+`dashboardIconVisible` switch (default on) takes the logo item out of the menu bar even
+when cards are grouped into it, and `moduleClickBehavior` decides what a module item
+opens: its own detail (the default, and the behavior Mectrics has always had) or the
+Dashboard, anchored to the clicked item and showing every watched module as a card. Both
+live in **Settings → Menu Bar**, and the defaults reproduce the pre-hiding menu bar
+exactly. Hiding the icon is a change in which items exist, so it goes through the rebuild
+path; the click behavior is read at click time, never baked into a status item, so
+changing it never rebuilds anything. The icon may only be hidden while it has nothing to
+say and something remains: never while an alert rule routes to health — the icon is where
+that rule alerts — and never while no module takes an item of its own, and the pane says
+why as plain text. `MenuBarPlacement.itemKeys` leads with the Dashboard whenever it is
+shown, and omits it when it is not; its row in Settings carries no placement control of
+its own, because its place is decided by the master switch.
 
 That also makes it the only health indicator. The separate Compact Health item is gone: it
 read the same `healthConditions` and showed the same worst condition as the dashboard's
@@ -238,11 +240,14 @@ changing theme redraws it on the next cycle. Every colour is resolved inside
 badge on a light menu bar.
 
 The Dashboard is **one entry in the item list however many cards it holds**
-(`MenuBarPlacement.itemKeys`), and it is always in that list, so grouping or ungrouping a
+(`MenuBarPlacement.itemKeys`), and it leads that list whenever it is shown — its presence
+is decided by `dashboardIconVisible` plus the kept-when-empty flag and the grouped cards.
+Because it is one entry regardless of how many cards it holds, grouping or ungrouping a
 module goes through `AppModel.onWatchedModulesChanged` — republish the widgets, update
 Energy Guard, adjust what an open dashboard reports as visible — and never through
 `onModulesChanged`, which would tear down and re-create every status item for a change
-none of them shows.
+none of them shows. Only toggling the icon's own presence changes the list, and that is
+what `onModulesChanged` is for.
 
 ## The dashboard
 
@@ -250,7 +255,9 @@ The Dashboard opens `DashboardPopoverView` in the same shared `NSPopover` the mo
 popovers use, so a click on another item replaces its content rather than
 stacking a second popover, and it is dismissed the same way. It is a popover, not a panel:
 it is on screen from a click until the next click elsewhere, and is not the always-visible
-second surface the floating panel was (see [Health](#health)).
+second surface the floating panel was (see [Health](#health)). It is anchored to the
+Mectrics logo when that item is present, and to the clicked module item when the click
+behavior opens the Dashboard from a module.
 
 - Cards follow the menu bar's module order, then a Device card that no provider backs:
   the macOS version, and the uptime from `kern.boottime`, so sleep counts as it does for
@@ -343,7 +350,9 @@ That banner is why the Compact Health item no longer exists. The two read the sa
 `healthConditions` and showed the same worst condition, one in a banner and one in an icon
 beside it — the duplication this section exists to record. The state rides on the Mectrics
 icon as a badge instead, so one icon means one icon. Nothing was lost with the item: its
-switch is gone with it: the Dashboard is always in the menu bar.
+switch is gone with it. The Dashboard icon is the badge's one home, which is why it cannot
+be hidden while an alert rule is on — a rule still notifies and logs either way, but the
+badge has nowhere else to live.
 
 The bundled `mectrics` CLI is a read-only automation interface for unattended machines,
 not another dashboard. The app owns configuration. The CLI reads its enabled rules and can:
