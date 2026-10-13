@@ -22,6 +22,7 @@ Packages/MetricsKit/Package.resolved
 build/
 dist/
 *.dmg
+.commandcode/
 
 # Environment
 .env
