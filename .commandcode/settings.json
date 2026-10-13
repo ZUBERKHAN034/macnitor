@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Shell(cd \"/Users/zuberkhan/Downloads/Me/Codes & scripts/mectrics\" && which xcodegen swift xcodebuild 2>&1; echo \"---\"; swift --version 2>&1 | head -2; echo \"---\"; xcodegen --version 2>&1; echo \"--- git branch ---\"; git branch --show-current; echo \"--- catalog languages ---\"; grep -o '\"[a-z-]*\" *: *{[^}]*\"stringUnit\"' Mectrics/Resources/Localizable.xcstrings 2>/dev/null | head -0; python3 -c \"import json; d=json.load(open('Mectrics/Resources/Localizable.xcstrings')); print(sorted(set().union(*[set(v['localizations'].keys()) for v in d['strings'].values()])))\")",
+      "Shell(cd:*)",
+      "Shell(git:*)",
+      "Shell(python3 -c import json; d=json.load(open('Mectrics/Resources/Localizable.xcstrings')); print('top keys:', list(d.keys())); print('num strings:', len(d['strings'])))",
+      "Shell(cd \"/Users/zuberkhan/Downloads/Me/Codes & scripts/mectrics\" && python3 -c \" import json d = json.load(open('Mectrics/Resources/Localizable.xcstrings')) with open('/tmp/roundtrip.xcstrings', 'w', encoding='utf-8') as f: json.dump(d, f, ensure_ascii=False, indent=2) f.write('\\n') \" && diff <(cat Mectrics/Resources/Localizable.xcstrings) <(cat /tmp/roundtrip.xcstrings) >/dev/null && echo \"IDENTICAL\" || echo \"DIFFERS\")",
+      "Shell(python3 -c  import json d = json.load(open('Mectrics/Resources/Localizable.xcstrings')) with open('/tmp/roundtrip.xcstrings', 'w', encoding='utf-8') as f: json.dump(d, f, ensure_ascii=False, indent=2) f.write('\\n') )",
+      "Shell(python3 -c  import json d = json.load(open('Mectrics/Resources/Localizable.xcstrings')) keys = ['builder.dashboardIcon.show','builder.dashboardIcon.healthReason','builder.dashboardIcon.emptyReason','builder.clickBehavior.label','builder.clickBehavior.ownDetail','builder.clickBehavior.dashboard','builder.clickBehavior.footer','builder.dashboard.section','whatsNew.1_10_0.dashboard.title','whatsNew.1_10_0.dashboard.description'] for k in keys: loc = d['strings'][k]['localizations'] langs = sorted(loc.keys()) missing = [l for l in ['en','tr','ru','es','fr','pt-BR','zh-Hans'] if l not in loc] print(k, 'langs=', ','.join(langs), 'missing=', missing) print('valid JSON, total strings', len(d['strings'])) )",
+      "Shell(xcodegen:*)",
+      "Shell(swift:*)",
+      "Shell(xcode-select -p 2>&1; echo \"---\"; ls -d /Applications/Xcode*.app 2>&1; echo \"---\"; xcodebuild -version 2>&1; echo \"--- xcrun swift ---\"; xcrun --find swift 2>&1)",
+      "Shell(cd \"/Users/zuberkhan/Downloads/Me/Codes & scripts/mectrics\" && fail=0; for file in $(git ls-files '*.md'); do dir=$(dirname \"$file\"); targets=$( { grep -oE '\\]\\([^) ]+\\)' \"$file\" | sed -E 's/^\\]\\(//; s/\\)$//'; grep -oE '(src|srcset)=\"[^\"]+\"' \"$file\" | sed -E 's/^(src|srcset)=\"//; s/\"$//'; } || true ); for target in $targets; do case \"$target\" in http*|mailto:*|data:*|\\#*) continue;; esac; target=\"${target%%#*}\"; [ -z \"$target\" ] && continue; if [ ! -e \"$dir/$target\" ]; then echo \"BROKEN: $file -> $target\"; fail=1; fi; done; done; [ $fail -eq 0 ] && echo \"All relative Markdown links resolve.\")",
+      "Shell(python3 -c import yaml, sys; yaml.safe_load(open('.github/workflows/build-app.yml')); print('YAML valid') 2 >& 1)",
+      "Shell(python3 -c import json; print('pyyaml not available, skipping'))"
+    ],
+    "deny": [],
+    "defaultMode": "default"
+  }
+}
