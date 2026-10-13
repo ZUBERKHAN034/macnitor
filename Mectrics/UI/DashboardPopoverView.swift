@@ -11,11 +11,21 @@ import MetricsKit
 /// re-evaluates the cards and nothing around them.
 struct DashboardPopoverView: View {
     @Bindable var model: AppModel
+    /// True when a module item (rather than the logo) opened this dashboard, in which
+    /// case every watched module is a card — a hidden logo never leaves the Dashboard
+    /// empty.
+    let showsAllWatchedModules: Bool
     /// The module whose detail replaces the grid; nil shows the grid.
     @State private var selectedModule: MetricID? = nil
     /// Facts no sample carries, read once when the popover appears.
     @State private var systemInfo = DashboardSystemInfo()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Which modules appear as cards. The logo item shows the grouped modules; a module
+    /// item in `.dashboard` click mode shows every watched module.
+    private var cardModules: [MetricID] {
+        showsAllWatchedModules ? model.orderedEnabledModules : model.orderedDashboardModules
+    }
 
     /// Outer width, padding included. Kept close to a native menu bar popover: the
     /// cards are glanceable summaries, and the full reading is one click away.
@@ -80,7 +90,7 @@ struct DashboardPopoverView: View {
 
     private var overview: some View {
         VStack(alignment: .leading, spacing: Self.padding) {
-            DashboardHealthBanner(model: model) { select($0) }
+            DashboardHealthBanner(model: model, cards: cardModules) { select($0) }
             cardGrid
             actionFooter
         }
@@ -94,7 +104,7 @@ struct DashboardPopoverView: View {
         ) {
             ForEach(
                 DashboardLayout.rows(
-                    for: model.orderedDashboardModules,
+                    for: cardModules,
                     includesDevice: model.showsDeviceCard
                 ),
                 id: \.self
@@ -791,6 +801,9 @@ private struct DashboardEmptyHintCard: View {
 /// The worst alerting condition routed to Compact Health, above the cards.
 private struct DashboardHealthBanner: View {
     let model: AppModel
+    /// The modules shown as cards, so a condition can tell whether its module is a card
+    /// here or must open in the detail window.
+    let cards: [MetricID]
     let onSelect: (MetricID) -> Void
     @Environment(\.colorSchemeContrast) private var contrast
 
@@ -807,7 +820,7 @@ private struct DashboardHealthBanner: View {
                 // pressure is CPU's, even with CPU off the dashboard). Only a card's
                 // module is reported visible and sampled while the dashboard is open,
                 // so any other opens in the detail window, as Compact Health does.
-                if model.orderedDashboardModules.contains(worst.metricID) {
+                if cards.contains(worst.metricID) {
                     onSelect(worst.metricID)
                 } else {
                     model.onOpenMetricDetail?(worst.metricID)

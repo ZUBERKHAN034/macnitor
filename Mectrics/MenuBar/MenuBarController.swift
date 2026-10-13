@@ -22,7 +22,17 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
     /// click on another item replaces the content rather than stacking a second one.
     private enum PopoverKind: Equatable {
         case module(MetricID)
+        /// The Dashboard, anchored to the Mectrics logo item.
         case dashboard
+        /// The Dashboard, anchored to a module item (`.dashboard` click behavior).
+        case moduleDashboard(MetricID)
+
+        var isDashboard: Bool {
+            switch self {
+            case .dashboard, .moduleDashboard: return true
+            case .module: return false
+            }
+        }
     }
 
     /// The content the popover shows, kept until the popover has finished closing so
@@ -157,8 +167,8 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
     /// Brings what the open dashboard reports visible in line with the dashboard's
     /// current modules. Called when they change without a menu bar rebuild.
     func dashboardModulesChanged() {
-        guard popoverKind == .dashboard, !isPopoverClosing else { return }
-        let current = Set(model.orderedDashboardModules)
+        guard let kind = popoverKind, kind.isDashboard, !isPopoverClosing else { return }
+        let current = Set(dashboardCardModules(for: kind))
         let removed = reportedVisibleModules.subtracting(current)
         let added = current.subtracting(reportedVisibleModules)
         reportedVisibleModules = current
@@ -166,11 +176,26 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         if !added.isEmpty { onDetailVisibilityChanged?(added, true) }
     }
 
+    /// The modules a dashboard of `kind` shows as cards. The logo shows the grouped
+    /// modules; a module item in `.dashboard` click mode shows every watched module, so
+    /// a hidden logo never leaves the Dashboard empty.
+    private func dashboardCardModules(for kind: PopoverKind) -> [MetricID] {
+        switch kind {
+        case .dashboard: return model.orderedDashboardModules
+        case .moduleDashboard: return model.orderedEnabledModules
+        case .module: return []
+        }
+    }
+
     // MARK: - Popover
 
     private func togglePopover(for id: MetricID) {
         // Anchor on the module's first item (a module can have several).
         guard let button = items.values.first(where: { $0.id == id })?.item.button else { return }
+        if model.moduleClickBehavior.opensDashboard {
+            toggleDashboardFromModule(id: id, button: button)
+            return
+        }
         if popover.isShown && popoverKind == .module(id) {
             closePopover()
             return
@@ -186,20 +211,44 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         PerformanceSignposts.endModulePopover(signpostID)
     }
 
+    /// A module item opening the Dashboard: anchored to the clicked item, showing every
+    /// watched module as a card. Toggled like the logo's dashboard.
+    private func toggleDashboardFromModule(id: MetricID, button: NSStatusBarButton) {
+        if popover.isShown && popoverKind == .moduleDashboard(id) {
+            closePopover()
+            return
+        }
+        presentDashboard(showsAllWatchedModules: true, kind: .moduleDashboard(id), from: button)
+    }
+
     private func toggleDashboardPopover() {
         guard let button = logoItem?.item.button else { return }
         if popover.isShown && popoverKind == .dashboard {
             closePopover()
             return
         }
+        presentDashboard(showsAllWatchedModules: false, kind: .dashboard, from: button)
+    }
 
+    /// Shows the Dashboard in the shared popover. Every card is a detail surface: CPU,
+    /// Memory, and GPU show temperatures, and Energy Guard treats GPU and Fans as on
+    /// screen while the dashboard is open.
+    private func presentDashboard(
+        showsAllWatchedModules: Bool,
+        kind: PopoverKind,
+        from button: NSStatusBarButton
+    ) {
         let signpostID = PerformanceSignposts.beginDashboardPopover()
-        // Every card is a detail surface: CPU, Memory, and GPU show temperatures, and
-        // Energy Guard treats GPU and Fans as on screen while the dashboard is open.
+        let cardModules = showsAllWatchedModules
+            ? model.orderedEnabledModules
+            : model.orderedDashboardModules
         show(
-            DashboardPopoverView(model: model),
-            as: .dashboard,
-            visibleModules: Set(model.orderedDashboardModules),
+            DashboardPopoverView(
+                model: model,
+                showsAllWatchedModules: showsAllWatchedModules
+            ),
+            as: kind,
+            visibleModules: Set(cardModules),
             from: button
         )
         PerformanceSignposts.endDashboardPopover(signpostID)
