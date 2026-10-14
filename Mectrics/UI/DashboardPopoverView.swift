@@ -798,7 +798,7 @@ private struct DashboardMemoryBreakdown: View {
     }
 
     static func accessibilityFacts(in detail: [String: Double]) -> [String] {
-        var facts = definitions.compactMap { definition in
+        var facts: [String] = definitions.compactMap { definition -> String? in
             let (key, title, _) = definition
             guard let amount = detail[key], amount >= 0 else { return nil }
             return DashboardFormat.spokenList([title, MetricFormat.bytes(amount)])
