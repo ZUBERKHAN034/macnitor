@@ -29,8 +29,9 @@ enum ActivityMonitorLauncher {
     }
 
     private static func selectTab(_ tab: ActivityMonitorTab) {
-        // Verified on this Mac: the toolbar contains a Categories group with five
-        // indexed radio buttons in the order represented by ActivityMonitorTab.
+        // Activity Monitor exposes the five Categories buttons under a toolbar
+        // container. Its AppleScript role varies across macOS versions, so try the
+        // observed group forms while keeping selection strictly index-based.
         let script = """
         tell application "System Events"
             tell process "Activity Monitor"
@@ -40,7 +41,23 @@ enum ActivityMonitorLauncher {
                 end repeat
                 if (count of windows) is 0 then error "Activity Monitor window did not appear"
                 set frontmost to true
-                click radio button \(tab.rawValue) of group 1 of toolbar 1 of window 1
+                set selectedButton to missing value
+                try
+                    set selectedButton to radio button \(tab.rawValue) of group 1 of toolbar 1 of window 1
+                end try
+                if selectedButton is missing value then
+                    try
+                        set selectedButton to radio button \(tab.rawValue) of radio group 1 of toolbar 1 of window 1
+                    end try
+                end if
+                if selectedButton is missing value then
+                    try
+                        set selectedButton to radio button \(tab.rawValue) of toolbar 1 of window 1
+                    end try
+                end if
+                if selectedButton is missing value then error "Activity Monitor tab buttons were not found"
+                click selectedButton
+                if value of selectedButton is not 1 then error "Activity Monitor did not select the requested tab"
             end tell
         end tell
         """
@@ -48,6 +65,7 @@ enum ActivityMonitorLauncher {
         var errorInfo: NSDictionary?
         NSAppleScript(source: script)?.executeAndReturnError(&errorInfo)
         if let errorInfo {
+            NSLog("Activity Monitor tab selection failed: %@", errorInfo)
             showPermissionAlertIfNeeded(errorInfo)
         }
     }
