@@ -32,9 +32,8 @@ struct DashboardPopoverView: View {
     static let width: CGFloat = 320
     /// Around the grid, and inside every card.
     ///
-    /// The design system's small step keeps the left and right edges close to the cards
-    /// while matching the detail branch's horizontal inset.
-    static let padding: CGFloat = ExperienceSpacing.small
+    /// One shared edge inset for the dashboard, its cards, and its detail branch.
+    static let padding: CGFloat = ExperienceSpacing.medium
     static let cardSpacing: CGFloat = 8
     /// One of the two columns: the width inside the padding, less the gap, halved.
     static let cardWidth = (width - 2 * padding - cardSpacing) / 2
@@ -528,7 +527,7 @@ struct DashboardCardFacts: Equatable {
                 ))
             }
         case .disk:
-            facts.caption += usedOfTotal(d)
+            facts.caption += storageUsedOfTotal(d)
             if let volume = systemInfo.startupVolumeName {
                 facts.chips.append(DashboardChipFact(text: volume))
             }
@@ -570,6 +569,11 @@ struct DashboardCardFacts: Equatable {
     private static func usedOfTotal(_ d: [String: Double]) -> [String] {
         guard let used = d["used"], let total = d["total"], total > 0 else { return [] }
         return [DashboardFormat.usedOfTotal(used: used, total: total)]
+    }
+
+    private static func storageUsedOfTotal(_ d: [String: Double]) -> [String] {
+        guard let used = d["used"], let total = d["total"], total > 0 else { return [] }
+        return [DashboardFormat.storageUsedOfTotal(used: used, total: total)]
     }
 }
 

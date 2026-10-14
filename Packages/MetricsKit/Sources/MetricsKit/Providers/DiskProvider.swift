@@ -4,10 +4,11 @@ import IOKit
 /// Reports the main disk (`/`) usage and read/write throughput.
 ///
 /// `value` = used-space fraction (0...1). Detail: total, free, used (bytes),
-/// readRate, writeRate (bytes/s). Capacity comes from `statfs`; throughput from the
-/// delta of IOKit `IOBlockStorageDriver` statistics.
+/// readRate, writeRate (bytes/s). Capacity comes from native volume resource values
+/// (with `statfs` as a fallback); throughput from the delta of IOKit
+/// `IOBlockStorageDriver` statistics.
 ///
-/// Capacity is split across two cadences. `statfs` is a single syscall and runs on
+/// Capacity is split across two cadences. Native volume capacity values are read on
 /// every sample, so used and free stay live. The purgeable figure needs
 /// `volumeAvailableCapacityForImportantUsage`, which routes through the system's cache
 /// deletion machinery and costs roughly eleven milliseconds of CPU per call — three
@@ -88,20 +89,24 @@ public final class DiskProvider: MetricProvider, @unchecked Sendable {
         ]
     }
 
-    /// Allocated and strictly-free bytes on `/` from one `statfs` syscall. On APFS,
-    /// `f_blocks` can describe the volume's shared maximum rather than space actually
-    /// allocated to it. Use `f_blocks - f_bfree` for allocation and add `f_bavail`,
-    /// the space available to an unprivileged process, for the usable capacity.
+    /// Native volume total and available capacity for `/`. These resource values use
+    /// the same byte counts macOS storage surfaces report. `statfs` is the fallback.
     private func readCapacity() -> (total: Double, strictFree: Double)? {
+        let volume = URL(fileURLWithPath: "/")
+        if let values = try? volume.resourceValues(forKeys: [
+            .volumeTotalCapacityKey,
+            .volumeAvailableCapacityKey
+        ]), let total = values.volumeTotalCapacity,
+           let strictFree = values.volumeAvailableCapacity,
+           total > 0 {
+            return (Double(total), Double(strictFree))
+        }
+
         var stats = statfs()
         guard statfs("/", &stats) == 0 else { return nil }
         let blockSize = Double(stats.f_bsize)
-        let allocatedBlocks = stats.f_blocks >= stats.f_bfree
-            ? stats.f_blocks - stats.f_bfree
-            : 0
-        let allocated = Double(allocatedBlocks) * blockSize
+        let total = Double(stats.f_blocks) * blockSize
         let strictFree = Double(stats.f_bavail) * blockSize
-        let total = allocated + strictFree
         guard total > 0 else { return nil }
         return (total, strictFree)
     }

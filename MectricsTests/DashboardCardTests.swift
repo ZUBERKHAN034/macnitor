@@ -171,7 +171,7 @@ final class DashboardCardTests: XCTestCase {
         )
         XCTAssertEqual(
             named.caption,
-            [DashboardFormat.usedOfTotal(used: 200 * gigabyte, total: 494.4 * gigabyte)]
+            [DashboardFormat.storageUsedOfTotal(used: 200 * gigabyte, total: 494.4 * gigabyte)]
         )
         XCTAssertEqual(named.chips, [DashboardChipFact(text: "Macintosh HD")])
         XCTAssertEqual(named.chips[0].spoken, "Macintosh HD")

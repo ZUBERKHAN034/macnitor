@@ -53,7 +53,7 @@ struct DetailPopoverView: View {
                 footer
             }
         }
-        .padding(ExperienceSpacing.small)
+        .padding(ExperienceSpacing.medium)
         .frame(width: width)
     }
 
@@ -335,17 +335,17 @@ struct DetailPopoverView: View {
             return r
         case .disk:
             var r: [(String, String)] = [
-                (String(localized: "disk.used", defaultValue: "Used"), MetricFormat.bytes(d["used"] ?? 0)),
-                (String(localized: "disk.free", defaultValue: "Free"), MetricFormat.bytes(d["free"] ?? 0))
+                (String(localized: "disk.used", defaultValue: "Used"), MetricFormat.storageBytes(d["used"] ?? 0)),
+                (String(localized: "disk.free", defaultValue: "Free"), MetricFormat.storageBytes(d["free"] ?? 0))
             ]
             if let purgeable = d["purgeable"], purgeable > 0 {
                 r.append((String(localized: "disk.purgeable", defaultValue: "Purgeable"),
-                          MetricFormat.bytes(purgeable)))
+                          MetricFormat.storageBytes(purgeable)))
             }
             r.append(
                 (
                     String(localized: "disk.total", defaultValue: "Total"),
-                    MetricFormat.bytes(d["total"] ?? 0)
+                    MetricFormat.storageBytes(d["total"] ?? 0)
                 )
             )
             if let readRate = d["readRate"], let writeRate = d["writeRate"] {

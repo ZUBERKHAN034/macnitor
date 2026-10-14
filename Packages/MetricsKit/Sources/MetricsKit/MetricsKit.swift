@@ -50,6 +50,15 @@ public enum MetricFormat {
         return String(format: "%.1f %@", v, units[i])
     }
 
+    /// Decimal byte units used by macOS storage displays.
+    public static func storageBytes(_ value: Double) -> String {
+        let units = ["B", "KB", "MB", "GB", "TB"]
+        var v = value
+        var i = 0
+        while v >= 1000 && i < units.count - 1 { v /= 1000; i += 1 }
+        return String(format: "%.1f %@", v, units[i])
+    }
+
     public static func bytesPerSecond(_ value: Double) -> String {
         bytes(value) + "/s"
     }

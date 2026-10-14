@@ -185,7 +185,7 @@ extension ActiveAlertCondition {
         case SystemAlertSignal.diskAvailableCapacity.conditionKey:
             return String(
                 localized: "health.condition.diskCapacity",
-                defaultValue: "\(MetricFormat.bytes(measuredValue)) disk space remains"
+                defaultValue: "\(MetricFormat.storageBytes(measuredValue)) disk space remains"
             )
         case SystemAlertSignal.batteryService.conditionKey:
             return String(

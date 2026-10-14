@@ -40,8 +40,20 @@ enum DashboardFormat {
     /// The spaces inside "13.6 /" and "16.0 GB" do not break, so a narrow card wraps
     /// the line after the slash rather than stranding the unit on a line of its own.
     static func usedOfTotal(used: Double, total: Double) -> String {
-        let used = split(MetricFormat.bytes(used))
-        let total = split(MetricFormat.bytes(total))
+        usedOfTotal(used: MetricFormat.bytes(used), total: MetricFormat.bytes(total))
+    }
+
+    /// Storage capacity in the decimal units macOS uses for disk sizes.
+    static func storageUsedOfTotal(used: Double, total: Double) -> String {
+        usedOfTotal(
+            used: MetricFormat.storageBytes(used),
+            total: MetricFormat.storageBytes(total)
+        )
+    }
+
+    private static func usedOfTotal(used: String, total: String) -> String {
+        let used = split(used)
+        let total = split(total)
         let totalText = "\(total.number)\u{00A0}\(total.unit)"
         guard used.unit != total.unit else {
             return "\(used.number)\u{00A0}/ \(totalText)"

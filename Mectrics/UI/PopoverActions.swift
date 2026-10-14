@@ -26,7 +26,6 @@ struct PopoverActionBar: View {
 
     var body: some View {
         HStack {
-            Spacer()
             Menu {
                 Button(action: onOpenSettings) {
                     Label("Settings", systemImage: "gearshape")
@@ -42,7 +41,9 @@ struct PopoverActionBar: View {
             .menuStyle(.borderlessButton)
             .menuIndicator(.hidden)
             .accessibilityLabel(Text("More"))
+            .frame(maxWidth: .infinity, alignment: .trailing)
         }
+        .padding(.top, ExperienceSpacing.small)
         .font(.callout)
     }
 }
