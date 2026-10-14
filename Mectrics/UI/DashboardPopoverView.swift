@@ -541,10 +541,18 @@ struct DashboardCardFacts: Equatable {
                 MemoryPressureLevel(rawValue: Int($0))
             }) {
                 facts.chips.append(DashboardChipFact(
-                    symbol: level.symbolName,
-                    text: level.localizedName,
+                    symbol: "arrow.down",
+                    text: "\(DashboardFormat.memoryPressurePercent(level))%",
                     tint: level.tint,
                     label: String(localized: "mem.pressure", defaultValue: "Pressure")
+                ))
+            }
+            if let swapUsed = d["swapUsed"],
+               let swapTotal = d["swapTotal"], swapTotal > 0 {
+                facts.chips.append(DashboardChipFact(
+                    symbol: "arrow.left.arrow.right",
+                    text: DashboardFormat.memorySwapUsed(swapUsed),
+                    label: String(localized: "mem.swap", defaultValue: "Swap")
                 ))
             }
         case .disk:
@@ -779,22 +787,6 @@ struct DashboardMemoryBreakdown: View {
                 .minimumScaleFactor(0.8)
             }
 
-            if let swapUsed = detail["swapUsed"],
-               let swapTotal = detail["swapTotal"], swapTotal > 0 {
-                HStack(spacing: ExperienceSpacing.xSmall) {
-                    Image(systemName: "arrow.left.arrow.right")
-                        .foregroundStyle(.secondary)
-                        .frame(width: 6)
-                    Text(String(localized: "mem.swap", defaultValue: "Swap"))
-                        .foregroundStyle(.secondary)
-                    Spacer(minLength: ExperienceSpacing.xSmall)
-                    Text(DashboardFormat.usedOfTotal(used: swapUsed, total: swapTotal))
-                        .monospacedDigit()
-                }
-                .font(.system(size: 9))
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-            }
         }
     }
 
@@ -808,13 +800,6 @@ struct DashboardMemoryBreakdown: View {
             let (key, title, _) = definition
             guard let amount = detail[key], amount >= 0 else { return nil }
             return DashboardFormat.spokenList([title, MetricFormat.bytes(amount)])
-        }
-        if let used = detail["swapUsed"],
-           let total = detail["swapTotal"], total > 0 {
-            facts.append(DashboardFormat.spokenList([
-                String(localized: "mem.swap", defaultValue: "Swap"),
-                DashboardFormat.usedOfTotal(used: used, total: total)
-            ]))
         }
         return facts
     }
@@ -1317,15 +1302,7 @@ private struct DashboardHistoryBars: View {
 }
 
 private extension MemoryPressureLevel {
-    var symbolName: String {
-        switch self {
-        case .normal: return "gauge.with.dots.needle.33percent"
-        case .warning: return "gauge.with.dots.needle.67percent"
-        case .critical: return "gauge.with.dots.needle.100percent"
-        }
-    }
-
-    /// Normal reads in the ordinary text color; the level's word says the rest.
+    /// Preserve the native warning and critical colors on the pressure percentage.
     var tint: Color? {
         switch self {
         case .normal: return nil

@@ -51,6 +51,27 @@ enum DashboardFormat {
         )
     }
 
+    /// Active swap in decimal megabytes, using larger units as needed.
+    static func memorySwapUsed(_ bytes: Double) -> String {
+        let units = ["MB", "GB", "TB"]
+        var value = max(bytes, 0) / 1_000_000
+        var unitIndex = 0
+        while value >= 1_000 && unitIndex < units.count - 1 {
+            value /= 1_000
+            unitIndex += 1
+        }
+        return String(format: "%.2f %@", value, units[unitIndex])
+    }
+
+    /// Dashboard scale for the kernel's discrete pressure states.
+    static func memoryPressurePercent(_ level: MemoryPressureLevel) -> Int {
+        switch level {
+        case .normal: 0
+        case .warning: 50
+        case .critical: 100
+        }
+    }
+
     private static func usedOfTotal(used: String, total: String) -> String {
         let used = split(used)
         let total = split(total)
