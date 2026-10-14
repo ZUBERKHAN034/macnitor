@@ -36,9 +36,10 @@ struct DashboardPopoverView: View {
     static let padding: CGFloat = ExperienceSpacing.medium
     static let cardSpacing: CGFloat = 8
     static let cardPadding: CGFloat = ExperienceSpacing.small
-    static let cardHeight: CGFloat = 168
     /// One of the two columns: the width inside the padding, less the gap, halved.
     static let cardWidth = (width - 2 * padding - cardSpacing) / 2
+    /// Keep the two-column cards square as the dashboard width or insets change.
+    static let cardHeight = cardWidth
 
     var body: some View {
         // One container for both states, so moving between them does not count as
@@ -678,7 +679,7 @@ private struct DashboardBatteryIcon: View {
         VStack(spacing: 1) {
             RoundedRectangle(cornerRadius: 2, style: .continuous)
                 .fill(Color.primary.opacity(0.16))
-                .frame(width: 13, height: 5)
+                .frame(width: 12, height: 4)
             GeometryReader { geometry in
                 ZStack(alignment: .bottom) {
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
@@ -689,9 +690,9 @@ private struct DashboardBatteryIcon: View {
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
             }
-            .frame(width: 35, height: 48)
+            .frame(width: 30, height: 34)
         }
-        .frame(width: 42, height: 55)
+        .frame(width: 36, height: 40)
         .accessibilityHidden(true)
     }
 }
