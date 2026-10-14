@@ -707,11 +707,16 @@ private struct DashboardMemoryContent: View {
     let accent: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: ExperienceSpacing.tiny) {
-            VStack(alignment: .leading, spacing: ExperienceSpacing.tiny) {
+        VStack(alignment: .leading, spacing: ExperienceSpacing.hairline) {
+            VStack(alignment: .leading, spacing: ExperienceSpacing.hairline) {
                 DashboardValueText(text: value)
                 if let caption {
-                    DashboardCaption(text: caption)
+                    Text(caption)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
             }
             DashboardMemoryBreakdown(detail: detail, accent: accent)
@@ -743,7 +748,7 @@ struct DashboardMemoryBreakdown: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: ExperienceSpacing.tiny) {
+        VStack(alignment: .leading, spacing: 0) {
             GeometryReader { geometry in
                 HStack(spacing: 1) {
                     ForEach(parts) { part in
@@ -769,7 +774,7 @@ struct DashboardMemoryBreakdown: View {
                     Text(MetricFormat.bytes(part.amount))
                         .monospacedDigit()
                 }
-                .font(.caption2)
+                .font(.system(size: 9))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
             }
@@ -786,7 +791,7 @@ struct DashboardMemoryBreakdown: View {
                     Text(DashboardFormat.usedOfTotal(used: swapUsed, total: swapTotal))
                         .monospacedDigit()
                 }
-                .font(.caption2)
+                .font(.system(size: 9))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
             }
@@ -1184,7 +1189,7 @@ private struct DashboardChip: View {
         .monospacedDigit()
         .foregroundStyle(color)
         .padding(.horizontal, ExperienceSpacing.xSmall)
-        .padding(.vertical, ExperienceSpacing.tiny)
+        .padding(.vertical, ExperienceSpacing.hairline)
         .background(shape.fill(color.opacity(DashboardStyle.chipFillOpacity)))
         .overlay {
             if contrast == .increased {
