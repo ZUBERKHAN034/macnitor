@@ -190,6 +190,10 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
     // MARK: - Popover
 
     private func togglePopover(for id: MetricID) {
+        if id == .memory {
+            ActivityMonitorLauncher.open(tab: .memory)
+            return
+        }
         // Anchor on the module's first item (a module can have several).
         guard let button = items.values.first(where: { $0.id == id })?.item.button else { return }
         if model.moduleClickBehavior.opensDashboard {

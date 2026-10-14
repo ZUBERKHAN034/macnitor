@@ -20821,6 +20821,194 @@
           }
         }
       }
+    },
+    "activityMonitor.permission.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permission Needed"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İzin Gerekli"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Требуется разрешение"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se necesita permiso"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autorisation requise"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permissão necessária"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要权限"
+          }
+        }
+      }
+    },
+    "activityMonitor.permission.message": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activity Monitor was opened, but Mectrics could not select its tab. Allow Mectrics under Privacy & Security in System Settings to enable direct tab selection."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Etkinlik Monitörü açıldı ancak Mectrics sekmesini seçemedi. Sekmenin doğrudan seçilmesini sağlamak için Sistem Ayarları’nda Gizlilik ve Güvenlik bölümünden Mectrics’e izin verin."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Мониторинг системы открыт, но Mectrics не удалось выбрать вкладку. Разрешите Mectrics доступ в разделе «Конфиденциальность и безопасность» в системных настройках, чтобы выбирать вкладки напрямую."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se abrió Monitor de Actividad, pero Mectrics no pudo seleccionar la pestaña. Permite el acceso a Mectrics en Privacidad y seguridad, dentro de Ajustes del Sistema, para seleccionar pestañas directamente."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moniteur d’activité est ouvert, mais Mectrics n’a pas pu sélectionner l’onglet. Autorisez Mectrics dans Confidentialité et sécurité des Réglages Système pour sélectionner directement les onglets."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Monitor de Atividade foi aberto, mas o Mectrics não conseguiu selecionar a aba. Permita o acesso do Mectrics em Privacidade e Segurança nos Ajustes do Sistema para selecionar abas diretamente."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "活动监视器已打开，但 Mectrics 无法选择其标签页。请在“系统设置”的“隐私与安全性”中允许 Mectrics，以便直接选择标签页。"
+          }
+        }
+      }
+    },
+    "activityMonitor.permission.openSettings": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Settings"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ayarları Aç"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Открыть настройки"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir Ajustes"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir les réglages"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir Ajustes"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开设置"
+          }
+        }
+      }
+    },
+    "activityMonitor.permission.cancel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İptal"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отмена"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annuler"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelar"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
