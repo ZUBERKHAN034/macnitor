@@ -53,7 +53,7 @@ struct DetailPopoverView: View {
                 footer
             }
         }
-        .padding(ExperienceSpacing.medium)
+        .padding(ExperienceSpacing.small)
         .frame(width: width)
     }
 
@@ -435,11 +435,6 @@ private extension MetricContextualAction {
                 localized: "action.openBatterySettings",
                 defaultValue: "Open Battery Settings"
             )
-        case .networkSettings:
-            return String(
-                localized: "action.openNetworkSettings",
-                defaultValue: "Open Network Settings"
-            )
         case .copyLocalAddress:
             return String(
                 localized: "action.copyLocalAddress",
@@ -453,7 +448,6 @@ private extension MetricContextualAction {
         case .activityMonitor: return "gauge.with.dots.needle.67percent"
         case .storageSettings: return "internaldrive"
         case .batterySettings: return "battery.100percent"
-        case .networkSettings: return "network"
         case .copyLocalAddress: return "doc.on.doc"
         }
     }

@@ -152,7 +152,7 @@ struct DashboardPopoverView: View {
                 localized: "dashboard.back.help",
                 defaultValue: "Back to every reading"
             ))
-            .padding([.top, .horizontal], ExperienceSpacing.medium)
+            .padding([.top, .horizontal], Self.padding)
             // The detail pads itself, so at the popover's own width its content lines
             // up with the back row and the footer. It honors the enabled state: a
             // module taken off the dashboard while its detail is open says Off and
@@ -166,7 +166,7 @@ struct DashboardPopoverView: View {
                 width: Self.width
             )
             actionFooter
-                .padding([.bottom, .horizontal], ExperienceSpacing.medium)
+                .padding([.bottom, .horizontal], Self.padding)
         }
     }
 
@@ -799,7 +799,7 @@ private struct DashboardHealthBanner: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                .padding(.horizontal, ExperienceSpacing.medium)
+                .padding(.horizontal, DashboardPopoverView.padding)
                 .padding(.vertical, ExperienceSpacing.small)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(shape.fill(tint.opacity(0.12)))
@@ -853,8 +853,6 @@ private struct DashboardCardLayout<Content: View>: View {
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
-                // Room for the remove control a hovered card shows beside it.
-                .padding(.trailing, ExperienceSpacing.large)
             content
         }
         .padding(DashboardPopoverView.padding)

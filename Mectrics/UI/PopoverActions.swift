@@ -19,27 +19,28 @@ struct PopoverPrimaryButton: View {
     }
 }
 
-/// Shared bottom bar: app-level actions sit quietly below the popover's own action.
-///
-/// Quit keeps a destructive tint so it reads as the one irreversible item here,
-/// without being hidden behind a menu that would hold a single command.
+/// Shared bottom bar: app-level actions sit in one compact menu below the popover's
+/// own action.
 struct PopoverActionBar: View {
     let onOpenSettings: () -> Void
 
     var body: some View {
         HStack {
-            Button(action: onOpenSettings) {
-                Label("Settings", systemImage: "gearshape")
-            }
-            .buttonStyle(.borderless)
             Spacer()
-            Button {
-                NSApp.terminate(nil)
+            Menu {
+                Button(action: onOpenSettings) {
+                    Label("Settings", systemImage: "gearshape")
+                }
+                Button(role: .destructive) {
+                    NSApp.terminate(nil)
+                } label: {
+                    Label("Quit", systemImage: "power")
+                }
             } label: {
-                Label("Quit", systemImage: "power")
+                Image(systemName: "ellipsis")
             }
-            .buttonStyle(.borderless)
-            .foregroundStyle(Color(nsColor: .systemRed))
+            .menuStyle(.borderlessButton)
+            .accessibilityLabel(Text("More"))
         }
         .font(.callout)
     }

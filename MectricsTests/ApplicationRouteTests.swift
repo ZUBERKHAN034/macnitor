@@ -76,11 +76,11 @@ final class ApplicationRouteTests: XCTestCase {
         )
         XCTAssertEqual(
             MetricContextualAction.actions(for: .network, hasLocalAddress: true),
-            [.networkSettings, .copyLocalAddress]
+            [.activityMonitor, .copyLocalAddress]
         )
         XCTAssertEqual(
             MetricContextualAction.actions(for: .network, hasLocalAddress: false),
-            [.networkSettings]
+            [.activityMonitor]
         )
         XCTAssertTrue(
             MetricContextualAction.actions(for: .sensors, hasLocalAddress: false).isEmpty

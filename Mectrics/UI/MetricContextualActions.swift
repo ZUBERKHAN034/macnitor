@@ -5,7 +5,6 @@ enum MetricContextualAction: Equatable {
     case activityMonitor
     case storageSettings
     case batterySettings
-    case networkSettings
     case copyLocalAddress
 
     static func actions(
@@ -21,8 +20,8 @@ enum MetricContextualAction: Equatable {
             return [.batterySettings]
         case .network:
             return hasLocalAddress
-                ? [.networkSettings, .copyLocalAddress]
-                : [.networkSettings]
+                ? [.activityMonitor, .copyLocalAddress]
+                : [.activityMonitor]
         case .sensors, .fans:
             return []
         }
@@ -44,8 +43,6 @@ enum MetricContextualActionRunner {
             return openSettings("com.apple.settings.Storage")
         case .batterySettings:
             return openSettings("com.apple.Battery-Settings.extension")
-        case .networkSettings:
-            return openSettings("com.apple.Network-Settings.extension")
         case .copyLocalAddress:
             guard let localAddress else { return false }
             let visibleValue = "\(localAddress.address) (\(localAddress.interface))"
