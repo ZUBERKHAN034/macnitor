@@ -366,7 +366,16 @@ private struct DashboardModuleCard: View {
                 history: model.history(id, count: DashboardStyle.historyCount),
                 accent: accent
             )
-        case .memory, .disk:
+        case .memory:
+            DashboardMemoryContent(
+                value: value,
+                fraction: sample.value,
+                caption: facts.captionText,
+                detail: sample.detail,
+                chips: facts.chips,
+                accent: accent
+            )
+        case .disk:
             DashboardCapacityContent(
                 value: value,
                 fraction: sample.value,
@@ -375,23 +384,19 @@ private struct DashboardModuleCard: View {
                 accent: accent
             )
         case .battery:
-            DashboardCapacityContent(
+            DashboardBatteryContent(
                 value: value,
                 fraction: sample.value,
                 caption: facts.captionText,
                 chips: facts.chips,
                 accent: accent,
-                history: DashboardFormat.batteryPowerHistory(
+                powerHistory: DashboardFormat.batteryPowerHistory(
                     samples: model.historySamples(
                         .battery,
                         count: DashboardStyle.historyCount
                     ),
                     isOnBattery: model.isOnBattery
-                ),
-                symbol: BatteryPowerStatus.resolve(
-                    sample.detail,
-                    isOnBattery: model.isOnBattery
-                ).symbolName
+                )
             )
         case .network:
             DashboardNetworkContent(
@@ -442,6 +447,9 @@ private struct DashboardModuleCard: View {
             ]
         } else {
             parts = [DashboardFormat.primaryValue(for: id, sample: sample)]
+            if id == .memory {
+                parts += DashboardMemoryBreakdown.accessibilityFacts(in: sample.detail)
+            }
         }
         parts.append(state.localizedName)
         parts += facts.spoken
@@ -612,35 +620,177 @@ private struct DashboardLoadContent: View {
     }
 }
 
-/// Memory, Disk, and Battery: the share in use (or charged) beside a ring, then chips
-/// along the bottom.
+/// Disk: the share in use beside a ring, then its volume chip.
 private struct DashboardCapacityContent: View {
     let value: String
     let fraction: Double
     let caption: String?
     let chips: [DashboardChipFact]
     let accent: Color
-    var history: [Double]? = nil
-    /// Drawn inside the ring (the battery's power source).
-    var symbol: String?
 
     var body: some View {
         DashboardRingRow(
             value: value,
             caption: caption,
             fraction: fraction,
-            accent: accent,
-            symbol: symbol
+            accent: accent
         )
-        if let history {
-            DashboardChipRow(chips: chips)
-            DashboardHistoryBars(values: history, accent: accent)
-                .frame(height: DashboardStyle.barMinimumHeight)
-        } else {
-            Spacer(minLength: 0)
-            DashboardChipRow(chips: chips)
+        Spacer(minLength: 0)
+        DashboardChipRow(chips: chips)
+    }
+}
+
+/// The Battery card uses a filled battery glyph and recent power draw instead of a
+/// circular charge ring.
+private struct DashboardBatteryContent: View {
+    let value: String
+    let fraction: Double
+    let caption: String?
+    let chips: [DashboardChipFact]
+    let accent: Color
+    let powerHistory: [Double]
+
+    var body: some View {
+        HStack(alignment: .center, spacing: ExperienceSpacing.small) {
+            VStack(alignment: .leading, spacing: ExperienceSpacing.tiny) {
+                DashboardValueText(text: value)
+                if let caption {
+                    DashboardCaption(text: caption)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            DashboardBatteryIcon(fraction: fraction, accent: accent)
+        }
+        DashboardChipRow(chips: chips)
+        DashboardHistoryBars(values: powerHistory, accent: accent)
+            .frame(height: DashboardStyle.barMinimumHeight)
+    }
+}
+
+/// Battery silhouette with a bottom-up accent fill, matching the supplied dashboard
+/// reference and keeping charge level readable without a circular ring.
+private struct DashboardBatteryIcon: View {
+    let fraction: Double
+    let accent: Color
+
+    var body: some View {
+        VStack(spacing: 1) {
+            RoundedRectangle(cornerRadius: 2, style: .continuous)
+                .fill(Color.primary.opacity(0.16))
+                .frame(width: 13, height: 5)
+            GeometryReader { geometry in
+                ZStack(alignment: .bottom) {
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(Color.primary.opacity(0.16))
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .fill(accent)
+                        .frame(height: geometry.size.height * min(max(fraction, 0), 1))
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            }
+            .frame(width: 35, height: 48)
+        }
+        .frame(width: 42, height: 55)
+        .accessibilityHidden(true)
+    }
+}
+
+/// A total-memory stacked bar plus a compact legend. The three states share the
+/// current accent hue at different strengths so their amounts are easy to compare.
+private struct DashboardMemoryContent: View {
+    let value: String
+    let fraction: Double
+    let caption: String?
+    let detail: [String: Double]
+    let chips: [DashboardChipFact]
+    let accent: Color
+
+    var body: some View {
+        DashboardRingRow(
+            value: value,
+            caption: caption,
+            fraction: fraction,
+            accent: accent
+        )
+        DashboardMemoryBreakdown(detail: detail, accent: accent)
+        Spacer(minLength: 0)
+        DashboardChipRow(chips: chips)
+    }
+}
+
+private struct DashboardMemoryBreakdown: View {
+    private struct Part: Identifiable {
+        let key: String
+        let title: String
+        let tintStrength: Double
+        let amount: Double
+
+        var id: String { key }
+    }
+
+    let detail: [String: Double]
+    let accent: Color
+
+    private var parts: [Part] {
+        Self.definitions.compactMap { definition in
+            let (key, title, tintStrength) = definition
+            guard let amount = detail[key], amount >= 0 else { return nil }
+            return Part(key: key, title: title, tintStrength: tintStrength, amount: amount)
         }
     }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: ExperienceSpacing.tiny) {
+            GeometryReader { geometry in
+                HStack(spacing: 1) {
+                    ForEach(parts) { part in
+                        Rectangle()
+                            .fill(accent.opacity(part.tintStrength))
+                            .frame(width: segmentWidth(part, in: geometry.size.width))
+                    }
+                    Spacer(minLength: 0)
+                }
+                .background(Color.primary.opacity(0.08))
+                .clipShape(Capsule())
+            }
+            .frame(height: 5)
+
+            ForEach(parts) { part in
+                HStack(spacing: ExperienceSpacing.xSmall) {
+                    RoundedRectangle(cornerRadius: 1, style: .continuous)
+                        .fill(accent.opacity(part.tintStrength))
+                        .frame(width: 6, height: 6)
+                    Text(part.title)
+                        .foregroundStyle(.secondary)
+                    Spacer(minLength: ExperienceSpacing.xSmall)
+                    Text(MetricFormat.bytes(part.amount))
+                        .monospacedDigit()
+                }
+                .font(.caption)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            }
+        }
+    }
+
+    private func segmentWidth(_ part: Part, in width: CGFloat) -> CGFloat {
+        guard let total = detail["total"], total > 0 else { return 0 }
+        return width * min(max(part.amount / total, 0), 1)
+    }
+
+    static func accessibilityFacts(in detail: [String: Double]) -> [String] {
+        definitions.compactMap { definition in
+            let (key, title, _) = definition
+            guard let amount = detail[key], amount >= 0 else { return nil }
+            return DashboardFormat.spokenList([title, MetricFormat.bytes(amount)])
+        }
+    }
+
+    private static let definitions: [(String, String, Double)] = [
+        ("active", String(localized: "mem.active", defaultValue: "Active"), 1),
+        ("wired", String(localized: "mem.wired", defaultValue: "Wired"), 0.68),
+        ("compressed", String(localized: "mem.compressed", defaultValue: "Compressed"), 0.38)
+    ]
 }
 
 /// Download and upload as two large rates, then the local address.
