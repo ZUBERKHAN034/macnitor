@@ -798,10 +798,6 @@ private struct DashboardHealthBanner: View {
                             .font(.caption.weight(.medium))
                             .foregroundStyle(.secondary)
                     }
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                        .accessibilityHidden(true)
                 }
                 .padding(.horizontal, ExperienceSpacing.medium)
                 .padding(.vertical, ExperienceSpacing.small)
@@ -886,8 +882,7 @@ private struct DashboardCardBackground: View {
     }
 }
 
-/// A card as a button: brighter under the pointer and while pressed, with a chevron
-/// that says a click leads further.
+/// A card as a button: brighter under the pointer and while pressed.
 private struct DashboardCardButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         DashboardCardButton(configuration: configuration)
@@ -903,18 +898,6 @@ private struct DashboardCardButton: View {
         configuration.label
             .background {
                 DashboardCardBackground(fillOpacity: fillOpacity)
-            }
-            // Bottom-trailing, because the card's remove control owns the top-trailing
-            // corner: two affordances in one spot is one the pointer cannot reach.
-            .overlay(alignment: .bottomTrailing) {
-                if isHovered {
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.tertiary)
-                        .padding(.bottom, DashboardPopoverView.padding)
-                        .padding(.trailing, DashboardPopoverView.padding)
-                        .accessibilityHidden(true)
-                }
             }
             .contentShape(
                 RoundedRectangle(cornerRadius: ExperienceRadius.panel, style: .continuous)

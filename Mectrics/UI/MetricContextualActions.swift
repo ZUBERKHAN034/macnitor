@@ -43,7 +43,7 @@ enum MetricContextualActionRunner {
         case .storageSettings:
             return openSettings("com.apple.settings.Storage")
         case .batterySettings:
-            return openSettings("com.apple.settings.Battery")
+            return openSettings("com.apple.Battery-Settings.extension")
         case .networkSettings:
             return openSettings("com.apple.Network-Settings.extension")
         case .copyLocalAddress:

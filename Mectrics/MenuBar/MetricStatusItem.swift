@@ -151,7 +151,7 @@ final class MetricStatusItem: NSObject {
     private static let gap: CGFloat = 4
 
     /// Leading space taken by the embedded module icon (glyph + gap).
-    private static let iconSlot: CGFloat = 16
+    private static let iconSlot: CGFloat = 12
 
     private static let batteryWidth: CGFloat = 25
     /// Wide enough for a three-digit charge inside the body at `batteryLabelFont`.
