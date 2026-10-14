@@ -40,6 +40,7 @@ struct PopoverActionBar: View {
                 Image(systemName: "ellipsis")
             }
             .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
             .accessibilityLabel(Text("More"))
         }
         .font(.callout)

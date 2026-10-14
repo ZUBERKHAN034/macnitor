@@ -88,15 +88,20 @@ public final class DiskProvider: MetricProvider, @unchecked Sendable {
         ]
     }
 
-    /// Total and strictly-free bytes on `/` from one `statfs` syscall. `f_bavail` is
-    /// the space available to an unprivileged process — the same quantity
-    /// `volumeAvailableCapacity` reports, to within a block.
+    /// Allocated and strictly-free bytes on `/` from one `statfs` syscall. On APFS,
+    /// `f_blocks` can describe the volume's shared maximum rather than space actually
+    /// allocated to it. Use `f_blocks - f_bfree` for allocation and add `f_bavail`,
+    /// the space available to an unprivileged process, for the usable capacity.
     private func readCapacity() -> (total: Double, strictFree: Double)? {
         var stats = statfs()
         guard statfs("/", &stats) == 0 else { return nil }
         let blockSize = Double(stats.f_bsize)
-        let total = Double(stats.f_blocks) * blockSize
+        let allocatedBlocks = stats.f_blocks >= stats.f_bfree
+            ? stats.f_blocks - stats.f_bfree
+            : 0
+        let allocated = Double(allocatedBlocks) * blockSize
         let strictFree = Double(stats.f_bavail) * blockSize
+        let total = allocated + strictFree
         guard total > 0 else { return nil }
         return (total, strictFree)
     }
