@@ -73,6 +73,15 @@ public final class MemoryProvider: MetricProvider, @unchecked Sendable {
             detail["pressureLevel"] = Double(pressure)
         }
 
+        // The kernel's memorystatus level is the percentage of memory available
+        // to the system. Invert it for the dashboard's continuous pressure scale.
+        var availablePercent: Int32 = 0
+        var availablePercentSize = MemoryLayout<Int32>.size
+        if sysctlbyname("kern.memorystatus_level", &availablePercent, &availablePercentSize, nil, 0) == 0,
+           (0...100).contains(availablePercent) {
+            detail["pressurePercent"] = Double(100 - availablePercent)
+        }
+
         return MetricSample(value: usage, unit: .fraction, detail: detail)
     }
 }

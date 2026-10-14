@@ -537,13 +537,16 @@ struct DashboardCardFacts: Equatable {
             }
         case .memory:
             facts.caption += usedOfTotal(d)
-            if let level = d["pressureLevel"].flatMap({
-                MemoryPressureLevel(rawValue: Int($0))
-            }) {
+            if let pressurePercent = d["pressurePercent"],
+               pressurePercent.isFinite,
+               (0...100).contains(pressurePercent) {
+                let level = d["pressureLevel"].flatMap {
+                    MemoryPressureLevel(rawValue: Int($0))
+                }
                 facts.chips.append(DashboardChipFact(
                     symbol: "arrow.down",
-                    text: "\(DashboardFormat.memoryPressurePercent(level))%",
-                    tint: level.tint,
+                    text: "\(Int(pressurePercent.rounded()))%",
+                    tint: level?.tint,
                     label: String(localized: "mem.pressure", defaultValue: "Pressure")
                 ))
             }

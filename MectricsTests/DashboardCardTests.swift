@@ -130,6 +130,7 @@ final class DashboardCardTests: XCTestCase {
             "used": 13.6 * gigabyte,
             "total": 16 * gigabyte,
             "pressureLevel": Double(MemoryPressureLevel.warning.rawValue),
+            "pressurePercent": 38,
             "swapTotal": 2 * gigabyte,
             "swapUsed": 0.5 * gigabyte
         ])
@@ -137,7 +138,7 @@ final class DashboardCardTests: XCTestCase {
             memory.caption,
             [DashboardFormat.usedOfTotal(used: 13.6 * gigabyte, total: 16 * gigabyte)]
         )
-        XCTAssertEqual(memory.chips.map(\.text), ["50%", "536.87 MB"])
+        XCTAssertEqual(memory.chips.map(\.text), ["38%", "536.87 MB"])
         XCTAssertEqual(memory.chips.map(\.symbol), ["arrow.down", "arrow.left.arrow.right"])
         for chip in memory.chips {
             let label = try XCTUnwrap(chip.label)
@@ -152,9 +153,6 @@ final class DashboardCardTests: XCTestCase {
         )
         XCTAssertEqual(DashboardFormat.memorySwapUsed(0.5 * gigabyte), "536.87 MB")
         XCTAssertEqual(DashboardFormat.memorySwapUsed(0), "0.00 MB")
-        XCTAssertEqual(DashboardFormat.memoryPressurePercent(.normal), 0)
-        XCTAssertEqual(DashboardFormat.memoryPressurePercent(.warning), 50)
-        XCTAssertEqual(DashboardFormat.memoryPressurePercent(.critical), 100)
     }
 
     /// A pressure level the kernel does not define is not guessed at, and swap is
@@ -162,6 +160,8 @@ final class DashboardCardTests: XCTestCase {
     func testMemoryLeavesOutUndefinedPressureAndAbsentSwap() {
         XCTAssertEqual(facts(.memory, ["pressureLevel": 0]).chips, [])
         XCTAssertEqual(facts(.memory, ["pressureLevel": 3]).chips, [])
+        XCTAssertEqual(facts(.memory, ["pressurePercent": 101]).chips, [])
+        XCTAssertEqual(facts(.memory, ["pressurePercent": 38]).chips, [])
         XCTAssertEqual(facts(.memory, ["swapTotal": 0, "swapUsed": 0]).chips, [])
         XCTAssertEqual(facts(.memory, ["swapTotal": 2 * gigabyte]).chips, [])
         XCTAssertEqual(facts(.memory, ["swapUsed": 1024]).chips, [])
@@ -294,6 +294,7 @@ final class DashboardCardTests: XCTestCase {
         for level in MemoryPressureLevel.allCases {
             chips += facts(.memory, [
                 "pressureLevel": Double(level.rawValue),
+                "pressurePercent": 38,
                 "swapTotal": gigabyte,
                 "swapUsed": 1024
             ]).chips

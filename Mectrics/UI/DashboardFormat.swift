@@ -63,15 +63,6 @@ enum DashboardFormat {
         return String(format: "%.2f %@", value, units[unitIndex])
     }
 
-    /// Dashboard scale for the kernel's discrete pressure states.
-    static func memoryPressurePercent(_ level: MemoryPressureLevel) -> Int {
-        switch level {
-        case .normal: 0
-        case .warning: 50
-        case .critical: 100
-        }
-    }
-
     private static func usedOfTotal(used: String, total: String) -> String {
         let used = split(used)
         let total = split(total)
