@@ -83,7 +83,6 @@ targets:
         MARKETING_VERSION: "1.10.0"
         CURRENT_PROJECT_VERSION: "14"
         GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_NSAppleEventsUsageDescription: "Mectrics uses Automation to open Activity Monitor on the selected tab."
         ENABLE_APP_SANDBOX: NO
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
         INFOPLIST_KEY_NSHumanReadableCopyright: "© 2026 Mectrics"

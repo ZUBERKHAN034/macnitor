@@ -712,6 +712,11 @@ final class AppModel {
         engine.store.history(id, count: count).map(\.normalized)
     }
 
+    /// Raw samples are used when a card graphs a detail field instead of `value`.
+    func historySamples(_ id: MetricID, count: Int = 40) -> [MetricSample] {
+        engine.store.history(id, count: count)
+    }
+
     /// Applies one engine pass while preserving the last valid sample across short
     /// provider interruptions.
     func apply(_ report: SamplingCycleReport) {

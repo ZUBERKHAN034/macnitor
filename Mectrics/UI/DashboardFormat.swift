@@ -94,6 +94,34 @@ enum DashboardFormat {
         "\(Int(celsius.rounded()))°C"
     }
 
+    /// Battery power is negative while the battery supplies the Mac, and zero on
+    /// adapter power. Unknown power-source state or absent hardware readings stay nil.
+    static func batteryPowerWatts(
+        sample: MetricSample,
+        isOnBattery: Bool?
+    ) -> Double? {
+        guard let isOnBattery else { return nil }
+        guard isOnBattery else { return 0 }
+        guard let watts = sample.detail["powerWatts"] else { return nil }
+        return -abs(watts)
+    }
+
+    static func batteryPowerText(_ watts: Double) -> String {
+        "\(Int(watts.rounded())) W"
+    }
+
+    /// Scale the recent draw history to the greatest observed draw so the chart
+    /// shows changing usage while the signed watt value remains the exact reading.
+    static func batteryPowerHistory(
+        samples: [MetricSample],
+        isOnBattery: Bool?
+    ) -> [Double] {
+        let watts = samples.compactMap { batteryPowerWatts(sample: $0, isOnBattery: isOnBattery) }
+        let peak = watts.map { abs($0) }.max() ?? 0
+        guard peak > 0 else { return watts.map { _ in 0 } }
+        return watts.map { abs($0) / peak }
+    }
+
     /// Spoken facts as one list, joined by the catalog's separator ("%1$@, %2$@";
     /// Chinese uses a full-width comma) rather than a hardcoded ", ".
     static func spokenList(_ parts: [String]) -> String {

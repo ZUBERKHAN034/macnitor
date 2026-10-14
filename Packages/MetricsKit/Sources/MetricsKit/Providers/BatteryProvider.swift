@@ -6,7 +6,7 @@ import IOKit
 /// `AppleSmartBattery` entry for health/cycle info.
 ///
 /// `value` = charge fraction (0...1). Detail: charging (1/0), timeToEmpty/Full (min),
-/// cycleCount, healthPercent, temperature (°C), amperage/voltage.
+/// cycleCount, healthPercent, temperature (°C), amperage/voltage, and battery power draw.
 /// On desktop Macs (no battery) `isAvailable == false`.
 public final class BatteryProvider: MetricProvider, @unchecked Sendable {
     public let id: MetricID = .battery
@@ -110,6 +110,10 @@ public final class BatteryProvider: MetricProvider, @unchecked Sendable {
         }
         if let voltage = dict["Voltage"] as? Int { out["voltage"] = Double(voltage) / 1000 }
         if let amperage = dict["Amperage"] as? Int { out["amperage"] = Double(amperage) }
+        if let voltage = out["voltage"], let amperage = out["amperage"] {
+            // AppleSmartBattery reports amperage in mA and voltage in V.
+            out["powerWatts"] = abs(voltage * amperage) / 1000
+        }
         return out
     }
 }

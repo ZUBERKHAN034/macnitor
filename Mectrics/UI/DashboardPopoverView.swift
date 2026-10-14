@@ -381,6 +381,13 @@ private struct DashboardModuleCard: View {
                 caption: facts.captionText,
                 chips: facts.chips,
                 accent: accent,
+                history: DashboardFormat.batteryPowerHistory(
+                    samples: model.historySamples(
+                        .battery,
+                        count: DashboardStyle.historyCount
+                    ),
+                    isOnBattery: model.isOnBattery
+                ),
                 symbol: BatteryPowerStatus.resolve(
                     sample.detail,
                     isOnBattery: model.isOnBattery
@@ -534,6 +541,16 @@ struct DashboardCardFacts: Equatable {
         case .battery:
             let status = BatteryPowerStatus.resolve(d, isOnBattery: isOnBattery)
             facts.caption.append(status.localizedName)
+            if let watts = DashboardFormat.batteryPowerWatts(
+                sample: sample,
+                isOnBattery: isOnBattery
+            ) {
+                facts.chips.append(DashboardChipFact(
+                    symbol: "bolt.fill",
+                    text: DashboardFormat.batteryPowerText(watts),
+                    label: String(localized: "battery.power", defaultValue: "Power")
+                ))
+            }
             if let label = status.estimateLabel, let minutes = status.estimate(in: d) {
                 facts.chips.append(DashboardChipFact(
                     symbol: "clock",
@@ -603,6 +620,7 @@ private struct DashboardCapacityContent: View {
     let caption: String?
     let chips: [DashboardChipFact]
     let accent: Color
+    var history: [Double]? = nil
     /// Drawn inside the ring (the battery's power source).
     var symbol: String?
 
@@ -614,8 +632,14 @@ private struct DashboardCapacityContent: View {
             accent: accent,
             symbol: symbol
         )
-        Spacer(minLength: 0)
-        DashboardChipRow(chips: chips)
+        if let history {
+            DashboardChipRow(chips: chips)
+            DashboardHistoryBars(values: history, accent: accent)
+                .frame(height: DashboardStyle.barMinimumHeight)
+        } else {
+            Spacer(minLength: 0)
+            DashboardChipRow(chips: chips)
+        }
     }
 }
 
