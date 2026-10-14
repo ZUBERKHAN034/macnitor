@@ -113,7 +113,7 @@ enum MenuBarComponent: String, CaseIterable, Identifiable {
         case .temperature:
             return "125°"
         case .netActivity, .netActivityGraph, .netDown, .netUp:
-            return "↓999M"
+            return "↓9999.9 TB/s"
         case .value, .valueGraph:
             switch module {
             // The charging bolt is part of the value, so it belongs in the template.
@@ -183,9 +183,9 @@ extension MenuBarText {
         case .netActivityGraph:
             return .textGraph(string(for: .network, sample: sample))
         case .netDown:
-            return .text("↓\(MetricFormat.menuRate(sample.detail["down"] ?? 0))")
+            return .text("↓\(DashboardFormat.rate(sample.detail["down"]))")
         case .netUp:
-            return .text("↑\(MetricFormat.menuRate(sample.detail["up"] ?? 0))")
+            return .text("↑\(DashboardFormat.rate(sample.detail["up"]))")
         }
     }
 }

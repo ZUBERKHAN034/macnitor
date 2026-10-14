@@ -28,7 +28,7 @@ enum MenuBarText {
             // splits on the newline and draws each line right-aligned in a small font.
             let down = sample.detail["down"] ?? 0
             let up = sample.detail["up"] ?? 0
-            return "↓\(MetricFormat.menuRate(down))\n↑\(MetricFormat.menuRate(up))"
+            return "↓\(DashboardFormat.rate(down))\n↑\(DashboardFormat.rate(up))"
         case .disk:
             return MetricFormat.percent(sample.value, decimals: 0)
         case .sensors:
