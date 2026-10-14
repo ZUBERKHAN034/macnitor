@@ -184,6 +184,14 @@ enum BatteryPowerStatus: Equatable {
         }
     }
 
+    var symbolName: String? {
+        switch self {
+        case .charging: return "bolt.fill"
+        case .pluggedIn: return "powerplug.fill"
+        case .onBattery: return nil
+        }
+    }
+
     /// What the estimate counts down to; nil when plugged in, where there is nothing
     /// to estimate.
     var estimateLabel: String? {
