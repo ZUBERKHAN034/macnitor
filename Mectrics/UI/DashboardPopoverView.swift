@@ -720,7 +720,7 @@ private struct DashboardMemoryContent: View {
     }
 }
 
-private struct DashboardMemoryBreakdown: View {
+struct DashboardMemoryBreakdown: View {
     private struct Part: Identifiable {
         let key: String
         let title: String

@@ -138,13 +138,22 @@ final class DashboardCardTests: XCTestCase {
             [DashboardFormat.usedOfTotal(used: 13.6 * gigabyte, total: 16 * gigabyte)]
         )
         XCTAssertEqual(memory.chips.map(\.text), [
-            MemoryPressureLevel.warning.localizedName,
-            "512.0 MB"
+            MemoryPressureLevel.warning.localizedName
         ])
         for chip in memory.chips {
             let label = try XCTUnwrap(chip.label)
             XCTAssertEqual(chip.spoken, DashboardFormat.spokenList([label, chip.text]))
         }
+        XCTAssertEqual(
+            DashboardMemoryBreakdown.accessibilityFacts(in: [
+                "swapTotal": 2 * gigabyte,
+                "swapUsed": 0.5 * gigabyte
+            ]),
+            [DashboardFormat.spokenList([
+                String(localized: "mem.swap", defaultValue: "Swap"),
+                DashboardFormat.usedOfTotal(used: 0.5 * gigabyte, total: 2 * gigabyte)
+            ])]
+        )
     }
 
     /// A pressure level the kernel does not define is not guessed at, and swap is
@@ -155,10 +164,19 @@ final class DashboardCardTests: XCTestCase {
         XCTAssertEqual(facts(.memory, ["swapTotal": 0, "swapUsed": 0]).chips, [])
         XCTAssertEqual(facts(.memory, ["swapTotal": 2 * gigabyte]).chips, [])
         XCTAssertEqual(facts(.memory, ["swapUsed": 1024]).chips, [])
-        // Swap that exists but is unused is a fact: none of it in use.
         XCTAssertEqual(
-            facts(.memory, ["swapTotal": 2 * gigabyte, "swapUsed": 0]).chips.map(\.text),
-            ["0.0 B"]
+            DashboardMemoryBreakdown.accessibilityFacts(in: [
+                "swapTotal": 2 * gigabyte,
+                "swapUsed": 0
+            ]),
+            [DashboardFormat.spokenList([
+                String(localized: "mem.swap", defaultValue: "Swap"),
+                DashboardFormat.usedOfTotal(used: 0, total: 2 * gigabyte)
+            ])]
+        )
+        XCTAssertEqual(
+            DashboardMemoryBreakdown.accessibilityFacts(in: ["swapTotal": 0, "swapUsed": 0]),
+            []
         )
     }
 
