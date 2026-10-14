@@ -107,7 +107,7 @@ enum DashboardFormat {
     }
 
     static func batteryPowerText(_ watts: Double) -> String {
-        "\(Int(watts.rounded())) W"
+        String(format: "%.2f W", watts)
     }
 
     /// Scale the recent draw history to the greatest observed draw so the chart

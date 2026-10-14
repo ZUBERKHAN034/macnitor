@@ -35,6 +35,8 @@ struct DashboardPopoverView: View {
     /// One shared edge inset for the dashboard, its cards, and its detail branch.
     static let padding: CGFloat = ExperienceSpacing.medium
     static let cardSpacing: CGFloat = 8
+    static let cardPadding: CGFloat = ExperienceSpacing.small
+    static let cardHeight: CGFloat = 168
     /// One of the two columns: the width inside the padding, less the gap, halved.
     static let cardWidth = (width - 2 * padding - cardSpacing) / 2
 
@@ -287,7 +289,6 @@ private enum DashboardStyle {
     static let rateSize: CGFloat = 16
     static let ringDiameter: CGFloat = 40
     static let ringLineWidth: CGFloat = 6
-    static let ringSymbolSize: CGFloat = 11
     /// Bars in the CPU and GPU history: one per sample, newest on the right.
     static let historyCount = 16
     static let barSpacing: CGFloat = 2
@@ -369,7 +370,6 @@ private struct DashboardModuleCard: View {
         case .memory:
             DashboardMemoryContent(
                 value: value,
-                fraction: sample.value,
                 caption: facts.captionText,
                 detail: sample.detail,
                 chips: facts.chips,
@@ -386,6 +386,10 @@ private struct DashboardModuleCard: View {
         case .battery:
             DashboardBatteryContent(
                 value: value,
+                power: DashboardFormat.batteryPowerWatts(
+                    sample: sample,
+                    isOnBattery: model.isOnBattery
+                ).map(DashboardFormat.batteryPowerText),
                 fraction: sample.value,
                 caption: facts.captionText,
                 chips: facts.chips,
@@ -449,6 +453,15 @@ private struct DashboardModuleCard: View {
             parts = [DashboardFormat.primaryValue(for: id, sample: sample)]
             if id == .memory {
                 parts += DashboardMemoryBreakdown.accessibilityFacts(in: sample.detail)
+            } else if id == .battery,
+                      let watts = DashboardFormat.batteryPowerWatts(
+                        sample: sample,
+                        isOnBattery: model.isOnBattery
+                      ) {
+                parts.append(DashboardFormat.spokenList([
+                    String(localized: "battery.power", defaultValue: "Power"),
+                    DashboardFormat.batteryPowerText(watts)
+                ]))
             }
         }
         parts.append(state.localizedName)
@@ -533,14 +546,6 @@ struct DashboardCardFacts: Equatable {
                     label: String(localized: "mem.pressure", defaultValue: "Pressure")
                 ))
             }
-            if let swapTotal = d["swapTotal"], swapTotal > 0,
-               let swapUsed = d["swapUsed"] {
-                facts.chips.append(DashboardChipFact(
-                    symbol: "arrow.left.arrow.right",
-                    text: MetricFormat.bytes(swapUsed),
-                    label: String(localized: "mem.swap", defaultValue: "Swap")
-                ))
-            }
         case .disk:
             facts.caption += storageUsedOfTotal(d)
             if let volume = systemInfo.startupVolumeName {
@@ -549,16 +554,6 @@ struct DashboardCardFacts: Equatable {
         case .battery:
             let status = BatteryPowerStatus.resolve(d, isOnBattery: isOnBattery)
             facts.caption.append(status.localizedName)
-            if let watts = DashboardFormat.batteryPowerWatts(
-                sample: sample,
-                isOnBattery: isOnBattery
-            ) {
-                facts.chips.append(DashboardChipFact(
-                    symbol: "bolt.fill",
-                    text: DashboardFormat.batteryPowerText(watts),
-                    label: String(localized: "battery.power", defaultValue: "Power")
-                ))
-            }
             if let label = status.estimateLabel, let minutes = status.estimate(in: d) {
                 facts.chips.append(DashboardChipFact(
                     symbol: "clock",
@@ -644,6 +639,7 @@ private struct DashboardCapacityContent: View {
 /// circular charge ring.
 private struct DashboardBatteryContent: View {
     let value: String
+    let power: String?
     let fraction: Double
     let caption: String?
     let chips: [DashboardChipFact]
@@ -651,19 +647,24 @@ private struct DashboardBatteryContent: View {
     let powerHistory: [Double]
 
     var body: some View {
-        HStack(alignment: .center, spacing: ExperienceSpacing.small) {
-            VStack(alignment: .leading, spacing: ExperienceSpacing.tiny) {
-                DashboardValueText(text: value)
-                if let caption {
-                    DashboardCaption(text: caption)
+        VStack(alignment: .leading, spacing: ExperienceSpacing.tiny) {
+            HStack(alignment: .center, spacing: ExperienceSpacing.small) {
+                VStack(alignment: .leading, spacing: ExperienceSpacing.tiny) {
+                    DashboardValueText(text: value)
+                    if let power {
+                        DashboardCaption(text: power)
+                    }
+                    if let caption {
+                        DashboardCaption(text: caption)
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                DashboardBatteryIcon(fraction: fraction, accent: accent)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            DashboardBatteryIcon(fraction: fraction, accent: accent)
+            DashboardChipRow(chips: chips)
+            DashboardHistoryBars(values: powerHistory, accent: accent)
+                .frame(height: DashboardStyle.barMinimumHeight)
         }
-        DashboardChipRow(chips: chips)
-        DashboardHistoryBars(values: powerHistory, accent: accent)
-            .frame(height: DashboardStyle.barMinimumHeight)
     }
 }
 
@@ -699,22 +700,23 @@ private struct DashboardBatteryIcon: View {
 /// current accent hue at different strengths so their amounts are easy to compare.
 private struct DashboardMemoryContent: View {
     let value: String
-    let fraction: Double
     let caption: String?
     let detail: [String: Double]
     let chips: [DashboardChipFact]
     let accent: Color
 
     var body: some View {
-        DashboardRingRow(
-            value: value,
-            caption: caption,
-            fraction: fraction,
-            accent: accent
-        )
-        DashboardMemoryBreakdown(detail: detail, accent: accent)
-        Spacer(minLength: 0)
-        DashboardChipRow(chips: chips)
+        VStack(alignment: .leading, spacing: ExperienceSpacing.tiny) {
+            VStack(alignment: .leading, spacing: ExperienceSpacing.tiny) {
+                DashboardValueText(text: value)
+                if let caption {
+                    DashboardCaption(text: caption)
+                }
+            }
+            DashboardMemoryBreakdown(detail: detail, accent: accent)
+            Spacer(minLength: 0)
+            DashboardChipRow(chips: chips)
+        }
     }
 }
 
@@ -766,7 +768,24 @@ private struct DashboardMemoryBreakdown: View {
                     Text(MetricFormat.bytes(part.amount))
                         .monospacedDigit()
                 }
-                .font(.caption)
+                .font(.caption2)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            }
+
+            if let swapUsed = detail["swapUsed"],
+               let swapTotal = detail["swapTotal"], swapTotal > 0 {
+                HStack(spacing: ExperienceSpacing.xSmall) {
+                    Image(systemName: "arrow.left.arrow.right")
+                        .foregroundStyle(.secondary)
+                        .frame(width: 6)
+                    Text(String(localized: "mem.swap", defaultValue: "Swap"))
+                        .foregroundStyle(.secondary)
+                    Spacer(minLength: ExperienceSpacing.xSmall)
+                    Text(DashboardFormat.usedOfTotal(used: swapUsed, total: swapTotal))
+                        .monospacedDigit()
+                }
+                .font(.caption2)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
             }
@@ -779,11 +798,19 @@ private struct DashboardMemoryBreakdown: View {
     }
 
     static func accessibilityFacts(in detail: [String: Double]) -> [String] {
-        definitions.compactMap { definition in
+        var facts = definitions.compactMap { definition in
             let (key, title, _) = definition
             guard let amount = detail[key], amount >= 0 else { return nil }
             return DashboardFormat.spokenList([title, MetricFormat.bytes(amount)])
         }
+        if let used = detail["swapUsed"],
+           let total = detail["swapTotal"], total > 0 {
+            facts.append(DashboardFormat.spokenList([
+                String(localized: "mem.swap", defaultValue: "Swap"),
+                DashboardFormat.usedOfTotal(used: used, total: total)
+            ]))
+        }
+        return facts
     }
 
     private static let definitions: [(String, String, Double)] = [
@@ -912,9 +939,9 @@ private struct DashboardEmptyHintCard: View {
             .font(.callout)
         }
         .multilineTextAlignment(.center)
-        .padding(DashboardPopoverView.padding)
+        .padding(DashboardPopoverView.cardPadding)
         .frame(width: DashboardPopoverView.cardWidth)
-        .frame(maxHeight: .infinity)
+        .frame(height: DashboardPopoverView.cardHeight, alignment: .center)
         .background {
             RoundedRectangle(cornerRadius: ExperienceRadius.panel, style: .continuous)
                 .strokeBorder(
@@ -1018,8 +1045,7 @@ private struct DashboardHealthBanner: View {
 
 // MARK: - Card parts
 
-/// Header, then content, inside the card's padding at the column's width. The height
-/// follows the row, so both cards in a row match.
+/// Header and content share the same fixed width and height across the Dashboard.
 private struct DashboardCardLayout<Content: View>: View {
     let symbol: String
     let title: String
@@ -1033,9 +1059,9 @@ private struct DashboardCardLayout<Content: View>: View {
                 .lineLimit(1)
             content
         }
-        .padding(DashboardPopoverView.padding)
+        .padding(DashboardPopoverView.cardPadding)
         .frame(width: DashboardPopoverView.cardWidth, alignment: .leading)
-        .frame(maxHeight: .infinity, alignment: .top)
+        .frame(height: DashboardPopoverView.cardHeight, alignment: .topLeading)
     }
 }
 
@@ -1196,7 +1222,6 @@ private struct DashboardRingRow: View {
     let caption: String?
     let fraction: Double
     let accent: Color
-    var symbol: String?
 
     var body: some View {
         HStack(alignment: .top, spacing: ExperienceSpacing.xSmall) {
@@ -1207,7 +1232,7 @@ private struct DashboardRingRow: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            DashboardRing(fraction: fraction, accent: accent, symbol: symbol)
+            DashboardRing(fraction: fraction, accent: accent)
         }
     }
 }
@@ -1217,7 +1242,6 @@ private struct DashboardRingRow: View {
 private struct DashboardRing: View {
     let fraction: Double
     let accent: Color
-    var symbol: String?
     @Environment(\.colorSchemeContrast) private var contrast
 
     var body: some View {
@@ -1236,11 +1260,6 @@ private struct DashboardRing: View {
                 .trim(from: 0, to: min(max(fraction, 0), 1))
                 .stroke(accent, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
                 .rotationEffect(.degrees(-90))
-            if let symbol {
-                Image(systemName: symbol)
-                    .font(.system(size: DashboardStyle.ringSymbolSize, weight: .semibold))
-                    .foregroundStyle(accent)
-            }
         }
         .padding(lineWidth / 2)
         .frame(width: DashboardStyle.ringDiameter, height: DashboardStyle.ringDiameter)
