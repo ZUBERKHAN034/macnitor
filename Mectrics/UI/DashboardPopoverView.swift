@@ -647,6 +647,11 @@ private struct DashboardCapacityContent: View {
             HStack(spacing: ExperienceSpacing.small) {
                 DashboardRing(fraction: usedFraction ?? 0, accent: accent, diameter: 46)
 
+                Rectangle()
+                    .fill(Color.primary.opacity(DashboardStyle.trackOpacity))
+                    .frame(width: ExperienceSpacing.hairline, height: 54)
+                    .accessibilityHidden(true)
+
                 VStack(alignment: .leading, spacing: ExperienceSpacing.xSmall) {
                     DashboardStorageSummary(
                         title: String(localized: "disk.used", defaultValue: "Used"),
@@ -662,30 +667,22 @@ private struct DashboardCapacityContent: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             Spacer(minLength: ExperienceSpacing.tiny)
-            GeometryReader { geometry in
-                let gap = ExperienceSpacing.xSmall
-                let innerWidth = max(geometry.size.width - gap, 0)
-                let percentageWidth = innerWidth * 0.37
-                HStack(spacing: gap) {
-                    DashboardDiskFooterChip(fact: DashboardChipFact(
-                        symbol: nil,
-                        text: usedFraction.map { MetricFormat.percent($0, decimals: 1) }
-                            ?? DashboardFormat.missingValue,
-                        tint: accent,
-                        label: String(localized: "disk.used", defaultValue: "Used")
-                    ))
-                    .frame(width: percentageWidth, height: 24)
-                    DashboardDiskFooterChip(fact: DashboardChipFact(
-                        symbol: "externaldrive",
-                        text: chips.first?.text ?? DashboardFormat.missingValue,
-                        tint: .secondary
-                    ))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 24)
-                    .layoutPriority(1)
-                }
+            HStack(spacing: ExperienceSpacing.xSmall) {
+                DashboardDiskFooterChip(fact: DashboardChipFact(
+                    symbol: nil,
+                    text: usedFraction.map { MetricFormat.percent($0, decimals: 1) }
+                        ?? DashboardFormat.missingValue,
+                    tint: accent,
+                    label: String(localized: "disk.used", defaultValue: "Used")
+                ))
+                .frame(maxWidth: .infinity)
+                DashboardDiskFooterChip(fact: DashboardChipFact(
+                    symbol: "externaldrive",
+                    text: chips.first?.text ?? DashboardFormat.missingValue,
+                    tint: .secondary
+                ))
+                .frame(maxWidth: .infinity)
             }
-            .frame(height: 24)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -767,10 +764,12 @@ private struct DashboardDiskFooterChip: View {
             if let symbol = fact.symbol {
                 Image(systemName: symbol)
                     .imageScale(.small)
+                    .font(.system(size: 9, weight: .medium))
             }
             Text(fact.text)
+                .font(.system(size: 9, weight: .medium))
                 .lineLimit(1)
-                .minimumScaleFactor(0.5)
+                .minimumScaleFactor(0.75)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .font(.caption.weight(.medium))
