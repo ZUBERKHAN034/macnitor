@@ -320,8 +320,7 @@ private struct DashboardModuleCard: View {
         } label: {
             DashboardCardLayout(
                 symbol: MetricSymbol.name(for: id),
-                title: id.localizedName,
-                headerDetail: id == .disk ? systemInfo.startupVolumeName : nil
+                title: id.localizedName
             ) {
                 if let sample, let facts {
                     content(for: sample, facts: facts)
@@ -382,6 +381,7 @@ private struct DashboardModuleCard: View {
                 value: value,
                 fraction: sample.value,
                 caption: facts.captionText,
+                chips: facts.chips,
                 accent: accent
             )
         case .battery:
@@ -632,10 +632,11 @@ private struct DashboardCapacityContent: View {
     let value: String
     let fraction: Double
     let caption: String?
+    let chips: [DashboardChipFact]
     let accent: Color
 
     var body: some View {
-        VStack(spacing: ExperienceSpacing.xSmall) {
+        VStack(spacing: ExperienceSpacing.tiny) {
             Spacer(minLength: 0)
             ZStack {
                 DashboardRing(fraction: fraction, accent: accent)
@@ -643,9 +644,10 @@ private struct DashboardCapacityContent: View {
             }
             if let caption {
                 DashboardStorageCapacityText(text: caption)
-                    .padding(.top, ExperienceSpacing.tiny)
             }
             Spacer(minLength: 0)
+            DashboardChipRow(chips: chips)
+                .frame(maxWidth: .infinity, alignment: .center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -1052,28 +1054,14 @@ private struct DashboardHealthBanner: View {
 private struct DashboardCardLayout<Content: View>: View {
     let symbol: String
     let title: String
-    var headerDetail: String? = nil
     @ViewBuilder let content: Content
 
     var body: some View {
         VStack(alignment: .leading, spacing: ExperienceSpacing.xSmall + ExperienceSpacing.tiny) {
-            HStack(spacing: ExperienceSpacing.xSmall) {
-                Image(systemName: symbol)
-                    .font(.system(size: 14, weight: .medium))
-                    .frame(width: 16, height: 16)
-                    .accessibilityHidden(true)
-                Text(title)
-                    .font(.subheadline.weight(.medium))
-                    .lineLimit(1)
-                if let headerDetail {
-                    Text(headerDetail)
-                        .font(.caption)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                        .minimumScaleFactor(0.8)
-                }
-            }
-            .foregroundStyle(.secondary)
+            Label(title, systemImage: symbol)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
             content
         }
         .padding(DashboardPopoverView.cardPadding)

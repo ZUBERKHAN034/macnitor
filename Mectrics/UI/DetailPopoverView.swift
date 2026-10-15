@@ -486,14 +486,14 @@ private struct DiskCapacityMetric: View {
                 .minimumScaleFactor(0.75)
             HStack(alignment: .firstTextBaseline, spacing: 2) {
                 Text(parts.number)
-                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .font(.system(size: 15.5, weight: .semibold, design: .rounded))
                     .monospacedDigit()
                 Text(parts.unit)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(.secondary)
             }
             .lineLimit(1)
-            .minimumScaleFactor(0.65)
+            .minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
