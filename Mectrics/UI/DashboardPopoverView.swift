@@ -665,10 +665,10 @@ private struct DashboardCapacityContent: View {
             GeometryReader { geometry in
                 let gap = ExperienceSpacing.xSmall
                 let innerWidth = max(geometry.size.width - gap, 0)
-                let percentageWidth = innerWidth * 0.44
+                let percentageWidth = innerWidth * 0.37
                 HStack(spacing: gap) {
                     DashboardDiskFooterChip(fact: DashboardChipFact(
-                        symbol: "circle.fill",
+                        symbol: nil,
                         text: usedFraction.map { MetricFormat.percent($0, decimals: 1) }
                             ?? DashboardFormat.missingValue,
                         tint: accent,
@@ -707,7 +707,7 @@ private struct DashboardStorageSummary: View {
     let marker: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: ExperienceSpacing.tiny) {
             HStack(spacing: ExperienceSpacing.xSmall) {
                 Circle()
                     .fill(Color.primary.opacity(DashboardStyle.chipFillOpacity))
@@ -737,13 +737,13 @@ private struct DashboardStorageAmount: View {
         let parts = DashboardFormat.split(text)
         HStack(alignment: .firstTextBaseline, spacing: 2) {
             Text(parts.number)
-                .font(.system(size: 9.5, weight: .semibold, design: .rounded))
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
             if !parts.unit.isEmpty {
                 Text(parts.unit)
-                    .font(.system(size: 8, weight: .medium))
+                    .font(.system(size: 9.5, weight: .medium))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
