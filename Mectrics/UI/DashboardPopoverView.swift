@@ -639,7 +639,6 @@ private struct DashboardCapacityContent: View {
     var body: some View {
         let total = validValue("total")
         let used = validValue("used")
-        let free = validValue("free")
         let usedFraction = fraction(used, total: total)
         let totalText = total.map(MetricFormat.storageBytes) ?? DashboardFormat.missingValue
 
@@ -651,33 +650,34 @@ private struct DashboardCapacityContent: View {
                     DashboardStorageSummary(
                         title: String(localized: "disk.used", defaultValue: "Used"),
                         amount: used.map(MetricFormat.storageBytes) ?? DashboardFormat.missingValue,
-                        total: totalText,
+                        capacity: totalText,
                         marker: accent
                     )
                     DashboardStorageSummary(
-                        title: String(localized: "disk.free", defaultValue: "Free"),
-                        amount: free.map(MetricFormat.storageBytes) ?? DashboardFormat.missingValue,
-                        total: totalText,
+                        title: String(localized: "disk.total", defaultValue: "Total"),
+                        amount: totalText,
+                        capacity: nil,
                         marker: Color.primary.opacity(0.36)
                     )
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            Spacer(minLength: ExperienceSpacing.xSmall)
+            Spacer(minLength: ExperienceSpacing.tiny)
             HStack(spacing: ExperienceSpacing.xSmall) {
-                DashboardDiskPill(
-                    symbol: "chart.pie.fill",
-                    primary: usedFraction.map { MetricFormat.percent($0, decimals: 1) }
+                DashboardChip(fact: DashboardChipFact(
+                    symbol: "circle.fill",
+                    text: usedFraction.map { MetricFormat.percent($0, decimals: 1) }
                         ?? DashboardFormat.missingValue,
-                    secondary: String(localized: "disk.used", defaultValue: "Used"),
-                    accent: accent
-                )
-                DashboardDiskPill(
+                    tint: accent,
+                    label: String(localized: "disk.used", defaultValue: "Used")
+                ))
+                .frame(maxWidth: .infinity)
+                DashboardChip(fact: DashboardChipFact(
                     symbol: "externaldrive",
-                    primary: chips.first?.text ?? DashboardFormat.missingValue,
-                    secondary: nil,
-                    accent: accent
-                )
+                    text: chips.first?.text ?? DashboardFormat.missingValue,
+                    tint: .secondary
+                ))
+                .frame(maxWidth: .infinity)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -697,15 +697,15 @@ private struct DashboardCapacityContent: View {
 private struct DashboardStorageSummary: View {
     let title: String
     let amount: String
-    let total: String
+    let capacity: String?
     let marker: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: ExperienceSpacing.hairline) {
+        VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: ExperienceSpacing.xSmall) {
                 Circle()
                     .fill(Color.primary.opacity(DashboardStyle.chipFillOpacity))
-                    .frame(width: 13, height: 13)
+                    .frame(width: 11, height: 11)
                     .overlay {
                         Circle()
                             .fill(marker)
@@ -713,17 +713,20 @@ private struct DashboardStorageSummary: View {
                     }
                     .accessibilityHidden(true)
                 Text(title)
-                    .font(.system(size: 9.5, weight: .medium))
+                    .font(.system(size: 8.5, weight: .medium))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
             DashboardStorageAmount(text: amount)
-            Text("of \(total)")
-                .font(.system(size: 8, weight: .regular))
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
+            if let capacity {
+                Text("of \(capacity)")
+                    .font(.system(size: 7.5, weight: .regular))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
         }
+        .frame(height: 30, alignment: .topLeading)
         .accessibilityElement(children: .combine)
     }
 }
@@ -749,50 +752,6 @@ private struct DashboardStorageAmount: View {
         .lineLimit(1)
         .minimumScaleFactor(0.6)
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-private struct DashboardDiskPill: View {
-    let symbol: String
-    let primary: String
-    let secondary: String?
-    let accent: Color
-
-    var body: some View {
-        HStack(spacing: ExperienceSpacing.tiny) {
-            Image(systemName: symbol)
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(secondary == nil ? Color.secondary : accent)
-                .frame(width: 12)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 0) {
-                Text(primary)
-                    .font(.system(size: 9, weight: .semibold, design: .rounded))
-                    .monospacedDigit()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                if let secondary {
-                    Text(secondary)
-                        .font(.system(size: 7.5, weight: .regular))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding(.horizontal, ExperienceSpacing.xSmall)
-        .frame(maxWidth: .infinity)
-        .frame(height: 28)
-        .background {
-            RoundedRectangle(cornerRadius: ExperienceRadius.compact, style: .continuous)
-                .fill(Color.primary.opacity(DashboardStyle.chipFillOpacity))
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: ExperienceRadius.compact, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.08), lineWidth: ExperienceSpacing.hairline)
-        }
-        .accessibilityElement(children: .combine)
     }
 }
 
@@ -1383,6 +1342,8 @@ private struct DashboardChip: View {
             }
             Text(fact.text)
                 .lineLimit(1)
+                .minimumScaleFactor(0.65)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .font(.caption.weight(.medium))
         .monospacedDigit()
