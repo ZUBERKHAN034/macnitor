@@ -691,22 +691,20 @@ private struct DashboardCapacityContent: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             Spacer(minLength: ExperienceSpacing.tiny)
-            HStack(spacing: ExperienceSpacing.xSmall) {
-                DashboardDiskFooterChip(fact: DashboardChipFact(
+            DashboardChipRow(chips: [
+                DashboardChipFact(
                     symbol: nil,
                     text: usedFraction.map { MetricFormat.percent($0, decimals: 1) }
                         ?? DashboardFormat.missingValue,
                     tint: accent,
                     label: String(localized: "disk.used", defaultValue: "Used")
-                ))
-                .frame(maxWidth: .infinity)
-                DashboardDiskFooterChip(fact: DashboardChipFact(
+                ),
+                DashboardChipFact(
                     symbol: nil,
                     text: chips.first?.text ?? DashboardFormat.missingValue,
                     tint: .secondary
-                ))
-                .frame(maxWidth: .infinity)
-            }
+                )
+            ])
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -772,47 +770,6 @@ private struct DashboardStorageAmount: View {
         .lineLimit(1)
         .minimumScaleFactor(0.6)
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-/// Uses the same treatment as Memory's footer chips while keeping disk-only width
-/// fitting local to this card.
-private struct DashboardDiskFooterChip: View {
-    let fact: DashboardChipFact
-    @Environment(\.colorSchemeContrast) private var contrast
-
-    var body: some View {
-        let shape = RoundedRectangle(cornerRadius: ExperienceRadius.compact, style: .continuous)
-        let color = fact.tint ?? Color.primary
-        HStack(spacing: ExperienceSpacing.tiny) {
-            if let symbol = fact.symbol {
-                Image(systemName: symbol)
-                    .imageScale(.small)
-                    .font(.system(size: 9, weight: .medium))
-            }
-            Text(fact.text)
-                .font(.system(size: 9, weight: .medium))
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .font(.caption.weight(.medium))
-        .monospacedDigit()
-        .foregroundStyle(color)
-        .padding(.horizontal, ExperienceSpacing.xSmall)
-        .padding(.vertical, ExperienceSpacing.hairline)
-        .frame(maxWidth: .infinity)
-        .background(shape.fill(color.opacity(DashboardStyle.chipFillOpacity)))
-        .overlay {
-            if contrast == .increased {
-                shape.strokeBorder(
-                    color.opacity(ExperienceSurface.increasedBorderOpacity),
-                    lineWidth: ExperienceSpacing.hairline
-                )
-            }
-        }
-        .help(fact.label ?? "")
-        .accessibilityElement(children: .combine)
     }
 }
 
