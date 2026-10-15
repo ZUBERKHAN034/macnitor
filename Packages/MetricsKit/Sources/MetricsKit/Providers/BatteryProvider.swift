@@ -39,6 +39,7 @@ public final class BatteryProvider: MetricProvider, @unchecked Sendable {
 
         var detail: [String: Double] = [
             "charging": isCharging ? 1 : 0,
+            "fullyCharged": (desc["FullyCharged"] as? Bool ?? false) ? 1 : 0,
             "timeToEmpty": Double(timeToEmpty),
             "timeToFull": Double(timeToFull),
             "currentCapacity": Double(current),
@@ -98,6 +99,9 @@ public final class BatteryProvider: MetricProvider, @unchecked Sendable {
         // to full (charging); 65535 means "no estimate".
         if let remaining = dict["TimeRemaining"] as? Int, remaining > 0, remaining < 65535 {
             out["smartTimeRemaining"] = Double(remaining)
+        }
+        if let fullyCharged = dict["FullyCharged"] as? Bool {
+            out["fullyCharged"] = fullyCharged ? 1 : 0
         }
         if let designCap = dict["DesignCapacity"] as? Int,
            let maxCap = dict["AppleRawMaxCapacity"] as? Int ?? dict["MaxCapacity"] as? Int,

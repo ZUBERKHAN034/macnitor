@@ -26,6 +26,8 @@ final class AppModel {
     /// on every power-source notification, so no view has to; nil until then.
     var isOnBattery: Bool?
 
+    private var batteryPowerHistory = BatteryPowerHistory()
+
     /// Consecutive provider attempts that returned no sample. Short interruptions keep
     /// the last valid value; repeated failures become an explicit error state.
     private(set) var consecutiveSamplingFailures: [MetricID: Int] = [:]
@@ -717,12 +719,27 @@ final class AppModel {
         engine.store.history(id, count: count)
     }
 
+    /// Battery draw history captured with the power source that applied to each sample.
+    func batteryPowerReadings(count: Int) -> [Double] {
+        batteryPowerHistory.suffix(count)
+    }
+
     /// Applies one engine pass while preserving the last valid sample across short
     /// provider interruptions.
     func apply(_ report: SamplingCycleReport) {
         for (id, sample) in report.samples {
             latest[id] = sample
             consecutiveSamplingFailures[id] = 0
+            if id == .battery, let isOnBattery {
+                if isOnBattery {
+                    if let watts = sample.detail["powerWatts"], watts.isFinite, watts >= 0 {
+                        batteryPowerHistory.append(watts)
+                    }
+                } else {
+                    // Adapter power means the battery is not supplying the Mac.
+                    batteryPowerHistory.append(0)
+                }
+            }
         }
         for id in report.failedMetricIDs {
             consecutiveSamplingFailures[id, default: 0] += 1
@@ -732,6 +749,27 @@ final class AppModel {
         // the menu bar, so the items are rebuilt — but only then, not every cycle.
         if refreshComponentOptions() {
             onModulesChanged?()
+        }
+    }
+
+    private struct BatteryPowerHistory {
+        private static let capacity = 90
+        private var readings = Array(repeating: 0.0, count: capacity)
+        private var nextIndex = 0
+        private var storedCount = 0
+
+        mutating func append(_ reading: Double) {
+            readings[nextIndex] = reading
+            nextIndex = (nextIndex + 1) % Self.capacity
+            storedCount = min(storedCount + 1, Self.capacity)
+        }
+
+        func suffix(_ requestedCount: Int) -> [Double] {
+            let count = min(max(requestedCount, 0), storedCount)
+            let startIndex = (nextIndex - count + Self.capacity) % Self.capacity
+            return (0..<count).map { offset in
+                readings[(startIndex + offset) % Self.capacity]
+            }
         }
     }
 

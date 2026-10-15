@@ -124,14 +124,11 @@ enum DashboardFormat {
 
     /// Scale the recent draw history to the greatest observed draw so the chart
     /// shows changing usage while the signed watt value remains the exact reading.
-    static func batteryPowerHistory(
-        samples: [MetricSample],
-        isOnBattery: Bool?
-    ) -> [Double] {
-        let watts = samples.compactMap { batteryPowerWatts(sample: $0, isOnBattery: isOnBattery) }
-        let peak = watts.map { abs($0) }.max() ?? 0
-        guard peak > 0 else { return watts.map { _ in 0 } }
-        return watts.map { abs($0) / peak }
+    static func batteryPowerHistory(readings: [Double]) -> [Double] {
+        let validReadings = readings.filter { $0.isFinite && $0 >= 0 }
+        let peak = validReadings.max() ?? 0
+        guard peak > 0 else { return validReadings.map { _ in 0 } }
+        return validReadings.map { $0 / peak }
     }
 
     /// Spoken facts as one list, joined by the catalog's separator ("%1$@, %2$@";
@@ -230,5 +227,24 @@ enum BatteryPowerStatus: Equatable {
         if let system, system > 0 { return system }
         guard let fallback = detail["smartTimeRemaining"], fallback > 0 else { return nil }
         return fallback
+    }
+}
+
+/// Color state for the Battery card's bolt, based on macOS power-source status.
+enum BatteryChargeIconState: Equatable {
+    case disconnected
+    case connected
+    case fullyCharged
+
+    static func resolve(
+        isOnBattery: Bool?,
+        isCharging: Bool,
+        isFullyCharged: Bool
+    ) -> Self {
+        // Power-source state wins over a stale charging flag during transitions.
+        if isOnBattery == true { return .disconnected }
+        if isFullyCharged { return .fullyCharged }
+        guard isOnBattery == false || isCharging else { return .disconnected }
+        return .connected
     }
 }

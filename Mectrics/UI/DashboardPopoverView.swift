@@ -405,13 +405,16 @@ private struct DashboardModuleCard: View {
                     sample.detail,
                     isOnBattery: model.isOnBattery
                 ).estimateLabel ?? facts.captionText ?? DashboardFormat.missingValue,
+                chargingIconState: BatteryChargeIconState.resolve(
+                    isOnBattery: model.isOnBattery,
+                    isCharging: (sample.detail["charging"] ?? 0) > 0,
+                    isFullyCharged: (sample.detail["fullyCharged"] ?? 0) > 0
+                ),
                 accent: accent,
                 powerHistory: DashboardFormat.batteryPowerHistory(
-                    samples: model.historySamples(
-                        .battery,
+                    readings: model.batteryPowerReadings(
                         count: DashboardStyle.historyCount
-                    ),
-                    isOnBattery: model.isOnBattery
+                    )
                 )
             )
         case .network:
@@ -782,6 +785,7 @@ private struct DashboardBatteryContent: View {
     let caption: String?
     let estimate: String
     let estimateLabel: String
+    let chargingIconState: BatteryChargeIconState
     let accent: Color
     let powerHistory: [Double]
 
@@ -800,13 +804,13 @@ private struct DashboardBatteryContent: View {
                         symbol: "bolt.fill",
                         value: power ?? DashboardFormat.missingValue,
                         status: caption ?? DashboardFormat.missingValue,
-                        accent: accent
+                        iconColor: chargingIconState.color(accent: accent)
                     )
                     BatteryInfoRow(
                         symbol: "clock",
                         value: estimate,
                         status: estimateLabel,
-                        accent: accent
+                        iconColor: .secondary
                     )
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -824,7 +828,7 @@ private struct BatteryInfoRow: View {
     let symbol: String
     let value: String
     let status: String
-    let accent: Color
+    let iconColor: Color
 
     var body: some View {
         HStack(spacing: ExperienceSpacing.xSmall) {
@@ -834,7 +838,7 @@ private struct BatteryInfoRow: View {
                 .overlay {
                     Image(systemName: symbol)
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(symbol == "bolt.fill" ? accent : Color.secondary)
+                        .foregroundStyle(iconColor)
                 }
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 0) {
@@ -852,6 +856,16 @@ private struct BatteryInfoRow: View {
         }
         .frame(height: 30, alignment: .leading)
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private extension BatteryChargeIconState {
+    func color(accent: Color) -> Color {
+        switch self {
+        case .disconnected: return .gray
+        case .connected: return accent
+        case .fullyCharged: return .green
+        }
     }
 }
 
@@ -1237,33 +1251,25 @@ private struct DashboardNetworkFooter: View {
     let systemInfo: DashboardSystemInfo
 
     var body: some View {
-        HStack(spacing: ExperienceSpacing.xSmall) {
-            Circle()
-                .fill(Color.primary.opacity(DashboardStyle.chipFillOpacity))
-                .frame(width: 21, height: 21)
-                .overlay {
-                    Image(systemName: systemInfo.interfaceSymbol)
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.secondary)
-                }
+        VStack(spacing: ExperienceSpacing.xSmall) {
+            Rectangle()
+                .fill(Color.primary.opacity(DashboardStyle.trackOpacity))
+                .frame(height: ExperienceSpacing.hairline)
                 .accessibilityHidden(true)
-            Text(systemInfo.localAddress ?? DashboardFormat.missingValue)
-                .font(.system(size: 10.5, weight: .medium))
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding(.horizontal, ExperienceSpacing.xSmall)
-        .frame(maxWidth: .infinity)
-        .frame(height: 26)
-        .background {
-            RoundedRectangle(cornerRadius: ExperienceRadius.compact, style: .continuous)
-                .fill(Color.primary.opacity(DashboardStyle.chipFillOpacity))
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: ExperienceRadius.compact, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.08), lineWidth: ExperienceSpacing.hairline)
+
+            HStack(spacing: ExperienceSpacing.xSmall) {
+                Image(systemName: systemInfo.interfaceSymbol)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+                Text(systemInfo.localAddress ?? DashboardFormat.missingValue)
+                    .font(.system(size: 10.5, weight: .medium))
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .help(systemInfo.interfaceName ?? "")
     }
