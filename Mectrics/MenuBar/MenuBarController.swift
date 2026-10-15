@@ -2,27 +2,13 @@ import AppKit
 import SwiftUI
 import MetricsKit
 
-/// Tracks AppKit menu sessions so a menu opened from inside the popover is not
-/// mistaken for an interaction that should dismiss its parent.
-struct PopoverMenuTrackingState: Equatable {
-    private(set) var activeMenuCount = 0
-
-    var isTrackingMenu: Bool { activeMenuCount > 0 }
-
-    func shouldDismissPopover(
+enum PopoverToggleDecision {
+    static func shouldCloseCurrentPopover(
         isShown: Bool,
         isClosing: Bool,
-        applicationIsActive: Bool
+        matchesCurrentKind: Bool
     ) -> Bool {
-        isShown && !isClosing && !isTrackingMenu && !applicationIsActive
-    }
-
-    mutating func beginTracking() {
-        activeMenuCount += 1
-    }
-
-    mutating func endTracking() {
-        activeMenuCount = max(0, activeMenuCount - 1)
+        isShown && !isClosing && matchesCurrentKind
     }
 }
 
@@ -41,7 +27,6 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
     /// when nothing is grouped into it and it was not asked for on its own.
     private var logoItem: DashboardStatusItem?
     private let popover = NSPopover()
-    private var menuTrackingState = PopoverMenuTrackingState()
 
     /// What the shared popover is showing. All three share one `NSPopover`, so a
     /// click on another item replaces the content rather than stacking a second one.
@@ -77,30 +62,6 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         popover.behavior = .transient
         popover.delegate = self
         popover.animates = !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
-        // A popover made key can outlive a switch to another app — clicking a window
-        // that is already frontmost is not the "interaction elsewhere" that transient
-        // behaviour watches for. Close it explicitly when Mectrics stops being active.
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(applicationDidResignActive),
-            name: NSApplication.didResignActiveNotification,
-            object: nil
-        )
-        // SwiftUI's Menu is backed by NSMenu. Opening it can momentarily resign the
-        // key popover window; defer dismissal until AppKit finishes tracking and
-        // close only if the app is still inactive then.
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(menuDidBeginTracking),
-            name: NSMenu.didBeginTrackingNotification,
-            object: nil
-        )
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(menuDidEndTracking),
-            name: NSMenu.didEndTrackingNotification,
-            object: nil
-        )
         // Items skip redrawing when their inputs are unchanged, and the system accent
         // is a dynamic color that keeps its identity when the user picks a new one.
         NotificationCenter.default.addObserver(
@@ -109,34 +70,6 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
             name: NSColor.systemColorsDidChangeNotification,
             object: nil
         )
-    }
-
-    @objc private func applicationDidResignActive() {
-        guard popover.isShown, !isPopoverClosing else { return }
-        // Let AppKit finish delivering the menu-began notification for the same
-        // input event before deciding that the parent popover should close.
-        DispatchQueue.main.async { [weak self] in
-            guard let self, self.menuTrackingState.shouldDismissPopover(
-                isShown: self.popover.isShown,
-                isClosing: self.isPopoverClosing,
-                applicationIsActive: NSApp.isActive
-            ) else { return }
-            self.popover.performClose(nil)
-        }
-    }
-
-    @objc private func menuDidBeginTracking(_ notification: Notification) {
-        menuTrackingState.beginTracking()
-    }
-
-    @objc private func menuDidEndTracking(_ notification: Notification) {
-        menuTrackingState.endTracking()
-        guard menuTrackingState.shouldDismissPopover(
-            isShown: popover.isShown,
-            isClosing: isPopoverClosing,
-            applicationIsActive: NSApp.isActive
-        ) else { return }
-        popover.performClose(nil)
     }
 
     @objc private func systemColorsDidChange() {
@@ -263,7 +196,11 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
             toggleDashboardFromModule(id: id, button: button)
             return
         }
-        if popover.isShown && popoverKind == .module(id) {
+        if PopoverToggleDecision.shouldCloseCurrentPopover(
+            isShown: popover.isShown,
+            isClosing: isPopoverClosing,
+            matchesCurrentKind: popoverKind == .module(id)
+        ) {
             closePopover()
             return
         }
@@ -281,7 +218,11 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
     /// A module item opening the Dashboard: anchored to the clicked item, showing every
     /// watched module as a card. Toggled like the logo's dashboard.
     private func toggleDashboardFromModule(id: MetricID, button: NSStatusBarButton) {
-        if popover.isShown && popoverKind == .moduleDashboard(id) {
+        if PopoverToggleDecision.shouldCloseCurrentPopover(
+            isShown: popover.isShown,
+            isClosing: isPopoverClosing,
+            matchesCurrentKind: popoverKind == .moduleDashboard(id)
+        ) {
             closePopover()
             return
         }
@@ -290,7 +231,11 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
 
     private func toggleDashboardPopover() {
         guard let button = logoItem?.item.button else { return }
-        if popover.isShown && popoverKind == .dashboard {
+        if PopoverToggleDecision.shouldCloseCurrentPopover(
+            isShown: popover.isShown,
+            isClosing: isPopoverClosing,
+            matchesCurrentKind: popoverKind == .dashboard
+        ) {
             closePopover()
             return
         }
