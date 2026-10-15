@@ -688,9 +688,11 @@ private struct DashboardBatteryContent: View {
                 DashboardBatteryIcon(fraction: fraction, accent: accent)
             }
             DashboardChipRow(chips: chips)
+            Spacer(minLength: 0)
             DashboardHistoryBars(values: powerHistory, accent: accent)
                 .frame(height: DashboardStyle.barMinimumHeight)
         }
+        .frame(maxHeight: .infinity)
     }
 }
 
@@ -704,7 +706,7 @@ private struct DashboardBatteryIcon: View {
         VStack(spacing: 1) {
             RoundedRectangle(cornerRadius: 2, style: .continuous)
                 .fill(Color.primary.opacity(0.16))
-                .frame(width: 12, height: 4)
+                .frame(width: 14, height: 5)
             GeometryReader { geometry in
                 ZStack(alignment: .bottom) {
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
@@ -715,9 +717,9 @@ private struct DashboardBatteryIcon: View {
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
             }
-            .frame(width: 30, height: 34)
+            .frame(width: 40, height: 46)
         }
-        .frame(width: 42, height: 52)
+        .frame(width: 46, height: 54)
         .accessibilityHidden(true)
     }
 }
@@ -747,7 +749,7 @@ private struct DashboardMemoryContent: View {
             DashboardMemoryBreakdown(detail: detail, accent: accent)
             Spacer(minLength: 0)
             DashboardChipRow(chips: chips)
-                .padding(.top, ExperienceSpacing.small + ExperienceSpacing.tiny)
+                .padding(.top, ExperienceSpacing.xSmall + ExperienceSpacing.tiny)
         }
     }
 }
@@ -774,7 +776,7 @@ struct DashboardMemoryBreakdown: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: ExperienceSpacing.tiny) {
             GeometryReader { geometry in
                 HStack(spacing: 1) {
                     ForEach(parts) { part in
@@ -788,7 +790,7 @@ struct DashboardMemoryBreakdown: View {
                 .clipShape(Capsule())
             }
             .frame(height: 5)
-            .padding(.bottom, ExperienceSpacing.xSmall + ExperienceSpacing.tiny)
+            .padding(.bottom, ExperienceSpacing.tiny)
 
             ForEach(parts) { part in
                 HStack(spacing: ExperienceSpacing.xSmall) {
