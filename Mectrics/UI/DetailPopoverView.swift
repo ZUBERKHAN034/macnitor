@@ -145,16 +145,37 @@ struct DetailPopoverView: View {
 
     @ViewBuilder
     private var detailRows: some View {
-        VStack(alignment: .leading, spacing: ExperienceSpacing.xSmall) {
-            ForEach(rows, id: \.0) { row in
-                HStack {
-                    Text(row.0).foregroundStyle(.secondary)
-                    Spacer()
-                    Text(row.1).monospacedDigit()
+        if moduleID == .disk {
+            DiskDetailSummary(
+                capacityRows: diskCapacityRows,
+                additionalRows: diskAdditionalRows
+            )
+        } else {
+            VStack(alignment: .leading, spacing: ExperienceSpacing.xSmall) {
+                ForEach(rows, id: \.0) { row in
+                    HStack {
+                        Text(row.0).foregroundStyle(.secondary)
+                        Spacer()
+                        Text(row.1).monospacedDigit()
+                    }
+                    .font(.callout)
                 }
-                .font(.callout)
             }
         }
+    }
+
+    private var diskCapacityRows: [(String, String)] {
+        guard let d = sample?.detail else { return [] }
+        return [
+            (String(localized: "disk.used", defaultValue: "Used"), MetricFormat.storageBytes(d["used"] ?? 0)),
+            (String(localized: "disk.free", defaultValue: "Free"), MetricFormat.storageBytes(d["free"] ?? 0)),
+            (String(localized: "disk.total", defaultValue: "Total"), MetricFormat.storageBytes(d["total"] ?? 0))
+        ]
+    }
+
+    private var diskAdditionalRows: [(String, String)] {
+        let capacityLabels = Set(diskCapacityRows.map(\.0))
+        return rows.filter { !capacityLabels.contains($0.0) }
     }
 
     private var footer: some View {
@@ -414,6 +435,67 @@ struct DetailPopoverView: View {
     /// define is shown as a dash rather than guessed at.
     private static func pressureLabel(_ level: Double) -> String {
         MemoryPressureLevel(rawValue: Int(level))?.localizedName ?? "–"
+    }
+}
+
+/// Capacity figures get the primary visual weight, while optional activity rows stay
+/// compact below them. Three flexible columns keep the values inside the popover.
+private struct DiskDetailSummary: View {
+    let capacityRows: [(String, String)]
+    let additionalRows: [(String, String)]
+
+    private let columns = Array(
+        repeating: GridItem(.flexible(minimum: 0), alignment: .leading),
+        count: 3
+    )
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: ExperienceSpacing.small) {
+            LazyVGrid(columns: columns, alignment: .leading, spacing: ExperienceSpacing.small) {
+                ForEach(capacityRows, id: \.0) { row in
+                    DiskCapacityMetric(label: row.0, value: row.1)
+                }
+            }
+            if !additionalRows.isEmpty {
+                VStack(alignment: .leading, spacing: ExperienceSpacing.xSmall) {
+                    ForEach(additionalRows, id: \.0) { row in
+                        HStack {
+                            Text(row.0).foregroundStyle(.secondary)
+                            Spacer()
+                            Text(row.1).monospacedDigit()
+                        }
+                        .font(.callout)
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct DiskCapacityMetric: View {
+    let label: String
+    let value: String
+
+    var body: some View {
+        let parts = DashboardFormat.split(value)
+        VStack(alignment: .leading, spacing: ExperienceSpacing.tiny) {
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Text(parts.number)
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .monospacedDigit()
+                Text(parts.unit)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.65)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

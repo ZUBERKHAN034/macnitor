@@ -320,7 +320,8 @@ private struct DashboardModuleCard: View {
         } label: {
             DashboardCardLayout(
                 symbol: MetricSymbol.name(for: id),
-                title: id.localizedName
+                title: id.localizedName,
+                headerDetail: id == .disk ? systemInfo.startupVolumeName : nil
             ) {
                 if let sample, let facts {
                     content(for: sample, facts: facts)
@@ -381,7 +382,6 @@ private struct DashboardModuleCard: View {
                 value: value,
                 fraction: sample.value,
                 caption: facts.captionText,
-                chips: facts.chips,
                 accent: accent
             )
         case .battery:
@@ -632,7 +632,6 @@ private struct DashboardCapacityContent: View {
     let value: String
     let fraction: Double
     let caption: String?
-    let chips: [DashboardChipFact]
     let accent: Color
 
     var body: some View {
@@ -640,22 +639,13 @@ private struct DashboardCapacityContent: View {
             Spacer(minLength: 0)
             ZStack {
                 DashboardRing(fraction: fraction, accent: accent)
-                DashboardValueText(text: value, size: DashboardStyle.rateSize)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
+                DashboardDiskPercentage(value: value)
             }
             if let caption {
-                Text(caption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
+                DashboardStorageCapacityText(text: caption)
                     .padding(.top, ExperienceSpacing.tiny)
             }
             Spacer(minLength: 0)
-            DashboardChipRow(chips: chips)
-                .frame(maxWidth: .infinity, alignment: .center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -1062,6 +1052,7 @@ private struct DashboardHealthBanner: View {
 private struct DashboardCardLayout<Content: View>: View {
     let symbol: String
     let title: String
+    var headerDetail: String? = nil
     @ViewBuilder let content: Content
 
     var body: some View {
@@ -1074,6 +1065,13 @@ private struct DashboardCardLayout<Content: View>: View {
                 Text(title)
                     .font(.subheadline.weight(.medium))
                     .lineLimit(1)
+                if let headerDetail {
+                    Text(headerDetail)
+                        .font(.caption)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .minimumScaleFactor(0.8)
+                }
             }
             .foregroundStyle(.secondary)
             content
@@ -1261,6 +1259,67 @@ private struct DashboardRing: View {
         .padding(lineWidth / 2)
         .frame(width: DashboardStyle.ringDiameter, height: DashboardStyle.ringDiameter)
         .accessibilityHidden(true)
+    }
+}
+
+/// A percentage sized to the disk ring, with a compact percent sign so even a full
+/// volume reading stays inside the ring's clear center.
+private struct DashboardDiskPercentage: View {
+    let value: String
+
+    var body: some View {
+        let number = value.hasSuffix("%") ? String(value.dropLast()) : value
+        let size = DashboardStyle.ringDiameter * 0.24
+        let text = Text(number)
+            .font(.system(size: size, weight: .semibold, design: .rounded))
+            + Text(value.hasSuffix("%") ? "%" : "")
+                .font(.system(size: size * 0.6, weight: .semibold, design: .rounded))
+
+        text
+            .monospacedDigit()
+            .lineLimit(1)
+            .minimumScaleFactor(0.6)
+            .frame(width: DashboardStyle.ringDiameter - 2 * DashboardStyle.ringLineWidth - 8)
+            .accessibilityLabel(value)
+    }
+}
+
+/// Used and total stay on one line; the numbers lead and their storage units recede.
+private struct DashboardStorageCapacityText: View {
+    let text: String
+
+    var body: some View {
+        let values = text.split(separator: "/").map {
+            $0.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        Group {
+            if values.count == 2 {
+                HStack(alignment: .firstTextBaseline, spacing: ExperienceSpacing.xSmall) {
+                    amount(String(values[0]))
+                    Text("/")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    amount(String(values[1]))
+                }
+            } else {
+                Text(text)
+                    .font(.subheadline.weight(.semibold))
+                    .monospacedDigit()
+            }
+        }
+        .lineLimit(1)
+        .minimumScaleFactor(0.75)
+        .frame(maxWidth: .infinity, alignment: .center)
+    }
+
+    private func amount(_ value: String) -> some View {
+        let parts = DashboardFormat.split(value)
+        return Text(parts.number)
+            .font(.system(size: 14, weight: .semibold, design: .rounded))
+            .monospacedDigit()
+            + Text(" \(parts.unit)")
+                .font(.system(size: 10, weight: .medium))
+                .foregroundColor(.secondary)
     }
 }
 
