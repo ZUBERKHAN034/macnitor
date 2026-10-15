@@ -547,7 +547,7 @@ struct DashboardCardFacts: Equatable {
                     MemoryPressureLevel(rawValue: Int($0))
                 }
                 facts.chips.append(DashboardChipFact(
-                    symbol: "clock",
+                    symbol: "gauge.with.needle",
                     text: "\(Int(pressurePercent.rounded()))%",
                     tint: level?.tint,
                     label: String(localized: "mem.pressure", defaultValue: "Pressure")
@@ -640,15 +640,21 @@ private struct DashboardCapacityContent: View {
         let total = validValue("total")
         let used = validValue("used")
         let usedFraction = fraction(used, total: total)
+        let ringDiameter: CGFloat = 48
 
         VStack(spacing: 0) {
             Spacer(minLength: 0)
-            HStack(spacing: ExperienceSpacing.xSmall + ExperienceSpacing.tiny) {
+            HStack(spacing: ExperienceSpacing.xSmall) {
                 ZStack {
-                    DashboardRing(fraction: usedFraction ?? 0, accent: accent)
+                    DashboardRing(
+                        fraction: usedFraction ?? 0,
+                        accent: accent,
+                        diameter: ringDiameter
+                    )
                     DashboardDiskPercentage(
                         value: usedFraction.map { MetricFormat.percent($0, decimals: 1) }
-                            ?? DashboardFormat.missingValue
+                            ?? DashboardFormat.missingValue,
+                        diameter: ringDiameter
                     )
                 }
 
@@ -657,7 +663,7 @@ private struct DashboardCapacityContent: View {
                     .frame(width: ExperienceSpacing.hairline, height: 72)
                     .accessibilityHidden(true)
 
-                VStack(alignment: .leading, spacing: ExperienceSpacing.xSmall) {
+                VStack(alignment: .leading, spacing: ExperienceSpacing.small) {
                     DashboardStorageSummary(
                         title: String(localized: "disk.used", defaultValue: "Used"),
                         amount: used.map(MetricFormat.storageBytes) ?? DashboardFormat.missingValue,
@@ -719,16 +725,19 @@ private struct DashboardStorageAmount: View {
         let parts = DashboardFormat.split(text)
         HStack(alignment: .firstTextBaseline, spacing: 2) {
             Text(parts.number)
-                .font(.system(size: 11.5, weight: .semibold, design: .rounded))
+                .font(.system(size: 10.5, weight: .semibold, design: .rounded))
                 .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
             if !parts.unit.isEmpty {
                 Text(parts.unit)
                     .font(.system(size: 8.5, weight: .medium))
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
         }
         .lineLimit(1)
-        .minimumScaleFactor(0.7)
+        .minimumScaleFactor(0.6)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
@@ -1362,6 +1371,7 @@ private struct DashboardChipRow: View {
 private struct DashboardRing: View {
     let fraction: Double
     let accent: Color
+    let diameter: CGFloat
     @Environment(\.colorSchemeContrast) private var contrast
 
     var body: some View {
@@ -1382,7 +1392,7 @@ private struct DashboardRing: View {
                 .rotationEffect(.degrees(-90))
         }
         .padding(lineWidth / 2)
-        .frame(width: DashboardStyle.ringDiameter, height: DashboardStyle.ringDiameter)
+        .frame(width: diameter, height: diameter)
         .accessibilityHidden(true)
     }
 }
@@ -1391,10 +1401,11 @@ private struct DashboardRing: View {
 /// volume reading stays inside the ring's clear center.
 private struct DashboardDiskPercentage: View {
     let value: String
+    let diameter: CGFloat
 
     var body: some View {
         let number = value.hasSuffix("%") ? String(value.dropLast()) : value
-        let size = DashboardStyle.ringDiameter * 0.24
+        let size = diameter * 0.24
         let text = Text(number)
             .font(.system(size: size, weight: .semibold, design: .rounded))
             + Text(value.hasSuffix("%") ? "%" : "")
@@ -1404,7 +1415,7 @@ private struct DashboardDiskPercentage: View {
             .monospacedDigit()
             .lineLimit(1)
             .minimumScaleFactor(0.6)
-            .frame(width: DashboardStyle.ringDiameter - 2 * DashboardStyle.ringLineWidth - 8)
+            .frame(width: diameter - 2 * DashboardStyle.ringLineWidth - 8)
             .accessibilityLabel(value)
     }
 }
