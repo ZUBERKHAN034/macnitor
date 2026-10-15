@@ -94,6 +94,9 @@ public final class BatteryProvider: MetricProvider, @unchecked Sendable {
         else { return nil }
 
         var out: [String: Double] = [:]
+        if Self.systemChargeLimitIsHolding(service: service) {
+            out["systemChargeLimitReached"] = 1
+        }
         if let cycle = dict["CycleCount"] as? Int { out["cycleCount"] = Double(cycle) }
         // Fallback estimate when IOPS reports -1: minutes to empty (discharging) or
         // to full (charging); 65535 means "no estimate".
@@ -119,5 +122,21 @@ public final class BatteryProvider: MetricProvider, @unchecked Sendable {
             out["powerWatts"] = abs(voltage * amperage) / 1000
         }
         return out
+    }
+
+    /// OpenDente identifies macOS's native charge-limit hold from bit 24 of
+    /// AppleSmartBattery's ChargerData.NotChargingReason value.
+    private static func systemChargeLimitIsHolding(service: io_service_t) -> Bool {
+        guard let chargerData = IORegistryEntryCreateCFProperty(
+            service,
+            "ChargerData" as CFString,
+            kCFAllocatorDefault,
+            0
+        )?.takeRetainedValue() as? [String: Any],
+        let rawReason = chargerData["NotChargingReason"] as? NSNumber
+        else { return false }
+
+        let systemChargeLimitBit = UInt64(1) << 24
+        return (rawReason.uint64Value & systemChargeLimitBit) != 0
     }
 }

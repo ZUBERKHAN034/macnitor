@@ -408,7 +408,11 @@ private struct DashboardModuleCard: View {
                 chargingIconState: BatteryChargeIconState.resolve(
                     isOnBattery: model.isOnBattery,
                     isCharging: (sample.detail["charging"] ?? 0) > 0,
-                    isFullyCharged: (sample.detail["fullyCharged"] ?? 0) > 0
+                    isFullyCharged: (sample.detail["fullyCharged"] ?? 0) > 0,
+                    isSystemChargeLimitReached:
+                        (sample.detail["systemChargeLimitReached"] ?? 0) > 0,
+                    isAtFullCapacity: sample.value >= 0.999
+                        && (sample.detail["charging"] ?? 0) == 0
                 ),
                 accent: accent,
                 powerHistory: DashboardFormat.batteryPowerHistory(
@@ -1251,7 +1255,7 @@ private struct DashboardNetworkFooter: View {
     let systemInfo: DashboardSystemInfo
 
     var body: some View {
-        VStack(spacing: ExperienceSpacing.xSmall) {
+        VStack(spacing: ExperienceSpacing.small) {
             Rectangle()
                 .fill(Color.primary.opacity(DashboardStyle.trackOpacity))
                 .frame(height: ExperienceSpacing.hairline)

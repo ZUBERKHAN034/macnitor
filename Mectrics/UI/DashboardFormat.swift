@@ -239,11 +239,16 @@ enum BatteryChargeIconState: Equatable {
     static func resolve(
         isOnBattery: Bool?,
         isCharging: Bool,
-        isFullyCharged: Bool
+        isFullyCharged: Bool,
+        isSystemChargeLimitReached: Bool,
+        isAtFullCapacity: Bool
     ) -> Self {
         // Power-source state wins over a stale charging flag during transitions.
         if isOnBattery == true { return .disconnected }
-        if isFullyCharged { return .fullyCharged }
+        if isOnBattery == false,
+           isFullyCharged || isSystemChargeLimitReached || isAtFullCapacity {
+            return .fullyCharged
+        }
         guard isOnBattery == false || isCharging else { return .disconnected }
         return .connected
     }
