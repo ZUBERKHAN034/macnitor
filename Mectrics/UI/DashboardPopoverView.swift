@@ -288,8 +288,8 @@ private enum DashboardStyle {
     static let valueSize: CGFloat = 20
     /// Network shows two rates stacked, so each is set a little smaller.
     static let rateSize: CGFloat = 16
-    static let ringDiameter: CGFloat = 40
-    static let ringLineWidth: CGFloat = 6
+    static let ringDiameter: CGFloat = 64
+    static let ringLineWidth: CGFloat = 10
     /// Bars in the CPU and GPU history: one per sample, newest on the right.
     static let historyCount = 16
     static let barSpacing: CGFloat = 2
@@ -636,14 +636,28 @@ private struct DashboardCapacityContent: View {
     let accent: Color
 
     var body: some View {
-        DashboardRingRow(
-            value: value,
-            caption: caption,
-            fraction: fraction,
-            accent: accent
-        )
-        Spacer(minLength: 0)
-        DashboardChipRow(chips: chips)
+        VStack(spacing: ExperienceSpacing.xSmall) {
+            Spacer(minLength: 0)
+            ZStack {
+                DashboardRing(fraction: fraction, accent: accent)
+                DashboardValueText(text: value, size: DashboardStyle.rateSize)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+            if let caption {
+                Text(caption)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+                    .padding(.top, ExperienceSpacing.tiny)
+            }
+            Spacer(minLength: 0)
+            DashboardChipRow(chips: chips)
+                .frame(maxWidth: .infinity, alignment: .center)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
@@ -703,7 +717,7 @@ private struct DashboardBatteryIcon: View {
             }
             .frame(width: 30, height: 34)
         }
-        .frame(width: 36, height: 40)
+        .frame(width: 42, height: 52)
         .accessibilityHidden(true)
     }
 }
@@ -733,6 +747,7 @@ private struct DashboardMemoryContent: View {
             DashboardMemoryBreakdown(detail: detail, accent: accent)
             Spacer(minLength: 0)
             DashboardChipRow(chips: chips)
+                .padding(.top, ExperienceSpacing.small + ExperienceSpacing.tiny)
         }
     }
 }
@@ -773,6 +788,7 @@ struct DashboardMemoryBreakdown: View {
                 .clipShape(Capsule())
             }
             .frame(height: 5)
+            .padding(.bottom, ExperienceSpacing.xSmall + ExperienceSpacing.tiny)
 
             ForEach(parts) { part in
                 HStack(spacing: ExperienceSpacing.xSmall) {
@@ -784,8 +800,9 @@ struct DashboardMemoryBreakdown: View {
                     Spacer(minLength: ExperienceSpacing.xSmall)
                     Text(MetricFormat.bytes(part.amount))
                         .monospacedDigit()
+                        .frame(maxWidth: .infinity, alignment: .trailing)
                 }
-                .font(.system(size: 9))
+                .font(.system(size: 8.5))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
             }
@@ -1047,10 +1064,16 @@ private struct DashboardCardLayout<Content: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: ExperienceSpacing.xSmall + ExperienceSpacing.tiny) {
-            Label(title, systemImage: symbol)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
+            HStack(spacing: ExperienceSpacing.xSmall) {
+                Image(systemName: symbol)
+                    .font(.system(size: 14, weight: .medium))
+                    .frame(width: 16, height: 16)
+                    .accessibilityHidden(true)
+                Text(title)
+                    .font(.subheadline.weight(.medium))
+                    .lineLimit(1)
+            }
+            .foregroundStyle(.secondary)
             content
         }
         .padding(DashboardPopoverView.cardPadding)
@@ -1206,28 +1229,6 @@ private struct DashboardChipRow: View {
 
     private var chipViews: some View {
         ForEach(chips, id: \.self) { DashboardChip(fact: $0) }
-    }
-}
-
-/// A reading and its caption beside a ring. The text column takes every point the
-/// ring leaves, so a caption wraps only when it truly does not fit.
-private struct DashboardRingRow: View {
-    let value: String
-    let caption: String?
-    let fraction: Double
-    let accent: Color
-
-    var body: some View {
-        HStack(alignment: .top, spacing: ExperienceSpacing.xSmall) {
-            VStack(alignment: .leading, spacing: ExperienceSpacing.tiny) {
-                DashboardValueText(text: value)
-                if let caption {
-                    DashboardCaption(text: caption)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            DashboardRing(fraction: fraction, accent: accent)
-        }
     }
 }
 
