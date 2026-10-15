@@ -630,7 +630,7 @@ private struct DashboardLoadContent: View {
     }
 }
 
-/// Disk: the share in use beside a ring, then its volume chip.
+/// Disk: an empty-centered usage ring, storage details, and two compact footer pills.
 private struct DashboardCapacityContent: View {
     let detail: [String: Double]
     let chips: [DashboardChipFact]
@@ -639,47 +639,46 @@ private struct DashboardCapacityContent: View {
     var body: some View {
         let total = validValue("total")
         let used = validValue("used")
+        let free = validValue("free")
         let usedFraction = fraction(used, total: total)
-        let ringDiameter: CGFloat = 48
+        let totalText = total.map(MetricFormat.storageBytes) ?? DashboardFormat.missingValue
 
         VStack(spacing: 0) {
-            Spacer(minLength: 0)
-            HStack(spacing: ExperienceSpacing.xSmall) {
-                ZStack {
-                    DashboardRing(
-                        fraction: usedFraction ?? 0,
-                        accent: accent,
-                        diameter: ringDiameter
-                    )
-                    DashboardDiskPercentage(
-                        value: usedFraction.map { MetricFormat.percent($0, decimals: 1) }
-                            ?? DashboardFormat.missingValue,
-                        diameter: ringDiameter
-                    )
-                }
+            HStack(spacing: ExperienceSpacing.small) {
+                DashboardRing(fraction: usedFraction ?? 0, accent: accent, diameter: 46)
 
-                Rectangle()
-                    .fill(Color.primary.opacity(DashboardStyle.trackOpacity))
-                    .frame(width: ExperienceSpacing.hairline, height: 72)
-                    .accessibilityHidden(true)
-
-                VStack(alignment: .leading, spacing: ExperienceSpacing.small) {
+                VStack(alignment: .leading, spacing: ExperienceSpacing.xSmall) {
                     DashboardStorageSummary(
                         title: String(localized: "disk.used", defaultValue: "Used"),
                         amount: used.map(MetricFormat.storageBytes) ?? DashboardFormat.missingValue,
+                        total: totalText,
                         marker: accent
                     )
                     DashboardStorageSummary(
-                        title: String(localized: "disk.total", defaultValue: "Total"),
-                        amount: total.map(MetricFormat.storageBytes) ?? DashboardFormat.missingValue,
+                        title: String(localized: "disk.free", defaultValue: "Free"),
+                        amount: free.map(MetricFormat.storageBytes) ?? DashboardFormat.missingValue,
+                        total: totalText,
                         marker: Color.primary.opacity(0.36)
                     )
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            Spacer(minLength: 0)
-            DashboardChipRow(chips: chips)
-                .frame(maxWidth: .infinity, alignment: .center)
+            Spacer(minLength: ExperienceSpacing.xSmall)
+            HStack(spacing: ExperienceSpacing.xSmall) {
+                DashboardDiskPill(
+                    symbol: "chart.pie.fill",
+                    primary: usedFraction.map { MetricFormat.percent($0, decimals: 1) }
+                        ?? DashboardFormat.missingValue,
+                    secondary: String(localized: "disk.used", defaultValue: "Used"),
+                    accent: accent
+                )
+                DashboardDiskPill(
+                    symbol: "externaldrive",
+                    primary: chips.first?.text ?? DashboardFormat.missingValue,
+                    secondary: nil,
+                    accent: accent
+                )
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -698,21 +697,32 @@ private struct DashboardCapacityContent: View {
 private struct DashboardStorageSummary: View {
     let title: String
     let amount: String
+    let total: String
     let marker: Color
 
     var body: some View {
         VStack(alignment: .leading, spacing: ExperienceSpacing.hairline) {
             HStack(spacing: ExperienceSpacing.xSmall) {
                 Circle()
-                    .fill(marker)
-                    .frame(width: 6, height: 6)
+                    .fill(Color.primary.opacity(DashboardStyle.chipFillOpacity))
+                    .frame(width: 13, height: 13)
+                    .overlay {
+                        Circle()
+                            .fill(marker)
+                            .frame(width: 6, height: 6)
+                    }
                     .accessibilityHidden(true)
                 Text(title)
-                    .font(.system(size: 10))
+                    .font(.system(size: 9.5, weight: .medium))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
             DashboardStorageAmount(text: amount)
+            Text("of \(total)")
+                .font(.system(size: 8, weight: .regular))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
         .accessibilityElement(children: .combine)
     }
@@ -725,13 +735,13 @@ private struct DashboardStorageAmount: View {
         let parts = DashboardFormat.split(text)
         HStack(alignment: .firstTextBaseline, spacing: 2) {
             Text(parts.number)
-                .font(.system(size: 10.5, weight: .semibold, design: .rounded))
+                .font(.system(size: 9.5, weight: .semibold, design: .rounded))
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
             if !parts.unit.isEmpty {
                 Text(parts.unit)
-                    .font(.system(size: 8.5, weight: .medium))
+                    .font(.system(size: 8, weight: .medium))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -739,6 +749,50 @@ private struct DashboardStorageAmount: View {
         .lineLimit(1)
         .minimumScaleFactor(0.6)
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct DashboardDiskPill: View {
+    let symbol: String
+    let primary: String
+    let secondary: String?
+    let accent: Color
+
+    var body: some View {
+        HStack(spacing: ExperienceSpacing.tiny) {
+            Image(systemName: symbol)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(secondary == nil ? Color.secondary : accent)
+                .frame(width: 12)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(primary)
+                    .font(.system(size: 9, weight: .semibold, design: .rounded))
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                if let secondary {
+                    Text(secondary)
+                        .font(.system(size: 7.5, weight: .regular))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, ExperienceSpacing.xSmall)
+        .frame(maxWidth: .infinity)
+        .frame(height: 28)
+        .background {
+            RoundedRectangle(cornerRadius: ExperienceRadius.compact, style: .continuous)
+                .fill(Color.primary.opacity(DashboardStyle.chipFillOpacity))
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: ExperienceRadius.compact, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.08), lineWidth: ExperienceSpacing.hairline)
+        }
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -1394,29 +1448,6 @@ private struct DashboardRing: View {
         .padding(lineWidth / 2)
         .frame(width: diameter, height: diameter)
         .accessibilityHidden(true)
-    }
-}
-
-/// A percentage sized to the disk ring, with a compact percent sign so even a full
-/// volume reading stays inside the ring's clear center.
-private struct DashboardDiskPercentage: View {
-    let value: String
-    let diameter: CGFloat
-
-    var body: some View {
-        let number = value.hasSuffix("%") ? String(value.dropLast()) : value
-        let size = diameter * 0.24
-        let text = Text(number)
-            .font(.system(size: size, weight: .semibold, design: .rounded))
-            + Text(value.hasSuffix("%") ? "%" : "")
-                .font(.system(size: size * 0.6, weight: .semibold, design: .rounded))
-
-        text
-            .monospacedDigit()
-            .lineLimit(1)
-            .minimumScaleFactor(0.6)
-            .frame(width: diameter - 2 * DashboardStyle.ringLineWidth - 8)
-            .accessibilityLabel(value)
     }
 }
 
