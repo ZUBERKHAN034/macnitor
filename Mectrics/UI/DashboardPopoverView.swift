@@ -384,14 +384,19 @@ private struct DashboardModuleCard: View {
             )
         case .battery:
             DashboardBatteryContent(
-                value: value,
+                percentage: value,
                 power: DashboardFormat.batteryPowerWatts(
                     sample: sample,
                     isOnBattery: model.isOnBattery
                 ).map(DashboardFormat.batteryPowerText),
                 fraction: sample.value,
                 caption: facts.captionText,
-                chips: facts.chips,
+                estimate: facts.chips.first(where: { $0.symbol == "clock" })?.text
+                    ?? DashboardFormat.missingValue,
+                estimateLabel: BatteryPowerStatus.resolve(
+                    sample.detail,
+                    isOnBattery: model.isOnBattery
+                ).estimateLabel ?? facts.captionText ?? DashboardFormat.missingValue,
                 accent: accent,
                 powerHistory: DashboardFormat.batteryPowerHistory(
                     samples: model.historySamples(
@@ -744,40 +749,42 @@ private struct DashboardStorageAmount: View {
 /// The Battery card uses a filled battery glyph and recent power draw instead of a
 /// circular charge ring.
 private struct DashboardBatteryContent: View {
-    let value: String
+    let percentage: String
     let power: String?
     let fraction: Double
     let caption: String?
-    let chips: [DashboardChipFact]
+    let estimate: String
+    let estimateLabel: String
     let accent: Color
     let powerHistory: [Double]
 
     var body: some View {
-        let estimate = chips.first { $0.symbol == "clock" }
-
         VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .center, spacing: ExperienceSpacing.small) {
-                DashboardBatteryIcon(fraction: fraction, accent: accent)
+            Spacer(minLength: ExperienceSpacing.xSmall)
+            HStack(alignment: .center, spacing: ExperienceSpacing.xSmall) {
+                DashboardBatteryIcon(
+                    fraction: fraction,
+                    percentage: percentage,
+                    accent: accent
+                )
                     .frame(width: 46)
-                VStack(alignment: .leading, spacing: ExperienceSpacing.tiny) {
-                    DashboardValueText(text: value, size: 18)
+                VStack(alignment: .leading, spacing: ExperienceSpacing.xSmall) {
                     BatteryInfoRow(
                         symbol: "bolt.fill",
                         value: power ?? DashboardFormat.missingValue,
                         status: caption ?? DashboardFormat.missingValue,
                         accent: accent
                     )
-                    if let estimate {
-                        BatteryInfoRow(
-                            symbol: "clock",
-                            value: estimate.text,
-                            status: estimate.label ?? "",
-                            accent: accent
-                        )
-                    }
+                    BatteryInfoRow(
+                        symbol: "clock",
+                        value: estimate,
+                        status: estimateLabel,
+                        accent: accent
+                    )
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .frame(height: 64, alignment: .center)
             Spacer(minLength: ExperienceSpacing.xSmall)
             DashboardHistoryBars(values: powerHistory, accent: accent)
                 .frame(height: DashboardStyle.barMinimumHeight)
@@ -796,10 +803,10 @@ private struct BatteryInfoRow: View {
         HStack(spacing: ExperienceSpacing.xSmall) {
             Circle()
                 .fill(Color.primary.opacity(0.08))
-                .frame(width: 26, height: 26)
+                .frame(width: 22, height: 22)
                 .overlay {
                     Image(systemName: symbol)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(symbol == "bolt.fill" ? accent : Color.secondary)
                 }
                 .accessibilityHidden(true)
@@ -813,9 +820,10 @@ private struct BatteryInfoRow: View {
                     .font(.system(size: 10))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.75)
+                    .minimumScaleFactor(0.7)
             }
         }
+        .frame(height: 30, alignment: .leading)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
@@ -824,6 +832,7 @@ private struct BatteryInfoRow: View {
 /// reference and keeping charge level readable without a circular ring.
 private struct DashboardBatteryIcon: View {
     let fraction: Double
+    let percentage: String
     let accent: Color
 
     var body: some View {
@@ -840,6 +849,15 @@ private struct DashboardBatteryIcon: View {
                         .frame(height: geometry.size.height * min(max(fraction, 0), 1))
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .overlay {
+                    Text(percentage)
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.65)
+                        .padding(.horizontal, 3)
+                }
             }
             .frame(width: 42, height: 54)
         }
