@@ -288,8 +288,8 @@ private enum DashboardStyle {
     static let valueSize: CGFloat = 20
     /// Network shows two rates stacked, so each is set a little smaller.
     static let rateSize: CGFloat = 16
-    static let ringDiameter: CGFloat = 64
-    static let ringLineWidth: CGFloat = 10
+    static let ringDiameter: CGFloat = 56
+    static let ringLineWidth: CGFloat = 8
     /// Bars in the CPU and GPU history: one per sample, newest on the right.
     static let historyCount = 16
     static let barSpacing: CGFloat = 2
@@ -378,9 +378,7 @@ private struct DashboardModuleCard: View {
             )
         case .disk:
             DashboardCapacityContent(
-                value: value,
-                fraction: sample.value,
-                caption: facts.captionText,
+                detail: sample.detail,
                 chips: facts.chips,
                 accent: accent
             )
@@ -629,27 +627,117 @@ private struct DashboardLoadContent: View {
 
 /// Disk: the share in use beside a ring, then its volume chip.
 private struct DashboardCapacityContent: View {
-    let value: String
-    let fraction: Double
-    let caption: String?
+    let detail: [String: Double]
     let chips: [DashboardChipFact]
     let accent: Color
 
     var body: some View {
-        VStack(spacing: ExperienceSpacing.tiny) {
+        let total = validValue("total")
+        let used = validValue("used")
+        let free = validValue("free")
+        let usedFraction = fraction(used, total: total)
+        let freeFraction = fraction(free, total: total)
+
+        VStack(spacing: 0) {
             Spacer(minLength: 0)
-            ZStack {
-                DashboardRing(fraction: fraction, accent: accent)
-                DashboardDiskPercentage(value: value)
-            }
-            if let caption {
-                DashboardStorageCapacityText(text: caption)
+            HStack(spacing: ExperienceSpacing.xSmall + ExperienceSpacing.tiny) {
+                ZStack {
+                    DashboardRing(fraction: usedFraction ?? 0, accent: accent)
+                    DashboardDiskPercentage(
+                        value: usedFraction.map { MetricFormat.percent($0, decimals: 1) }
+                            ?? DashboardFormat.missingValue
+                    )
+                }
+
+                Rectangle()
+                    .fill(Color.primary.opacity(DashboardStyle.trackOpacity))
+                    .frame(width: ExperienceSpacing.hairline, height: 72)
+                    .accessibilityHidden(true)
+
+                VStack(alignment: .leading, spacing: ExperienceSpacing.xSmall) {
+                    DashboardStorageSummary(
+                        title: String(localized: "disk.used", defaultValue: "Used"),
+                        amount: used.map(MetricFormat.storageBytes) ?? DashboardFormat.missingValue,
+                        percentage: usedFraction.map { MetricFormat.percent($0, decimals: 1) }
+                            ?? DashboardFormat.missingValue,
+                        marker: accent
+                    )
+                    DashboardStorageSummary(
+                        title: String(localized: "disk.free", defaultValue: "Free"),
+                        amount: free.map(MetricFormat.storageBytes) ?? DashboardFormat.missingValue,
+                        percentage: freeFraction.map { MetricFormat.percent($0, decimals: 1) }
+                            ?? DashboardFormat.missingValue,
+                        marker: Color.primary.opacity(0.36)
+                    )
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             Spacer(minLength: 0)
             DashboardChipRow(chips: chips)
                 .frame(maxWidth: .infinity, alignment: .center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func validValue(_ key: String) -> Double? {
+        guard let value = detail[key], value.isFinite, value >= 0 else { return nil }
+        return value
+    }
+
+    private func fraction(_ amount: Double?, total: Double?) -> Double? {
+        guard let amount, let total, total > 0 else { return nil }
+        return min(max(amount / total, 0), 1)
+    }
+}
+
+private struct DashboardStorageSummary: View {
+    let title: String
+    let amount: String
+    let percentage: String
+    let marker: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: ExperienceSpacing.hairline) {
+            HStack(spacing: ExperienceSpacing.xSmall) {
+                Circle()
+                    .fill(marker)
+                    .frame(width: 6, height: 6)
+                    .accessibilityHidden(true)
+                Text(title)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            DashboardStorageAmount(text: amount)
+            Text(percentage)
+                .font(.system(size: 10))
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+private struct DashboardStorageAmount: View {
+    let text: String
+
+    var body: some View {
+        let parts = DashboardFormat.split(text)
+        HStack(alignment: .firstTextBaseline, spacing: 2) {
+            Text(parts.number)
+                .font(.system(size: 11.5, weight: .semibold, design: .rounded))
+                .monospacedDigit()
+            if !parts.unit.isEmpty {
+                Text(parts.unit)
+                    .font(.system(size: 8.5, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -1269,45 +1357,6 @@ private struct DashboardDiskPercentage: View {
             .minimumScaleFactor(0.6)
             .frame(width: DashboardStyle.ringDiameter - 2 * DashboardStyle.ringLineWidth - 8)
             .accessibilityLabel(value)
-    }
-}
-
-/// Used and total stay on one line; the numbers lead and their storage units recede.
-private struct DashboardStorageCapacityText: View {
-    let text: String
-
-    var body: some View {
-        let values = text.split(separator: "/").map {
-            $0.trimmingCharacters(in: .whitespacesAndNewlines)
-        }
-        Group {
-            if values.count == 2 {
-                HStack(alignment: .firstTextBaseline, spacing: ExperienceSpacing.xSmall) {
-                    amount(String(values[0]))
-                    Text("/")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    amount(String(values[1]))
-                }
-            } else {
-                Text(text)
-                    .font(.subheadline.weight(.semibold))
-                    .monospacedDigit()
-            }
-        }
-        .lineLimit(1)
-        .minimumScaleFactor(0.75)
-        .frame(maxWidth: .infinity, alignment: .center)
-    }
-
-    private func amount(_ value: String) -> some View {
-        let parts = DashboardFormat.split(value)
-        return Text(parts.number)
-            .font(.system(size: 14, weight: .semibold, design: .rounded))
-            .monospacedDigit()
-            + Text(" \(parts.unit)")
-                .font(.system(size: 10, weight: .medium))
-                .foregroundColor(.secondary)
     }
 }
 
