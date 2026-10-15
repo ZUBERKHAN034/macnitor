@@ -643,6 +643,7 @@ private struct DashboardCapacityContent: View {
         let totalText = total.map(MetricFormat.storageBytes) ?? DashboardFormat.missingValue
 
         VStack(spacing: 0) {
+            Spacer(minLength: 0)
             HStack(spacing: ExperienceSpacing.small) {
                 DashboardRing(fraction: usedFraction ?? 0, accent: accent, diameter: 46)
 
@@ -650,35 +651,41 @@ private struct DashboardCapacityContent: View {
                     DashboardStorageSummary(
                         title: String(localized: "disk.used", defaultValue: "Used"),
                         amount: used.map(MetricFormat.storageBytes) ?? DashboardFormat.missingValue,
-                        capacity: totalText,
                         marker: accent
                     )
                     DashboardStorageSummary(
                         title: String(localized: "disk.total", defaultValue: "Total"),
                         amount: totalText,
-                        capacity: nil,
                         marker: Color.primary.opacity(0.36)
                     )
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             Spacer(minLength: ExperienceSpacing.tiny)
-            HStack(spacing: ExperienceSpacing.xSmall) {
-                DashboardDiskFooterChip(fact: DashboardChipFact(
-                    symbol: "circle.fill",
-                    text: usedFraction.map { MetricFormat.percent($0, decimals: 1) }
-                        ?? DashboardFormat.missingValue,
-                    tint: accent,
-                    label: String(localized: "disk.used", defaultValue: "Used")
-                ))
-                .frame(maxWidth: .infinity)
-                DashboardDiskFooterChip(fact: DashboardChipFact(
-                    symbol: "externaldrive",
-                    text: chips.first?.text ?? DashboardFormat.missingValue,
-                    tint: .secondary
-                ))
-                .frame(maxWidth: .infinity)
+            GeometryReader { geometry in
+                let gap = ExperienceSpacing.xSmall
+                let innerWidth = max(geometry.size.width - gap, 0)
+                let percentageWidth = innerWidth * 0.44
+                HStack(spacing: gap) {
+                    DashboardDiskFooterChip(fact: DashboardChipFact(
+                        symbol: "circle.fill",
+                        text: usedFraction.map { MetricFormat.percent($0, decimals: 1) }
+                            ?? DashboardFormat.missingValue,
+                        tint: accent,
+                        label: String(localized: "disk.used", defaultValue: "Used")
+                    ))
+                    .frame(width: percentageWidth, height: 24)
+                    DashboardDiskFooterChip(fact: DashboardChipFact(
+                        symbol: "externaldrive",
+                        text: chips.first?.text ?? DashboardFormat.missingValue,
+                        tint: .secondary
+                    ))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 24)
+                    .layoutPriority(1)
+                }
             }
+            .frame(height: 24)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -697,7 +704,6 @@ private struct DashboardCapacityContent: View {
 private struct DashboardStorageSummary: View {
     let title: String
     let amount: String
-    let capacity: String?
     let marker: Color
 
     var body: some View {
@@ -718,13 +724,6 @@ private struct DashboardStorageSummary: View {
                     .lineLimit(1)
             }
             DashboardStorageAmount(text: amount)
-            if let capacity {
-                Text("of \(capacity)")
-                    .font(.system(size: 7.5, weight: .regular))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
         }
         .frame(height: 30, alignment: .topLeading)
         .accessibilityElement(children: .combine)
@@ -771,7 +770,7 @@ private struct DashboardDiskFooterChip: View {
             }
             Text(fact.text)
                 .lineLimit(1)
-                .minimumScaleFactor(0.65)
+                .minimumScaleFactor(0.5)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .font(.caption.weight(.medium))
