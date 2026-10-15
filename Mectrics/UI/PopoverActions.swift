@@ -23,11 +23,15 @@ struct PopoverPrimaryButton: View {
 /// own action.
 struct PopoverActionBar: View {
     let onOpenSettings: () -> Void
+    let onMenuDismissed: () -> Void
 
     var body: some View {
         HStack {
             Spacer(minLength: 0)
-            PopoverActionMenuButton(onOpenSettings: onOpenSettings)
+            PopoverActionMenuButton(
+                onOpenSettings: onOpenSettings,
+                onMenuDismissed: onMenuDismissed
+            )
         }
         .frame(maxWidth: .infinity, alignment: .trailing)
         .padding(.top, ExperienceSpacing.small)
@@ -40,9 +44,13 @@ struct PopoverActionBar: View {
 /// the app on the first interaction, which immediately dismisses the menu.
 private struct PopoverActionMenuButton: NSViewRepresentable {
     let onOpenSettings: () -> Void
+    let onMenuDismissed: () -> Void
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(onOpenSettings: onOpenSettings)
+        Coordinator(
+            onOpenSettings: onOpenSettings,
+            onMenuDismissed: onMenuDismissed
+        )
     }
 
     func makeNSView(context: Context) -> NSButton {
@@ -67,6 +75,7 @@ private struct PopoverActionMenuButton: NSViewRepresentable {
 
     func updateNSView(_ button: NSButton, context: Context) {
         context.coordinator.onOpenSettings = onOpenSettings
+        context.coordinator.onMenuDismissed = onMenuDismissed
     }
 
     static func dismantleNSView(_ button: NSButton, coordinator: Coordinator) {
@@ -76,11 +85,16 @@ private struct PopoverActionMenuButton: NSViewRepresentable {
     @MainActor
     final class Coordinator: NSObject {
         var onOpenSettings: () -> Void
+        var onMenuDismissed: () -> Void
         private weak var button: NSButton?
         private var activationObserver: NSObjectProtocol?
 
-        init(onOpenSettings: @escaping () -> Void) {
+        init(
+            onOpenSettings: @escaping () -> Void,
+            onMenuDismissed: @escaping () -> Void
+        ) {
             self.onOpenSettings = onOpenSettings
+            self.onMenuDismissed = onMenuDismissed
         }
 
         @objc func showMenu(_ sender: NSButton) {
@@ -155,6 +169,7 @@ private struct PopoverActionMenuButton: NSViewRepresentable {
                 in: button
             )
             self.button = nil
+            onMenuDismissed()
         }
     }
 }

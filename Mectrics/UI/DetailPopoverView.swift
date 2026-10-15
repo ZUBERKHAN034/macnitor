@@ -179,7 +179,10 @@ struct DetailPopoverView: View {
     }
 
     private var footer: some View {
-        PopoverActionBar { model.onOpenSettings?() }
+        PopoverActionBar(
+            onOpenSettings: { model.onOpenSettings?() },
+            onMenuDismissed: { model.onPopoverActionMenuDismissed?() }
+        )
     }
 
     private var localAddress: (interface: String, address: String)? {

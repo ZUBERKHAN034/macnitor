@@ -168,6 +168,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model.onOpenSettings = { [weak self] in
             self?.settings.show()
         }
+        model.onPopoverActionMenuDismissed = { [weak self] in
+            self?.menuBar.closeAfterActionMenuDismisses()
+        }
         model.onOpenMenuBarSettings = { [weak self] in
             self?.settings.show(pane: .menuBar)
         }

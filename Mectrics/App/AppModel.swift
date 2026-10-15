@@ -141,6 +141,9 @@ final class AppModel {
     /// Called when a view asks for the settings window (wired by AppDelegate).
     @ObservationIgnored var onOpenSettings: (() -> Void)?
 
+    /// Closes the transient dashboard after its native action menu finishes tracking.
+    @ObservationIgnored var onPopoverActionMenuDismissed: (() -> Void)?
+
     /// Opens Settings on the Menu Bar pane, where the dashboard's modules are chosen
     /// (wired by AppDelegate).
     @ObservationIgnored var onOpenMenuBarSettings: (() -> Void)?
@@ -584,17 +587,26 @@ final class AppModel {
     private var visibleDetailModules: Set<MetricID> = []
 
     /// Replaces the on-screen modules in one step. The dashboard shows several at once,
-    /// and a forced pass reads every active provider — the SMC included — so one
-    /// opening asks for one pass, not one per card. Back-to-back passes would also
-    /// measure CPU load and network rates over a few milliseconds.
+    /// and a targeted pass reads the SMC (and GPU when visible) without sampling
+    /// unrelated rate-based providers such as network twice within milliseconds.
     func setVisibleDetailModules(_ ids: Set<MetricID>) {
         guard ids != visibleDetailModules else { return }
         let gained = !ids.isSubset(of: visibleDetailModules)
         visibleDetailModules = ids
         refreshActiveMetrics()
-        // A newly opened surface should show a temperature immediately rather than
-        // waiting for the next heavy cycle.
-        if gained { engine.requestRefresh(includingHeavy: true) }
+        // A newly opened hardware surface should show temperatures immediately rather
+        // than waiting for the next heavy cycle. Do not force every active provider:
+        // network rates need the regular interval between counter samples.
+        if gained {
+            let visibleHardwareModules = ids.intersection([.cpu, .memory, .gpu])
+            if !visibleHardwareModules.isEmpty {
+                var immediateMetrics: Set<MetricID> = [.sensors]
+                if visibleHardwareModules.contains(.gpu) {
+                    immediateMetrics.insert(.gpu)
+                }
+                engine.requestRefresh(for: immediateMetrics, includingHeavy: true)
+            }
+        }
     }
 
     private let defaults = UserDefaults.standard

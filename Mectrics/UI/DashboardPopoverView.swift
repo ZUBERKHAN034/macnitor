@@ -175,7 +175,10 @@ struct DashboardPopoverView: View {
     private var actionFooter: some View {
         VStack(alignment: .leading, spacing: ExperienceSpacing.small) {
             Divider()
-            PopoverActionBar { model.onOpenSettings?() }
+            PopoverActionBar(
+                onOpenSettings: { model.onOpenSettings?() },
+                onMenuDismissed: { model.onPopoverActionMenuDismissed?() }
+            )
         }
     }
 }

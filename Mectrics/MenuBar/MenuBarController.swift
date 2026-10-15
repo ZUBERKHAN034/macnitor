@@ -300,6 +300,13 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         popover.performClose(nil)
     }
 
+    /// The native action menu consumes the outside click that would ordinarily close
+    /// a transient popover. Close the dashboard when that menu finishes tracking.
+    func closeAfterActionMenuDismisses() {
+        guard popover.isShown, popoverKind != nil, !isPopoverClosing else { return }
+        closePopover()
+    }
+
     /// Reports every module the popover reported visible as hidden. Every way a
     /// popover ends — toggled closed, replaced by another, closed by AppKit, or
     /// orphaned by a rebuild — passes through here, and only the first pass finds
