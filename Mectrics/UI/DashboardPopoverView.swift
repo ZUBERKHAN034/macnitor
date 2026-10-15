@@ -223,8 +223,8 @@ enum DashboardLayout {
     }
 }
 
-/// System facts the dashboard shows but no sample carries. Reading them touches the
-/// system, so it happens once as the popover appears, never from a view's body.
+/// System facts the dashboard shows but no metric sample carries. The startup volume
+/// is read when the popover appears; the open Network card refreshes interface details.
 struct DashboardSystemInfo: Equatable {
     var localAddress: String?
     /// The primary interface as System Settings names it ("Wi-Fi"), or its BSD name.
@@ -235,6 +235,15 @@ struct DashboardSystemInfo: Equatable {
 
     @MainActor
     static func read() -> DashboardSystemInfo {
+        var info = readNetwork()
+        info.startupVolumeName = try? URL(fileURLWithPath: "/")
+            .resourceValues(forKeys: [.volumeLocalizedNameKey])
+            .volumeLocalizedName
+        return info
+    }
+
+    @MainActor
+    static func readNetwork() -> DashboardSystemInfo {
         var info = DashboardSystemInfo()
         if let primary = NetworkInfo.primaryIPv4() {
             info.localAddress = primary.address
@@ -242,9 +251,6 @@ struct DashboardSystemInfo: Equatable {
             info.interfaceName = described?.name ?? primary.interface
             info.interfaceSymbol = described?.symbol ?? "network"
         }
-        info.startupVolumeName = try? URL(fileURLWithPath: "/")
-            .resourceValues(forKeys: [.volumeLocalizedNameKey])
-            .volumeLocalizedName
         return info
     }
 
@@ -292,6 +298,8 @@ private enum DashboardStyle {
     static let ringLineWidth: CGFloat = 8
     /// Bars in the CPU and GPU history: one per sample, newest on the right.
     static let historyCount = 16
+    /// One network sample per base cycle, enough for a compact recent traffic trend.
+    static let networkHistoryCount = 30
     static let barSpacing: CGFloat = 2
     static let barMinimumHeight: CGFloat = 20
     /// A reading of zero is still a reading, so its bar keeps a sliver of height.
@@ -407,9 +415,15 @@ private struct DashboardModuleCard: View {
                 )
             )
         case .network:
+            let networkSamples = model.historySamples(
+                .network,
+                count: DashboardStyle.networkHistoryCount
+            )
             DashboardNetworkContent(
                 down: sample.detail["down"],
                 up: sample.detail["up"],
+                downloadHistory: networkHistory(networkSamples, direction: "down"),
+                uploadHistory: networkHistory(networkSamples, direction: "up"),
                 systemInfo: systemInfo,
                 accent: accent
             )
@@ -430,6 +444,16 @@ private struct DashboardModuleCard: View {
             }
         case .sensors:
             DashboardValueText(text: value)
+        }
+    }
+
+    private func networkHistory(
+        _ samples: [MetricSample],
+        direction: String
+    ) -> [DashboardNetworkPoint] {
+        samples.compactMap { sample in
+            guard let rate = sample.detail[direction], rate.isFinite, rate >= 0 else { return nil }
+            return DashboardNetworkPoint(timestamp: sample.timestamp, rate: rate)
         }
     }
 
@@ -677,7 +701,7 @@ private struct DashboardCapacityContent: View {
                 ))
                 .frame(maxWidth: .infinity)
                 DashboardDiskFooterChip(fact: DashboardChipFact(
-                    symbol: "externaldrive",
+                    symbol: nil,
                     text: chips.first?.text ?? DashboardFormat.missingValue,
                     tint: .secondary
                 ))
@@ -1021,48 +1045,270 @@ struct DashboardMemoryBreakdown: View {
     ]
 }
 
-/// Download and upload as two large rates, then the local address.
+/// Download and upload throughput with independent live histories and the local address.
+private struct DashboardNetworkPoint {
+    let timestamp: Date
+    let rate: Double
+}
+
 private struct DashboardNetworkContent: View {
     let down: Double?
     let up: Double?
+    let downloadHistory: [DashboardNetworkPoint]
+    let uploadHistory: [DashboardNetworkPoint]
     let systemInfo: DashboardSystemInfo
+    let accent: Color
+    @State private var latestNetworkInfo: DashboardSystemInfo?
+
+    var body: some View {
+        let currentNetworkInfo = latestNetworkInfo ?? systemInfo
+        let connected = currentNetworkInfo.localAddress != nil
+        VStack(alignment: .leading, spacing: 0) {
+            DashboardNetworkTrafficRow(
+                symbol: "arrow.down",
+                label: String(localized: "net.down", defaultValue: "Download"),
+                rate: connected ? down : nil,
+                history: connected ? downloadHistory : [],
+                accent: accent
+            )
+            Spacer(minLength: ExperienceSpacing.xSmall)
+            DashboardNetworkTrafficRow(
+                symbol: "arrow.up",
+                label: String(localized: "net.up", defaultValue: "Upload"),
+                rate: connected ? up : nil,
+                history: connected ? uploadHistory : [],
+                accent: accent
+            )
+            Spacer(minLength: ExperienceSpacing.xSmall)
+            DashboardNetworkFooter(systemInfo: currentNetworkInfo)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .task {
+            while !Task.isCancelled {
+                let refreshedInfo = await MainActor.run {
+                    DashboardSystemInfo.readNetwork()
+                }
+                if refreshedInfo != latestNetworkInfo {
+                    latestNetworkInfo = refreshedInfo
+                }
+                do {
+                    try await Task.sleep(for: .seconds(15))
+                } catch {
+                    break
+                }
+            }
+        }
+    }
+}
+
+private struct DashboardNetworkTrafficRow: View {
+    let symbol: String
+    let label: String
+    let rate: Double?
+    let history: [DashboardNetworkPoint]
     let accent: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            rateLine(symbol: "arrowtriangle.down.fill", rate: down)
-            rateLine(symbol: "arrowtriangle.up.fill", rate: up)
-        }
-        Spacer(minLength: 0)
-        // One line: the symbol says Wi-Fi or Ethernet, the tooltip and VoiceOver name
-        // the interface.
-        if let address = systemInfo.localAddress {
-            Label {
-                Text(address)
-                    .monospacedDigit()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-            } icon: {
-                Image(systemName: systemInfo.interfaceSymbol)
+        HStack(spacing: ExperienceSpacing.xSmall) {
+            Circle()
+                .fill(Color.primary.opacity(DashboardStyle.chipFillOpacity))
+                .frame(width: 22, height: 22)
+                .overlay {
+                    Image(systemName: symbol)
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(accent)
+                }
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 0) {
+                DashboardNetworkRateText(rate: DashboardFormat.rate(rate))
+                Text(label)
+                    .font(.system(size: 8.5, weight: .regular))
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
-            .font(.subheadline)
-            .help(systemInfo.interfaceName ?? "")
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            DashboardNetworkGraph(samples: history, accent: accent)
+                .frame(width: 32, height: 26)
+        }
+        .frame(height: 28, alignment: .center)
+    }
+}
+
+private struct DashboardNetworkRateText: View {
+    let rate: String
+
+    var body: some View {
+        let parts = DashboardFormat.split(rate)
+        HStack(alignment: .firstTextBaseline, spacing: ExperienceSpacing.tiny) {
+            Text(parts.number)
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.65)
+            if !parts.unit.isEmpty {
+                Text(parts.unit)
+                    .font(.system(size: 8.5, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+        }
+        .lineLimit(1)
+        .minimumScaleFactor(0.65)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct DashboardNetworkGraph: View {
+    let samples: [DashboardNetworkPoint]
+    let accent: Color
+
+    var body: some View {
+        Canvas { context, size in
+                var baseline = Path()
+                baseline.move(to: CGPoint(x: 0, y: size.height - 1))
+                baseline.addLine(to: CGPoint(x: size.width, y: size.height - 1))
+                context.stroke(baseline, with: .color(Color.primary.opacity(0.1)), lineWidth: 1)
+
+                let validSamples = samples.filter { $0.rate.isFinite && $0.rate >= 0 }
+                guard validSamples.count > 1,
+                      (validSamples.map(\.rate).max() ?? 0) > 0
+                else { return }
+
+                let maximum = SparklineScale.maximum(
+                    of: validSamples.map(\.rate),
+                    floor: SparklineScale.networkFloor
+                )
+                let points = graphPoints(validSamples, in: size, maximum: maximum)
+                let line = smoothPath(through: points)
+                var area = line
+                if let first = points.first, let last = points.last {
+                    area.addLine(to: CGPoint(x: last.x, y: size.height - 1))
+                    area.addLine(to: CGPoint(x: first.x, y: size.height - 1))
+                    area.closeSubpath()
+                }
+                context.fill(
+                    area,
+                    with: .linearGradient(
+                        Gradient(colors: [accent.opacity(0.2), accent.opacity(0.015)]),
+                        startPoint: .zero,
+                        endPoint: CGPoint(x: 0, y: size.height)
+                    )
+                )
+                context.stroke(
+                    line,
+                    with: .color(accent),
+                    style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round)
+                )
+        }
+        .accessibilityElement()
+        .accessibilityLabel(String(localized: "chart.recentTrend", defaultValue: "Recent trend"))
+        .accessibilityValue(graphSummary)
+    }
+
+    private func graphPoints(
+        _ samples: [DashboardNetworkPoint],
+        in size: CGSize,
+        maximum: Double
+    ) -> [CGPoint] {
+        let inset: CGFloat = 1
+        let graphWidth = max(size.width - inset * 2, 0)
+        let graphHeight = max(size.height - inset * 2, 0)
+        guard let firstDate = samples.first?.timestamp,
+              let lastDate = samples.last?.timestamp
+        else { return [] }
+        let duration = lastDate.timeIntervalSince(firstDate)
+        return samples.enumerated().map { index, sample in
+            let progress = duration > 0
+                ? min(max(sample.timestamp.timeIntervalSince(firstDate) / duration, 0), 1)
+                : Double(index) / Double(max(samples.count - 1, 1))
+            return CGPoint(
+                x: inset + graphWidth * CGFloat(progress),
+                y: size.height - inset
+                    - graphHeight * CGFloat(min(max(sample.rate / maximum, 0), 1))
+            )
         }
     }
 
-    private func rateLine(symbol: String, rate: Double?) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: ExperienceSpacing.xSmall) {
-            // The arrow's shape carries the direction; the accent only decorates it.
-            Image(systemName: symbol)
-                .font(.system(size: 8, weight: .bold))
-                .foregroundStyle(accent)
-                .accessibilityHidden(true)
-            DashboardValueText(
-                text: DashboardFormat.rate(rate),
-                size: DashboardStyle.rateSize
+    private func smoothPath(through points: [CGPoint]) -> Path {
+        var path = Path()
+        guard let first = points.first else { return path }
+        path.move(to: first)
+        guard points.count > 1 else { return path }
+        for index in 0..<(points.count - 1) {
+            let start = points[index]
+            let end = points[index + 1]
+            let previous = points[max(index - 1, 0)]
+            let next = points[min(index + 2, points.count - 1)]
+            let controlOne = CGPoint(
+                x: start.x + (end.x - previous.x) / 6,
+                y: start.y + (end.y - previous.y) / 6
+            )
+            let controlTwo = CGPoint(
+                x: end.x - (next.x - start.x) / 6,
+                y: end.y - (next.y - start.y) / 6
+            )
+            let minimumY = min(start.y, end.y)
+            let maximumY = max(start.y, end.y)
+            let minimumX = min(start.x, end.x)
+            let maximumX = max(start.x, end.x)
+            path.addCurve(
+                to: end,
+                control1: CGPoint(
+                    x: min(max(controlOne.x, minimumX), maximumX),
+                    y: min(max(controlOne.y, minimumY), maximumY)
+                ),
+                control2: CGPoint(
+                    x: min(max(controlTwo.x, minimumX), maximumX),
+                    y: min(max(controlTwo.y, minimumY), maximumY)
+                )
             )
         }
+        return path
+    }
+
+    private var graphSummary: String {
+        guard let latest = samples.last(where: { $0.rate.isFinite && $0.rate >= 0 }) else {
+            return String(localized: "chart.noReadings", defaultValue: "No readings")
+        }
+        return DashboardFormat.rate(latest.rate)
+    }
+}
+
+private struct DashboardNetworkFooter: View {
+    let systemInfo: DashboardSystemInfo
+
+    var body: some View {
+        HStack(spacing: ExperienceSpacing.xSmall) {
+            Circle()
+                .fill(Color.primary.opacity(DashboardStyle.chipFillOpacity))
+                .frame(width: 21, height: 21)
+                .overlay {
+                    Image(systemName: systemInfo.interfaceSymbol)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.secondary)
+                }
+                .accessibilityHidden(true)
+            Text(systemInfo.localAddress ?? DashboardFormat.missingValue)
+                .font(.system(size: 10.5, weight: .medium))
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, ExperienceSpacing.xSmall)
+        .frame(maxWidth: .infinity)
+        .frame(height: 26)
+        .background {
+            RoundedRectangle(cornerRadius: ExperienceRadius.compact, style: .continuous)
+                .fill(Color.primary.opacity(DashboardStyle.chipFillOpacity))
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: ExperienceRadius.compact, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.08), lineWidth: ExperienceSpacing.hairline)
+        }
+        .help(systemInfo.interfaceName ?? "")
     }
 }
 
