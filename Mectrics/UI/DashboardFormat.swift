@@ -211,7 +211,7 @@ enum BatteryPowerStatus: Equatable {
         case .charging:
             return String(localized: "battery.timeToFull", defaultValue: "Time to full")
         case .onBattery:
-            return String(localized: "battery.timeRemaining", defaultValue: "Time remaining")
+            return String(localized: "battery.timeRemaining", defaultValue: "Time left")
         case .pluggedIn:
             return nil
         }
