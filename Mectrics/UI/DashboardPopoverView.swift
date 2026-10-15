@@ -547,7 +547,7 @@ struct DashboardCardFacts: Equatable {
                     MemoryPressureLevel(rawValue: Int($0))
                 }
                 facts.chips.append(DashboardChipFact(
-                    symbol: "arrow.down",
+                    symbol: "clock",
                     text: "\(Int(pressurePercent.rounded()))%",
                     tint: level?.tint,
                     label: String(localized: "mem.pressure", defaultValue: "Pressure")
@@ -639,9 +639,7 @@ private struct DashboardCapacityContent: View {
     var body: some View {
         let total = validValue("total")
         let used = validValue("used")
-        let free = validValue("free")
         let usedFraction = fraction(used, total: total)
-        let freeFraction = fraction(free, total: total)
 
         VStack(spacing: 0) {
             Spacer(minLength: 0)
@@ -663,15 +661,11 @@ private struct DashboardCapacityContent: View {
                     DashboardStorageSummary(
                         title: String(localized: "disk.used", defaultValue: "Used"),
                         amount: used.map(MetricFormat.storageBytes) ?? DashboardFormat.missingValue,
-                        percentage: usedFraction.map { MetricFormat.percent($0, decimals: 1) }
-                            ?? DashboardFormat.missingValue,
                         marker: accent
                     )
                     DashboardStorageSummary(
-                        title: String(localized: "disk.free", defaultValue: "Free"),
-                        amount: free.map(MetricFormat.storageBytes) ?? DashboardFormat.missingValue,
-                        percentage: freeFraction.map { MetricFormat.percent($0, decimals: 1) }
-                            ?? DashboardFormat.missingValue,
+                        title: String(localized: "disk.total", defaultValue: "Total"),
+                        amount: total.map(MetricFormat.storageBytes) ?? DashboardFormat.missingValue,
                         marker: Color.primary.opacity(0.36)
                     )
                 }
@@ -698,7 +692,6 @@ private struct DashboardCapacityContent: View {
 private struct DashboardStorageSummary: View {
     let title: String
     let amount: String
-    let percentage: String
     let marker: Color
 
     var body: some View {
@@ -714,12 +707,6 @@ private struct DashboardStorageSummary: View {
                     .lineLimit(1)
             }
             DashboardStorageAmount(text: amount)
-            Text(percentage)
-                .font(.system(size: 10))
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
         }
         .accessibilityElement(children: .combine)
     }
@@ -932,7 +919,7 @@ struct DashboardMemoryBreakdown: View {
                 .clipShape(Capsule())
             }
             .frame(height: 5)
-            .padding(.bottom, ExperienceSpacing.tiny)
+            .padding(.bottom, ExperienceSpacing.small)
 
             ForEach(parts) { part in
                 HStack(spacing: ExperienceSpacing.xSmall) {
