@@ -114,6 +114,25 @@ struct MenuBarBuilderView: View {
                         Text(appearance.localizedName).tag(appearance)
                     }
                 }
+                HStack(spacing: ExperienceSpacing.small) {
+                    Text(String(
+                        localized: "dashboard.appearance.opacity",
+                        defaultValue: "Dashboard background opacity"
+                    ))
+                    Slider(
+                        value: $model.dashboardBackgroundOpacity,
+                        in: 0...DashboardAppearance.maximumBackgroundOpacity,
+                        step: 0.01
+                    )
+                    .accessibilityLabel(String(
+                        localized: "dashboard.appearance.opacity",
+                        defaultValue: "Dashboard background opacity"
+                    ))
+                    Text("\(Int((model.dashboardBackgroundOpacity * 100).rounded()))%")
+                        .monospacedDigit()
+                        .frame(width: 38, alignment: .trailing)
+                        .foregroundStyle(.secondary)
+                }
             } header: {
                 Text("Appearance")
             }

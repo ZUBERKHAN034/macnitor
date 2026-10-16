@@ -330,6 +330,11 @@ final class AppModel {
         didSet { defaults.set(dashboardAppearance.rawValue, forKey: Self.dashboardAppearanceKey) }
     }
 
+    /// Card surface opacity, shared by all Dashboard appearance modes.
+    var dashboardBackgroundOpacity: Double {
+        didSet { defaults.set(dashboardBackgroundOpacity, forKey: Self.dashboardBackgroundOpacityKey) }
+    }
+
     /// Called when a look-related setting changes so the menu bar redraws immediately
     /// (SwiftUI views update on their own via observation).
     @ObservationIgnored var onAppearanceChanged: (() -> Void)?
@@ -620,6 +625,7 @@ final class AppModel {
     private static let currentOnboardingVersion = 2
     private static let accentKey = "accentChoice"
     private static let dashboardAppearanceKey = "dashboardAppearance"
+    private static let dashboardBackgroundOpacityKey = "dashboardBackgroundOpacity"
     private static let menuBarIconsKey = "showMenuBarIcons"
     private static let dashboardItemEnabledKey = "dashboardItemEnabled"
     private static let dashboardIconVisibleKey = "dashboardIconVisible"
@@ -657,6 +663,9 @@ final class AppModel {
         self.dashboardAppearance = DashboardAppearance(
             rawValue: defaults.string(forKey: Self.dashboardAppearanceKey) ?? ""
         ) ?? .regular
+        let savedDashboardOpacity = defaults.object(forKey: Self.dashboardBackgroundOpacityKey) as? Double
+            ?? DashboardAppearance.defaultBackgroundOpacity
+        self.dashboardBackgroundOpacity = Self.clampedDashboardBackgroundOpacity(savedDashboardOpacity)
         // Icons default to on; only an explicit user choice turns them off.
         self.showMenuBarIcons = defaults.object(forKey: Self.menuBarIconsKey) as? Bool ?? true
         self.adaptMonitoringToEnergyState =
@@ -1082,6 +1091,11 @@ final class AppModel {
         if let data = try? JSONEncoder().encode(raw) {
             defaults.set(data, forKey: Self.systemAlertsKey)
         }
+    }
+
+    private static func clampedDashboardBackgroundOpacity(_ value: Double) -> Double {
+        guard value.isFinite else { return DashboardAppearance.defaultBackgroundOpacity }
+        return min(max(value, 0), DashboardAppearance.maximumBackgroundOpacity)
     }
 
     /// Legacy single-choice-per-module preference, read only for migration.

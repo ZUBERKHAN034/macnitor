@@ -41,6 +41,9 @@ enum AccentChoice: String, CaseIterable, Identifiable {
 /// Presentation style for Dashboard cards only. Missing preferences intentionally
 /// resolve to `.regular` so existing installs keep their current appearance.
 enum DashboardAppearance: String, CaseIterable, Identifiable {
+    static let defaultBackgroundOpacity = ExperienceSurface.subtleFillOpacity
+    static let maximumBackgroundOpacity = 0.25
+
     case regular
     case liquidGlass
     case liquidGlassRefined
@@ -52,9 +55,15 @@ enum DashboardAppearance: String, CaseIterable, Identifiable {
         case .regular:
             return String(localized: "dashboard.appearance.regular", defaultValue: "Regular")
         case .liquidGlass:
-            return String(localized: "dashboard.appearance.liquidGlass", defaultValue: "Liquid Glass")
+            return String(
+                localized: "dashboard.appearance.liquidGlass",
+                defaultValue: "Liquid Glass — Regular"
+            )
         case .liquidGlassRefined:
-            return String(localized: "dashboard.appearance.liquidGlassRefined", defaultValue: "Liquid Glass — Refined")
+            return String(
+                localized: "dashboard.appearance.liquidGlassRefined",
+                defaultValue: "Liquid Glass — Clear"
+            )
         }
     }
 }

@@ -7686,43 +7686,43 @@
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "Liquid Glass"
+            "value": "Liquid Glass — Regular"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sıvı Cam"
+            "value": "Sıvı Cam — Normal"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Жидкое стекло"
+            "value": "Жидкое стекло — обычное"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vidrio líquido"
+            "value": "Vidrio líquido — normal"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Verre liquide"
+            "value": "Verre liquide — standard"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vidro líquido"
+            "value": "Vidro líquido — regular"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "液态玻璃"
+            "value": "液态玻璃 — 标准"
           }
         }
       }
@@ -7733,43 +7733,90 @@
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "Liquid Glass — Refined"
+            "value": "Liquid Glass — Clear"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sıvı Cam — İnceltilmiş"
+            "value": "Sıvı Cam — Şeffaf"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Жидкое стекло — утончённое"
+            "value": "Жидкое стекло — прозрачное"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vidrio líquido — refinado"
+            "value": "Vidrio líquido — claro"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Verre liquide — raffiné"
+            "value": "Verre liquide — transparent"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vidro líquido — refinado"
+            "value": "Vidro líquido — transparente"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "液态玻璃 — 精致"
+            "value": "液态玻璃 — 清透"
+          }
+        }
+      }
+    },
+    "dashboard.appearance.opacity": {
+      "extractionState": "extracted_with_value",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Dashboard background opacity"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pano arka plan opaklığı"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Непрозрачность фона панели"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opacidad del fondo del panel"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opacité de l’arrière-plan du tableau de bord"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opacidade do fundo do painel"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仪表盘背景不透明度"
           }
         }
       }

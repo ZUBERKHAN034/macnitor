@@ -135,7 +135,8 @@ struct DashboardPopoverView: View {
             // Settings last showed.
             DashboardEmptyHintCard(
                 onOpenSettings: { model.onOpenMenuBarSettings?() },
-                appearance: model.dashboardAppearance
+                appearance: model.dashboardAppearance,
+                backgroundOpacity: model.dashboardBackgroundOpacity
             )
         }
     }
@@ -349,7 +350,10 @@ private struct DashboardModuleCard: View {
                 }
             }
         }
-        .buttonStyle(DashboardCardButtonStyle(appearance: model.dashboardAppearance))
+        .buttonStyle(DashboardCardButtonStyle(
+            appearance: model.dashboardAppearance,
+            backgroundOpacity: model.dashboardBackgroundOpacity
+        ))
         .accessibilityLabel(id.localizedName)
         .accessibilityValue(accessibilityValue(sample: sample, state: state, facts: facts))
         .accessibilityHint(String(
@@ -1322,7 +1326,12 @@ private struct DashboardDeviceCard: View {
                 }
             }
         }
-        .background { DashboardCardBackground(appearance: model.dashboardAppearance) }
+        .background {
+            DashboardCardBackground(
+                fillOpacity: model.dashboardBackgroundOpacity,
+                appearance: model.dashboardAppearance
+            )
+        }
         .accessibilityElement(children: .combine)
     }
 
@@ -1339,6 +1348,7 @@ private struct DashboardDeviceCard: View {
 private struct DashboardEmptyHintCard: View {
     let onOpenSettings: () -> Void
     let appearance: DashboardAppearance
+    let backgroundOpacity: Double
     @Environment(\.colorSchemeContrast) private var contrast
 
     var body: some View {
@@ -1375,7 +1385,10 @@ private struct DashboardEmptyHintCard: View {
                     style: StrokeStyle(lineWidth: ExperienceSpacing.hairline, dash: [4, 3])
                 )
             } else {
-                DashboardCardBackground(appearance: appearance)
+                DashboardCardBackground(
+                    fillOpacity: backgroundOpacity,
+                    appearance: appearance
+                )
                     .overlay {
                         shape.strokeBorder(
                             Color.primary.opacity(
@@ -1536,7 +1549,7 @@ private struct DashboardCardBackground: View {
         if reduceTransparency {
             shape
                 .fill(Color(nsColor: .controlBackgroundColor))
-                .overlay { interactionTint(shape: shape, refined: refined) }
+                .overlay { interactionTint(shape: shape) }
                 .overlay { border(shape: shape, refined: refined) }
         } else {
             supportedGlassSurface(shape: shape, refined: refined)
@@ -1563,10 +1576,10 @@ private struct DashboardCardBackground: View {
         shape: RoundedRectangle,
         refined: Bool
     ) -> some View {
-        let material: Material = refined ? .regular : .ultraThin
+        let material: Material = refined ? .ultraThin : .regular
         return shape
             .fill(material)
-            .overlay { interactionTint(shape: shape, refined: refined) }
+            .overlay { interactionTint(shape: shape) }
             .overlay { border(shape: shape, refined: refined) }
             .shadow(
                 color: Color.black.opacity(refined ? 0.08 : 0.13),
@@ -1585,11 +1598,11 @@ private struct DashboardCardBackground: View {
             .fill(.clear)
             .glassEffect(
                 refined
-                    ? .regular
+                    ? .clear
                     : .regular.tint(Color.accentColor.opacity(0.08)),
                 in: shape
             )
-            .overlay { interactionTint(shape: shape, refined: refined) }
+            .overlay { interactionTint(shape: shape) }
             .overlay { border(shape: shape, refined: refined) }
             .shadow(
                 color: Color.black.opacity(refined ? 0.06 : 0.12),
@@ -1599,8 +1612,8 @@ private struct DashboardCardBackground: View {
     }
     #endif
 
-    private func interactionTint(shape: RoundedRectangle, refined: Bool) -> some View {
-        shape.fill(Color.primary.opacity(fillOpacity * (refined ? 0.22 : 0.34)))
+    private func interactionTint(shape: RoundedRectangle) -> some View {
+        shape.fill(Color.primary.opacity(fillOpacity))
     }
 
     private func border(shape: RoundedRectangle, refined: Bool) -> some View {
@@ -1616,15 +1629,21 @@ private struct DashboardCardBackground: View {
 /// A card as a button: brighter under the pointer and while pressed.
 private struct DashboardCardButtonStyle: ButtonStyle {
     let appearance: DashboardAppearance
+    let backgroundOpacity: Double
 
     func makeBody(configuration: Configuration) -> some View {
-        DashboardCardButton(configuration: configuration, appearance: appearance)
+        DashboardCardButton(
+            configuration: configuration,
+            appearance: appearance,
+            backgroundOpacity: backgroundOpacity
+        )
     }
 }
 
 private struct DashboardCardButton: View {
     let configuration: ButtonStyleConfiguration
     let appearance: DashboardAppearance
+    let backgroundOpacity: Double
     @State private var isHovered = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -1644,8 +1663,16 @@ private struct DashboardCardButton: View {
     }
 
     private var fillOpacity: Double {
-        if configuration.isPressed { return ExperienceSurface.selectedFillOpacity }
-        return isHovered ? DashboardStyle.hoverFillOpacity : ExperienceSurface.subtleFillOpacity
+        if configuration.isPressed {
+            let increment = ExperienceSurface.selectedFillOpacity
+                - DashboardAppearance.defaultBackgroundOpacity
+            return min(backgroundOpacity + increment, DashboardAppearance.maximumBackgroundOpacity + increment)
+        }
+        let increment = DashboardStyle.hoverFillOpacity
+            - DashboardAppearance.defaultBackgroundOpacity
+        return isHovered
+            ? min(backgroundOpacity + increment, DashboardAppearance.maximumBackgroundOpacity + increment)
+            : backgroundOpacity
     }
 }
 
