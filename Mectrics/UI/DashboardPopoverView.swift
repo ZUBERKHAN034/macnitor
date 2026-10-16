@@ -133,7 +133,9 @@ struct DashboardPopoverView: View {
         case .emptyHint:
             // The dashboard's modules are chosen in the Menu Bar pane, whichever pane
             // Settings last showed.
-            DashboardEmptyHintCard { model.onOpenMenuBarSettings?() }
+            DashboardEmptyHintCard(appearance: model.dashboardAppearance) {
+                model.onOpenMenuBarSettings?()
+            }
         }
     }
 
@@ -346,7 +348,7 @@ private struct DashboardModuleCard: View {
                 }
             }
         }
-        .buttonStyle(DashboardCardButtonStyle())
+        .buttonStyle(DashboardCardButtonStyle(appearance: model.dashboardAppearance))
         .accessibilityLabel(id.localizedName)
         .accessibilityValue(accessibilityValue(sample: sample, state: state, facts: facts))
         .accessibilityHint(String(
@@ -1319,7 +1321,7 @@ private struct DashboardDeviceCard: View {
                 }
             }
         }
-        .background { DashboardCardBackground() }
+        .background { DashboardCardBackground(appearance: model.dashboardAppearance) }
         .accessibilityElement(children: .combine)
     }
 
@@ -1335,6 +1337,7 @@ private struct DashboardDeviceCard: View {
 /// Shown beside the device card when no module is chosen.
 private struct DashboardEmptyHintCard: View {
     let onOpenSettings: () -> Void
+    let appearance: DashboardAppearance
     @Environment(\.colorSchemeContrast) private var contrast
 
     var body: some View {
@@ -1360,8 +1363,9 @@ private struct DashboardEmptyHintCard: View {
         .frame(width: DashboardPopoverView.cardWidth)
         .frame(height: DashboardPopoverView.cardHeight, alignment: .center)
         .background {
-            RoundedRectangle(cornerRadius: ExperienceRadius.panel, style: .continuous)
-                .strokeBorder(
+            let shape = RoundedRectangle(cornerRadius: ExperienceRadius.panel, style: .continuous)
+            if appearance == .regular {
+                shape.strokeBorder(
                     Color.primary.opacity(
                         contrast == .increased
                             ? ExperienceSurface.increasedBorderOpacity
@@ -1369,6 +1373,19 @@ private struct DashboardEmptyHintCard: View {
                     ),
                     style: StrokeStyle(lineWidth: ExperienceSpacing.hairline, dash: [4, 3])
                 )
+            } else {
+                DashboardCardBackground(appearance: appearance)
+                    .overlay {
+                        shape.strokeBorder(
+                            Color.primary.opacity(
+                                contrast == .increased
+                                    ? ExperienceSurface.increasedBorderOpacity
+                                    : ExperienceSurface.standardBorderOpacity
+                            ),
+                            style: StrokeStyle(lineWidth: ExperienceSpacing.hairline, dash: [4, 3])
+                        )
+                    }
+                }
         }
     }
 }
@@ -1484,39 +1501,113 @@ private struct DashboardCardLayout<Content: View>: View {
 
 private struct DashboardCardBackground: View {
     var fillOpacity = ExperienceSurface.subtleFillOpacity
+    var appearance: DashboardAppearance = .regular
     @Environment(\.colorSchemeContrast) private var contrast
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
+    @ViewBuilder
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: ExperienceRadius.panel, style: .continuous)
-        shape
-            .fill(Color.primary.opacity(fillOpacity))
-            .overlay {
-                if contrast == .increased {
-                    shape.strokeBorder(
-                        Color.primary.opacity(ExperienceSurface.increasedBorderOpacity),
-                        lineWidth: ExperienceSpacing.hairline
-                    )
+        switch appearance {
+        case .regular:
+            shape
+                .fill(Color.primary.opacity(fillOpacity))
+                .overlay {
+                    if contrast == .increased {
+                        shape.strokeBorder(
+                            Color.primary.opacity(ExperienceSurface.increasedBorderOpacity),
+                            lineWidth: ExperienceSpacing.hairline
+                        )
+                    }
                 }
-            }
+        case .liquidGlass:
+            glassSurface(shape: shape, refined: false)
+        case .liquidGlassRefined:
+            glassSurface(shape: shape, refined: true)
+        }
+    }
+
+    @ViewBuilder
+    private func glassSurface(
+        shape: RoundedRectangle,
+        refined: Bool
+    ) -> some View {
+        if reduceTransparency {
+            shape
+                .fill(Color(nsColor: .controlBackgroundColor))
+                .overlay { interactionTint(shape: shape, refined: refined) }
+                .overlay { border(shape: shape, refined: refined) }
+        } else if #available(macOS 26.0, *) {
+            nativeGlassSurface(shape: shape, refined: refined)
+        } else {
+            let material: Material = refined ? .regular : .ultraThin
+            shape
+                .fill(material)
+                .overlay { interactionTint(shape: shape, refined: refined) }
+                .overlay { border(shape: shape, refined: refined) }
+                .shadow(
+                    color: Color.black.opacity(refined ? 0.08 : 0.13),
+                    radius: refined ? 7 : 11,
+                    y: refined ? 3 : 5
+                )
+        }
+    }
+
+    @available(macOS 26.0, *)
+    private func nativeGlassSurface(
+        shape: RoundedRectangle,
+        refined: Bool
+    ) -> some View {
+        shape
+            .fill(.clear)
+            .glassEffect(
+                refined
+                    ? .regular
+                    : .regular.tint(Color.accentColor.opacity(0.08)),
+                in: shape
+            )
+            .overlay { interactionTint(shape: shape, refined: refined) }
+            .overlay { border(shape: shape, refined: refined) }
+            .shadow(
+                color: Color.black.opacity(refined ? 0.06 : 0.12),
+                radius: refined ? 6 : 10,
+                y: refined ? 2 : 4
+            )
+    }
+
+    private func interactionTint(shape: RoundedRectangle, refined: Bool) -> some View {
+        shape.fill(Color.primary.opacity(fillOpacity * (refined ? 0.22 : 0.34)))
+    }
+
+    private func border(shape: RoundedRectangle, refined: Bool) -> some View {
+        shape.strokeBorder(
+            Color.primary.opacity(
+                contrast == .increased ? ExperienceSurface.increasedBorderOpacity : (refined ? 0.13 : 0.09)
+            ),
+            lineWidth: ExperienceSpacing.hairline
+        )
     }
 }
 
 /// A card as a button: brighter under the pointer and while pressed.
 private struct DashboardCardButtonStyle: ButtonStyle {
+    let appearance: DashboardAppearance
+
     func makeBody(configuration: Configuration) -> some View {
-        DashboardCardButton(configuration: configuration)
+        DashboardCardButton(configuration: configuration, appearance: appearance)
     }
 }
 
 private struct DashboardCardButton: View {
     let configuration: ButtonStyleConfiguration
+    let appearance: DashboardAppearance
     @State private var isHovered = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         configuration.label
             .background {
-                DashboardCardBackground(fillOpacity: fillOpacity)
+                DashboardCardBackground(fillOpacity: fillOpacity, appearance: appearance)
             }
             .contentShape(
                 RoundedRectangle(cornerRadius: ExperienceRadius.panel, style: .continuous)

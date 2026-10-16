@@ -325,6 +325,11 @@ final class AppModel {
         }
     }
 
+    /// Visual treatment applied only to Dashboard cards.
+    var dashboardAppearance: DashboardAppearance {
+        didSet { defaults.set(dashboardAppearance.rawValue, forKey: Self.dashboardAppearanceKey) }
+    }
+
     /// Called when a look-related setting changes so the menu bar redraws immediately
     /// (SwiftUI views update on their own via observation).
     @ObservationIgnored var onAppearanceChanged: (() -> Void)?
@@ -614,6 +619,7 @@ final class AppModel {
     private static let onboardingVersionKey = "completedOnboardingVersion"
     private static let currentOnboardingVersion = 2
     private static let accentKey = "accentChoice"
+    private static let dashboardAppearanceKey = "dashboardAppearance"
     private static let menuBarIconsKey = "showMenuBarIcons"
     private static let dashboardItemEnabledKey = "dashboardItemEnabled"
     private static let dashboardIconVisibleKey = "dashboardIconVisible"
@@ -648,6 +654,9 @@ final class AppModel {
         self.hasCompletedOnboarding =
             defaults.integer(forKey: Self.onboardingVersionKey) >= Self.currentOnboardingVersion
         self.accentChoice = AccentChoice(rawValue: defaults.string(forKey: Self.accentKey) ?? "") ?? .pink
+        self.dashboardAppearance = DashboardAppearance(
+            rawValue: defaults.string(forKey: Self.dashboardAppearanceKey) ?? ""
+        ) ?? .regular
         // Icons default to on; only an explicit user choice turns them off.
         self.showMenuBarIcons = defaults.object(forKey: Self.menuBarIconsKey) as? Bool ?? true
         self.adaptMonitoringToEnergyState =

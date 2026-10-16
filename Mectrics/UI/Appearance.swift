@@ -37,3 +37,24 @@ enum AccentChoice: String, CaseIterable, Identifiable {
         }
     }
 }
+
+/// Presentation style for Dashboard cards only. Missing preferences intentionally
+/// resolve to `.regular` so existing installs keep their current appearance.
+enum DashboardAppearance: String, CaseIterable, Identifiable {
+    case regular
+    case liquidGlass
+    case liquidGlassRefined
+
+    var id: String { rawValue }
+
+    var localizedName: String {
+        switch self {
+        case .regular:
+            return String(localized: "dashboard.appearance.regular", defaultValue: "Regular")
+        case .liquidGlass:
+            return String(localized: "dashboard.appearance.liquidGlass", defaultValue: "Liquid Glass")
+        case .liquidGlassRefined:
+            return String(localized: "dashboard.appearance.liquidGlassRefined", defaultValue: "Liquid Glass — Refined")
+        }
+    }
+}

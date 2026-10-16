@@ -103,6 +103,17 @@ struct MenuBarBuilderView: View {
                         Text(choice.localizedName).tag(choice)
                     }
                 }
+                Picker(
+                    String(
+                        localized: "dashboard.appearance.label",
+                        defaultValue: "Dashboard appearance"
+                    ),
+                    selection: $model.dashboardAppearance
+                ) {
+                    ForEach(DashboardAppearance.allCases) { appearance in
+                        Text(appearance.localizedName).tag(appearance)
+                    }
+                }
             } header: {
                 Text("Appearance")
             }
