@@ -7686,90 +7686,43 @@
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "Liquid Glass — Regular"
+            "value": "Liquid Glass"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sıvı Cam — Normal"
+            "value": "Sıvı Cam"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Жидкое стекло — обычное"
+            "value": "Жидкое стекло"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vidrio líquido — normal"
+            "value": "Vidrio líquido"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Verre liquide — standard"
+            "value": "Verre liquide"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vidro líquido — regular"
+            "value": "Vidro líquido"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "液态玻璃 — 标准"
-          }
-        }
-      }
-    },
-    "dashboard.appearance.liquidGlassRefined": {
-      "extractionState": "extracted_with_value",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Liquid Glass — Clear"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sıvı Cam — Şeffaf"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Жидкое стекло — прозрачное"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vidrio líquido — claro"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verre liquide — transparent"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vidro líquido — transparente"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "液态玻璃 — 清透"
+            "value": "液态玻璃"
           }
         }
       }

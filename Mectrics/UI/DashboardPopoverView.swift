@@ -44,31 +44,50 @@ struct DashboardPopoverView: View {
     var body: some View {
         // One container for both states, so moving between them does not count as
         // the popover appearing again.
-        VStack(alignment: .leading, spacing: 0) {
-            if let selectedModule {
-                detail(for: selectedModule)
-                    .transition(Self.drillIn)
-            } else {
-                overview
-                    .transition(Self.drillOut)
+        glassContainer {
+            VStack(alignment: .leading, spacing: 0) {
+                if let selectedModule {
+                    detail(for: selectedModule)
+                        .transition(Self.drillIn)
+                } else {
+                    overview
+                        .transition(Self.drillOut)
+                }
+            }
+            .frame(width: Self.width)
+            .background {
+                DashboardCardBackground(
+                    fillOpacity: model.dashboardBackgroundOpacity,
+                    appearance: model.dashboardAppearance,
+                    cornerRadius: ExperienceRadius.panel
+                )
+            }
+            // The grid and a detail are two depths of one place, so they slide the way a
+            // push and a pop do rather than being swapped out from under the pointer. The
+            // popover's own height follows: AppKit animates a content-size change while
+            // `animates` is on, which it is unless the system asks for less motion.
+            .clipped()
+            .onAppear {
+                systemInfo = DashboardSystemInfo.read()
             }
         }
-        .frame(width: Self.width)
-        .background {
-            DashboardCardBackground(
-                fillOpacity: model.dashboardBackgroundOpacity,
-                appearance: model.dashboardAppearance,
-                cornerRadius: ExperienceRadius.panel
-            )
+    }
+
+    @ViewBuilder
+    private func glassContainer<Content: View>(
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        #if compiler(>=6.2)
+        if #available(macOS 26.0, *), model.dashboardAppearance == .liquidGlass {
+            GlassEffectContainer(spacing: 0) {
+                content()
+            }
+        } else {
+            content()
         }
-        // The grid and a detail are two depths of one place, so they slide the way a
-        // push and a pop do rather than being swapped out from under the pointer. The
-        // popover's own height follows: AppKit animates a content-size change while
-        // `animates` is on, which it is unless the system asks for less motion.
-        .clipped()
-        .onAppear {
-            systemInfo = DashboardSystemInfo.read()
-        }
+        #else
+        content()
+        #endif
     }
 
     /// Pushes in from the trailing edge and leaves the same way, so the gesture reads
@@ -1543,103 +1562,65 @@ struct DashboardCardBackground: View {
                     }
                 }
         case .liquidGlass:
-            glassSurface(shape: shape, refined: false)
-        case .liquidGlassRefined:
-            glassSurface(shape: shape, refined: true)
+            glassSurface(shape: shape)
         }
     }
 
     @ViewBuilder
-    private func glassSurface(
-        shape: RoundedRectangle,
-        refined: Bool
-    ) -> some View {
+    private func glassSurface(shape: RoundedRectangle) -> some View {
         if reduceTransparency {
             shape
                 .fill(Color(nsColor: .controlBackgroundColor))
-                .overlay { interactionTint(shape: shape) }
-                .overlay { border(shape: shape, refined: refined) }
+                .overlay { clearTint(shape: shape) }
+                .overlay { border(shape: shape) }
         } else {
-            supportedGlassSurface(shape: shape, refined: refined)
+            supportedGlassSurface(shape: shape)
         }
     }
 
     @ViewBuilder
-    private func supportedGlassSurface(
-        shape: RoundedRectangle,
-        refined: Bool
-    ) -> some View {
+    private func supportedGlassSurface(shape: RoundedRectangle) -> some View {
         #if compiler(>=6.2)
         if #available(macOS 26.0, *) {
-            nativeGlassSurface(shape: shape, refined: refined)
+            nativeGlassSurface(shape: shape)
         } else {
-            materialGlassSurface(shape: shape, refined: refined)
+            fallbackGlassSurface(shape: shape)
         }
         #else
-        materialGlassSurface(shape: shape, refined: refined)
+        fallbackGlassSurface(shape: shape)
         #endif
     }
 
     @ViewBuilder
-    private func materialGlassSurface(
-        shape: RoundedRectangle,
-        refined: Bool
-    ) -> some View {
-        if refined {
-            // Keep Clear transparent on older SDKs too. An ultra-thin material
-            // still blurs whatever is behind the surface, making this mode look frosted.
-            shape
-                .fill(.clear)
-                .overlay { refinedTint(shape: shape) }
-                .overlay { border(shape: shape, refined: true) }
-        } else {
-            shape
-                .fill(.regularMaterial)
-                .overlay { interactionTint(shape: shape) }
-                .overlay { border(shape: shape, refined: false) }
-                .shadow(color: Color.black.opacity(0.13), radius: 11, y: 5)
-        }
+    private func fallbackGlassSurface(shape: RoundedRectangle) -> some View {
+        // Stay transparent on older SDKs too; a material fallback looks frosted.
+        shape
+            .fill(.clear)
+            .overlay { clearTint(shape: shape) }
+            .overlay { border(shape: shape) }
     }
 
     #if compiler(>=6.2)
     @available(macOS 26.0, *)
-    private func nativeGlassSurface(
-        shape: RoundedRectangle,
-        refined: Bool
-    ) -> some View {
+    private func nativeGlassSurface(shape: RoundedRectangle) -> some View {
         shape
             .fill(.clear)
-            .glassEffect(
-                refined
-                    ? .clear
-                    : .regular.tint(Color.accentColor.opacity(0.08)),
-                in: shape
-            )
-            .overlay {
-                if refined {
-                    refinedTint(shape: shape)
-                } else {
-                    interactionTint(shape: shape)
-                }
-            }
-            .overlay { border(shape: shape, refined: refined) }
-            .shadow(color: Color.black.opacity(refined ? 0.025 : 0.12), radius: refined ? 3 : 10, y: refined ? 1 : 4)
+            .glassEffect(.clear, in: shape)
+            .overlay { clearTint(shape: shape) }
+            .overlay { border(shape: shape) }
+            .shadow(color: Color.black.opacity(0.025), radius: 3, y: 1)
     }
     #endif
 
-    private func interactionTint(shape: RoundedRectangle) -> some View {
-        shape.fill(Color.primary.opacity(fillOpacity))
-    }
-
-    private func refinedTint(shape: RoundedRectangle) -> some View {
+    private func clearTint(shape: RoundedRectangle) -> some View {
         // Keep Clear dark without a material blur or a bright primary-color wash.
         shape.fill(Color.black.opacity(fillOpacity))
     }
 
-    private func border(shape: RoundedRectangle, refined: Bool) -> some View {
+    private func border(shape: RoundedRectangle) -> some View {
         shape.strokeBorder(
             Color.primary.opacity(
-                contrast == .increased ? ExperienceSurface.increasedBorderOpacity : (refined ? 0.13 : 0.09)
+                contrast == .increased ? ExperienceSurface.increasedBorderOpacity : 0.13
             ),
             lineWidth: ExperienceSpacing.hairline
         )
@@ -1685,7 +1666,7 @@ private struct DashboardCardButton: View {
     private var fillOpacity: Double {
         // Clear glass has no hover/pressed tint. That interaction lift looked like
         // a white flash because primary resolves to white in the dark appearance.
-        guard appearance != .liquidGlassRefined else { return backgroundOpacity }
+        guard appearance != .liquidGlass else { return backgroundOpacity }
 
         if configuration.isPressed {
             let increment = ExperienceSurface.selectedFillOpacity
