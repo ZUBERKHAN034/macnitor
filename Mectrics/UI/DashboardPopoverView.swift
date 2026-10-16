@@ -1632,8 +1632,8 @@ struct DashboardCardBackground: View {
     }
 
     private func refinedTint(shape: RoundedRectangle) -> some View {
-        // The opacity control remains effective in Clear mode without adding blur.
-        shape.fill(Color.primary.opacity(fillOpacity * 0.15))
+        // Keep Clear dark without a material blur or a bright primary-color wash.
+        shape.fill(Color.black.opacity(fillOpacity))
     }
 
     private func border(shape: RoundedRectangle, refined: Bool) -> some View {
@@ -1683,6 +1683,10 @@ private struct DashboardCardButton: View {
     }
 
     private var fillOpacity: Double {
+        // Clear glass has no hover/pressed tint. That interaction lift looked like
+        // a white flash because primary resolves to white in the dark appearance.
+        guard appearance != .liquidGlassRefined else { return backgroundOpacity }
+
         if configuration.isPressed {
             let increment = ExperienceSurface.selectedFillOpacity
                 - DashboardAppearance.defaultBackgroundOpacity
