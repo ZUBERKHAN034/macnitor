@@ -14,6 +14,9 @@ struct DetailPopoverView: View {
     var recoveryPlacement: MenuBarPlacement = .ownItems
     /// Outer width, padding included. The dashboard hosts this view at its own width.
     var width: CGFloat = 290
+    /// Set for standalone menu-bar detail popovers. Detail windows leave this unset.
+    var dashboardAppearance: DashboardAppearance?
+    var dashboardBackgroundOpacity = DashboardAppearance.defaultBackgroundOpacity
     @State private var copyConfirmationVisible = false
 
     private var sample: MetricSample? { model.latest[moduleID] }
@@ -55,6 +58,14 @@ struct DetailPopoverView: View {
         }
         .padding(ExperienceSpacing.medium)
         .frame(width: width)
+        .background {
+            if let dashboardAppearance {
+                DashboardCardBackground(
+                    fillOpacity: dashboardBackgroundOpacity,
+                    appearance: dashboardAppearance
+                )
+            }
+        }
     }
 
     @ViewBuilder

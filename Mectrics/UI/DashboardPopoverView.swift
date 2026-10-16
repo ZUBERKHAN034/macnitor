@@ -54,6 +54,13 @@ struct DashboardPopoverView: View {
             }
         }
         .frame(width: Self.width)
+        .background {
+            DashboardCardBackground(
+                fillOpacity: model.dashboardBackgroundOpacity,
+                appearance: model.dashboardAppearance,
+                cornerRadius: ExperienceRadius.panel
+            )
+        }
         // The grid and a detail are two depths of one place, so they slide the way a
         // push and a pop do rather than being swapped out from under the pointer. The
         // popover's own height follows: AppKit animates a content-size change while
@@ -1513,15 +1520,16 @@ private struct DashboardCardLayout<Content: View>: View {
     }
 }
 
-private struct DashboardCardBackground: View {
+struct DashboardCardBackground: View {
     var fillOpacity = ExperienceSurface.subtleFillOpacity
     var appearance: DashboardAppearance = .regular
+    var cornerRadius = ExperienceRadius.panel
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     @ViewBuilder
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: ExperienceRadius.panel, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         switch appearance {
         case .regular:
             shape

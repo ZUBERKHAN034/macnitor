@@ -207,7 +207,12 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
 
         let signpostID = PerformanceSignposts.beginModulePopover()
         show(
-            DetailPopoverView(model: model, moduleID: id),
+            DetailPopoverView(
+                model: model,
+                moduleID: id,
+                dashboardAppearance: model.dashboardAppearance,
+                dashboardBackgroundOpacity: model.dashboardBackgroundOpacity
+            ),
             as: .module(id),
             visibleModules: [id],
             from: button
