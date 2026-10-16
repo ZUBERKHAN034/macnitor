@@ -1580,20 +1580,25 @@ struct DashboardCardBackground: View {
         #endif
     }
 
+    @ViewBuilder
     private func materialGlassSurface(
         shape: RoundedRectangle,
         refined: Bool
     ) -> some View {
-        let material: Material = refined ? .ultraThin : .regular
-        return shape
-            .fill(material)
-            .overlay { interactionTint(shape: shape) }
-            .overlay { border(shape: shape, refined: refined) }
-            .shadow(
-                color: Color.black.opacity(refined ? 0.08 : 0.13),
-                radius: refined ? 7 : 11,
-                y: refined ? 3 : 5
-            )
+        if refined {
+            // Keep Clear transparent on older SDKs too. An ultra-thin material
+            // still blurs whatever is behind the surface, making this mode look frosted.
+            shape
+                .fill(.clear)
+                .overlay { refinedTint(shape: shape) }
+                .overlay { border(shape: shape, refined: true) }
+        } else {
+            shape
+                .fill(.regularMaterial)
+                .overlay { interactionTint(shape: shape) }
+                .overlay { border(shape: shape, refined: false) }
+                .shadow(color: Color.black.opacity(0.13), radius: 11, y: 5)
+        }
     }
 
     #if compiler(>=6.2)
@@ -1610,18 +1615,25 @@ struct DashboardCardBackground: View {
                     : .regular.tint(Color.accentColor.opacity(0.08)),
                 in: shape
             )
-            .overlay { interactionTint(shape: shape) }
+            .overlay {
+                if refined {
+                    refinedTint(shape: shape)
+                } else {
+                    interactionTint(shape: shape)
+                }
+            }
             .overlay { border(shape: shape, refined: refined) }
-            .shadow(
-                color: Color.black.opacity(refined ? 0.06 : 0.12),
-                radius: refined ? 6 : 10,
-                y: refined ? 2 : 4
-            )
+            .shadow(color: Color.black.opacity(refined ? 0.025 : 0.12), radius: refined ? 3 : 10, y: refined ? 1 : 4)
     }
     #endif
 
     private func interactionTint(shape: RoundedRectangle) -> some View {
         shape.fill(Color.primary.opacity(fillOpacity))
+    }
+
+    private func refinedTint(shape: RoundedRectangle) -> some View {
+        // The opacity control remains effective in Clear mode without adding blur.
+        shape.fill(Color.primary.opacity(fillOpacity * 0.15))
     }
 
     private func border(shape: RoundedRectangle, refined: Bool) -> some View {
