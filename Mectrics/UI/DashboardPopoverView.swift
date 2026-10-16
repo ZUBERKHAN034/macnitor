@@ -44,50 +44,31 @@ struct DashboardPopoverView: View {
     var body: some View {
         // One container for both states, so moving between them does not count as
         // the popover appearing again.
-        glassContainer {
-            VStack(alignment: .leading, spacing: 0) {
-                if let selectedModule {
-                    detail(for: selectedModule)
-                        .transition(Self.drillIn)
-                } else {
-                    overview
-                        .transition(Self.drillOut)
-                }
-            }
-            .frame(width: Self.width)
-            .background {
-                DashboardCardBackground(
-                    fillOpacity: model.dashboardBackgroundOpacity,
-                    appearance: model.dashboardAppearance,
-                    cornerRadius: ExperienceRadius.panel
-                )
-            }
-            // The grid and a detail are two depths of one place, so they slide the way a
-            // push and a pop do rather than being swapped out from under the pointer. The
-            // popover's own height follows: AppKit animates a content-size change while
-            // `animates` is on, which it is unless the system asks for less motion.
-            .clipped()
-            .onAppear {
-                systemInfo = DashboardSystemInfo.read()
+        VStack(alignment: .leading, spacing: 0) {
+            if let selectedModule {
+                detail(for: selectedModule)
+                    .transition(Self.drillIn)
+            } else {
+                overview
+                    .transition(Self.drillOut)
             }
         }
-    }
-
-    @ViewBuilder
-    private func glassContainer<Content: View>(
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        #if compiler(>=6.2)
-        if #available(macOS 26.0, *), model.dashboardAppearance == .liquidGlass {
-            GlassEffectContainer(spacing: 0) {
-                content()
-            }
-        } else {
-            content()
+        .frame(width: Self.width)
+        .background {
+            DashboardCardBackground(
+                fillOpacity: model.dashboardBackgroundOpacity,
+                appearance: model.dashboardAppearance,
+                cornerRadius: ExperienceRadius.panel
+            )
         }
-        #else
-        content()
-        #endif
+        // The grid and a detail are two depths of one place, so they slide the way a
+        // push and a pop do rather than being swapped out from under the pointer. The
+        // popover's own height follows: AppKit animates a content-size change while
+        // `animates` is on, which it is unless the system asks for less motion.
+        .clipped()
+        .onAppear {
+            systemInfo = DashboardSystemInfo.read()
+        }
     }
 
     /// Pushes in from the trailing edge and leaves the same way, so the gesture reads
