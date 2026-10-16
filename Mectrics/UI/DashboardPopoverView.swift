@@ -133,9 +133,10 @@ struct DashboardPopoverView: View {
         case .emptyHint:
             // The dashboard's modules are chosen in the Menu Bar pane, whichever pane
             // Settings last showed.
-            DashboardEmptyHintCard(appearance: model.dashboardAppearance) {
-                model.onOpenMenuBarSettings?()
-            }
+            DashboardEmptyHintCard(
+                onOpenSettings: { model.onOpenMenuBarSettings?() },
+                appearance: model.dashboardAppearance
+            )
         }
     }
 
@@ -1537,22 +1538,44 @@ private struct DashboardCardBackground: View {
                 .fill(Color(nsColor: .controlBackgroundColor))
                 .overlay { interactionTint(shape: shape, refined: refined) }
                 .overlay { border(shape: shape, refined: refined) }
-        } else if #available(macOS 26.0, *) {
-            nativeGlassSurface(shape: shape, refined: refined)
         } else {
-            let material: Material = refined ? .regular : .ultraThin
-            shape
-                .fill(material)
-                .overlay { interactionTint(shape: shape, refined: refined) }
-                .overlay { border(shape: shape, refined: refined) }
-                .shadow(
-                    color: Color.black.opacity(refined ? 0.08 : 0.13),
-                    radius: refined ? 7 : 11,
-                    y: refined ? 3 : 5
-                )
+            supportedGlassSurface(shape: shape, refined: refined)
         }
     }
 
+    @ViewBuilder
+    private func supportedGlassSurface(
+        shape: RoundedRectangle,
+        refined: Bool
+    ) -> some View {
+        #if compiler(>=6.2)
+        if #available(macOS 26.0, *) {
+            nativeGlassSurface(shape: shape, refined: refined)
+        } else {
+            materialGlassSurface(shape: shape, refined: refined)
+        }
+        #else
+        materialGlassSurface(shape: shape, refined: refined)
+        #endif
+    }
+
+    private func materialGlassSurface(
+        shape: RoundedRectangle,
+        refined: Bool
+    ) -> some View {
+        let material: Material = refined ? .regular : .ultraThin
+        return shape
+            .fill(material)
+            .overlay { interactionTint(shape: shape, refined: refined) }
+            .overlay { border(shape: shape, refined: refined) }
+            .shadow(
+                color: Color.black.opacity(refined ? 0.08 : 0.13),
+                radius: refined ? 7 : 11,
+                y: refined ? 3 : 5
+            )
+    }
+
+    #if compiler(>=6.2)
     @available(macOS 26.0, *)
     private func nativeGlassSurface(
         shape: RoundedRectangle,
@@ -1574,6 +1597,7 @@ private struct DashboardCardBackground: View {
                 y: refined ? 2 : 4
             )
     }
+    #endif
 
     private func interactionTint(shape: RoundedRectangle, refined: Bool) -> some View {
         shape.fill(Color.primary.opacity(fillOpacity * (refined ? 0.22 : 0.34)))
