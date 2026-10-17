@@ -45,11 +45,14 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         }
     }
 
-    /// The content the popover shows, kept until the popover has finished closing so
-    /// a click on the same item during the close animation still reads as a toggle.
+    /// The content currently shown in the shared popover.
     private var popoverKind: PopoverKind?
     /// True from the moment a close begins until something is shown again.
     private var isPopoverClosing = false
+    /// A rapid menu-bar click can arrive while AppKit is animating a close. Retain
+    /// only the latest requested presentation and show it after `popoverDidClose`,
+    /// so an old close callback can never clear the content of a newer presentation.
+    private var pendingPresentation: (@MainActor () -> Void)?
     /// Exactly the modules reported visible via `onDetailVisibilityChanged`, so the
     /// same set is reported hidden later — even if the dashboard's modules changed
     /// while it was open.
@@ -84,6 +87,7 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
     /// Rebuilds the menu bar items from scratch based on the menu bar style and the
     /// enabled modules.
     func rebuild() {
+        pendingPresentation = nil
         // Every item is about to be removed, and with it whatever button the open
         // popover is anchored to. Close it first — at once, not animated out from an
         // anchor that no longer exists — so what it reported visible is reported
@@ -280,6 +284,14 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         visibleModules: Set<MetricID>,
         from button: NSStatusBarButton
     ) {
+        guard !isPopoverClosing else {
+            pendingPresentation = { [weak self, weak button] in
+                guard let self, let button else { return }
+                self.show(content, as: kind, visibleModules: visibleModules, from: button)
+            }
+            return
+        }
+
         // An unset NSPopover defaults to Vibrant Light, which can put a frosted
         // layer behind the Dashboard regardless of its selected SwiftUI appearance.
         synchronizePopoverAppearance()
@@ -342,11 +354,9 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         popover.contentViewController = nil
     }
 
-    // AppKit sends `willClose` the moment a close begins and `didClose` after the
-    // animation. A click that shows new content during that animation re-opens the
-    // popover once it finishes, so the late `didClose` then belongs to the content
-    // that is gone, not the content now on screen. Visibility therefore ends in
-    // `willClose`, and `didClose` forgets the content only if nothing was shown since.
+    // AppKit sends `willClose` at the beginning of the dismissal and `didClose` after
+    // its animation. New presentations are queued between these callbacks, so the old
+    // callback pair always finishes before the shared popover receives new content.
 
     /// AppKit's own closes (transient dismissal, resigning active) begin here.
     func popoverWillClose(_ notification: Notification) {
@@ -358,5 +368,12 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         guard isPopoverClosing else { return }
         popoverKind = nil
         releasePopoverContent()
+        isPopoverClosing = false
+
+        let pendingPresentation = pendingPresentation
+        self.pendingPresentation = nil
+        if let pendingPresentation {
+            Task { @MainActor in pendingPresentation() }
+        }
     }
 }
