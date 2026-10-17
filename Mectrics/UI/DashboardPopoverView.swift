@@ -321,7 +321,7 @@ private struct DashboardCardReordering: ViewModifier {
                 } isTargeted: { isTargeted = $0 }
                 .overlay {
                     RoundedRectangle(cornerRadius: ExperienceRadius.standard)
-                        .stroke(.accentColor.opacity(0.8), lineWidth: 2)
+                        .stroke(Color.accentColor.opacity(0.8), lineWidth: 2)
                         .opacity(isTargeted ? 1 : 0)
                         .allowsHitTesting(false)
                 }
