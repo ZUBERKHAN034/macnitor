@@ -280,6 +280,15 @@ final class AppModel {
         }
     }
 
+    /// Persistent visual order for Dashboard cards, independent of menu bar item order.
+    /// Unknown or currently unavailable identifiers are ignored and newly enabled cards
+    /// are appended in the existing default module order.
+    var dashboardCardOrder: [String] {
+        didSet {
+            defaults.set(dashboardCardOrder, forKey: Self.dashboardCardOrderKey)
+        }
+    }
+
     /// Whether Mectrics looks for a new version on its own.
     ///
     /// Off until the user is asked, because it is the only thing in the app that reaches
@@ -457,7 +466,48 @@ final class AppModel {
 
     /// The dashboard's modules in card order (the menu bar's module order).
     var orderedDashboardModules: [MetricID] {
-        availableModules.filter { groupedModules.contains($0) }
+        orderedDashboardCards.compactMap { card in
+            guard case .module(let id) = card else { return nil }
+            return id
+        }
+    }
+
+    var orderedDashboardCards: [DashboardCard] {
+        orderedCards(
+            for: availableModules.filter { groupedModules.contains($0) },
+            includesDevice: showsDeviceCard
+        )
+    }
+
+    func orderedCards(for modules: [MetricID], includesDevice: Bool) -> [DashboardCard] {
+        let eligible = modules.map { DashboardCard.module($0) }
+            + (includesDevice ? [.device] : [])
+        let byIdentifier = Dictionary(uniqueKeysWithValues: eligible.map { ($0.layoutIdentifier, $0) })
+        let saved = dashboardCardOrder.compactMap { byIdentifier[$0] }
+        let savedIDs = Set(saved.map(\.layoutIdentifier))
+        return saved + eligible.filter { !savedIDs.contains($0.layoutIdentifier) }
+    }
+
+    func moveDashboardCard(_ identifier: String, to targetIdentifier: String) {
+        var cards = orderedDashboardCards.map(\.layoutIdentifier)
+        guard let sourceIndex = cards.firstIndex(of: identifier),
+              let targetIndex = cards.firstIndex(of: targetIdentifier),
+              sourceIndex != targetIndex else { return }
+        let moved = cards.remove(at: sourceIndex)
+        cards.insert(moved, at: targetIndex)
+        dashboardCardOrder = cards
+    }
+
+    func moveDashboardCardToEnd(_ identifier: String) {
+        var cards = orderedDashboardCards.map(\.layoutIdentifier)
+        guard let index = cards.firstIndex(of: identifier), index < cards.count - 1 else { return }
+        let moved = cards.remove(at: index)
+        cards.append(moved)
+        dashboardCardOrder = cards
+    }
+
+    func resetDashboardCardOrder() {
+        dashboardCardOrder = []
     }
 
     /// Component choices worth offering for a module. Battery health and cycle count
@@ -634,6 +684,7 @@ final class AppModel {
     private static let legacyCompactHealthEnabledKey = "compactHealthEnabled"
     private static let groupedModulesKey = "groupedModules"
     private static let showsDeviceCardKey = "showsDeviceCard"
+    private static let dashboardCardOrderKey = "dashboardCardOrder"
     private static let adaptMonitoringKey = "adaptMonitoringToEnergyState"
     private static let answeredUpdateChecksKey = "hasAnsweredAutomaticUpdateChecks"
     private static let alertsKey = AlertConfigurationStorage.thresholdRulesKey
@@ -707,6 +758,7 @@ final class AppModel {
         // Mac even before a module is grouped into it.
         self.showsDeviceCard =
             defaults.object(forKey: Self.showsDeviceCardKey) as? Bool ?? true
+        self.dashboardCardOrder = defaults.stringArray(forKey: Self.dashboardCardOrderKey) ?? []
         let groupable = available.filter { $0 != .sensors }
         self.groupedModules = MenuBarPlacement.groupedModules(
             stored: defaults.array(forKey: Self.groupedModulesKey) as? [String],

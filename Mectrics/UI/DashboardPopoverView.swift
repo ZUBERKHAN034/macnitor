@@ -15,6 +15,8 @@ struct DashboardPopoverView: View {
     /// case every watched module is a card — a hidden logo never leaves the Dashboard
     /// empty.
     let showsAllWatchedModules: Bool
+    /// Settings embeds this same live card grid as its visual layout editor.
+    var isSettingsPreview = false
     /// The module whose detail replaces the grid; nil shows the grid.
     @State private var selectedModule: MetricID? = nil
     /// Facts no sample carries, read once when the popover appears.
@@ -25,6 +27,10 @@ struct DashboardPopoverView: View {
     /// item in `.dashboard` click mode shows every watched module.
     private var cardModules: [MetricID] {
         showsAllWatchedModules ? model.orderedEnabledModules : model.orderedDashboardModules
+    }
+
+    private var cards: [DashboardCard] {
+        model.orderedCards(for: cardModules, includesDevice: model.showsDeviceCard)
     }
 
     /// Outer width, padding included. Kept close to a native menu bar popover: the
@@ -97,9 +103,15 @@ struct DashboardPopoverView: View {
 
     private var overview: some View {
         VStack(alignment: .leading, spacing: Self.padding) {
-            DashboardHealthBanner(model: model, cards: cardModules) { select($0) }
+            if !isSettingsPreview {
+                DashboardHealthBanner(model: model, cards: cardModules) { select($0) }
+            }
             cardGrid
-            actionFooter
+            if isSettingsPreview {
+                previewActionFooter
+            } else {
+                actionFooter
+            }
         }
         .padding(Self.padding)
     }
@@ -110,16 +122,16 @@ struct DashboardPopoverView: View {
             verticalSpacing: Self.cardSpacing
         ) {
             ForEach(
-                DashboardLayout.rows(
-                    for: cardModules,
-                    includesDevice: model.showsDeviceCard
-                ),
+                DashboardLayout.rows(for: cards),
                 id: \.self
             ) { row in
                 // A row with one card leaves the second cell empty.
                 GridRow {
                     ForEach(row, id: \.self) { card in
                         cell(for: card)
+                    }
+                    if isSettingsPreview, row.count == 1 {
+                        endDropTarget
                     }
                 }
             }
@@ -128,24 +140,48 @@ struct DashboardPopoverView: View {
 
     @ViewBuilder
     private func cell(for card: DashboardCard) -> some View {
-        switch card {
-        case .module(let id):
-            DashboardModuleCard(
-                model: model,
-                id: id,
-                systemInfo: systemInfo
-            ) { select($0) }
-        case .device:
-            DashboardDeviceCard(model: model)
-        case .emptyHint:
-            // The dashboard's modules are chosen in the Menu Bar pane, whichever pane
-            // Settings last showed.
-            DashboardEmptyHintCard(
-                onOpenSettings: { model.onOpenMenuBarSettings?() },
-                appearance: model.dashboardAppearance,
-                backgroundOpacity: model.dashboardBackgroundOpacity
-            )
+        Group {
+            switch card {
+            case .module(let id):
+                DashboardModuleCard(
+                    model: model,
+                    id: id,
+                    systemInfo: systemInfo
+                ) { select($0) }
+            case .device:
+                DashboardDeviceCard(model: model)
+            case .emptyHint:
+                DashboardEmptyHintCard(
+                    onOpenSettings: { model.onOpenMenuBarSettings?() },
+                    appearance: model.dashboardAppearance,
+                    backgroundOpacity: model.dashboardBackgroundOpacity
+                )
+            }
         }
+        .modifier(DashboardCardReordering(
+            card: card,
+            model: model,
+            enabled: isSettingsPreview
+        ))
+    }
+
+    private var endDropTarget: some View {
+        RoundedRectangle(cornerRadius: ExperienceRadius.standard)
+            .strokeBorder(
+                Color.secondary.opacity(0.35),
+                style: StrokeStyle(lineWidth: 1, dash: [4, 3])
+            )
+            .frame(width: Self.cardWidth, height: Self.cardHeight)
+            .overlay {
+                Image(systemName: "arrow.down.to.line")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .dropDestination(for: String.self) { identifiers, _ in
+                guard let identifier = identifiers.first else { return false }
+                model.moveDashboardCardToEnd(identifier)
+                return true
+            }
     }
 
     /// A module's full popover in place of the grid, under a row that leads back.
@@ -192,6 +228,23 @@ struct DashboardPopoverView: View {
             )
         }
     }
+
+    /// The live Dashboard footer's proportions without exposing app actions inside
+    /// Settings. This keeps the preview's overall height and alignment faithful.
+    private var previewActionFooter: some View {
+        VStack(alignment: .leading, spacing: ExperienceSpacing.small) {
+            Divider()
+            HStack {
+                Spacer(minLength: 0)
+                Image(systemName: "ellipsis")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 20, height: 20)
+                    .accessibilityHidden(true)
+            }
+            .padding(.top, ExperienceSpacing.small)
+        }
+    }
 }
 
 // MARK: - Layout and formatting
@@ -212,6 +265,14 @@ enum DashboardCard: Hashable {
     case device
     /// Stands in for the modules when none is chosen, so the grid says why it is empty.
     case emptyHint
+
+    var layoutIdentifier: String {
+        switch self {
+        case .module(let id): id.rawValue
+        case .device: "device"
+        case .emptyHint: "empty"
+        }
+    }
 }
 
 enum DashboardLayout {
@@ -230,9 +291,42 @@ enum DashboardLayout {
         for modules: [MetricID],
         includesDevice: Bool = true
     ) -> [[DashboardCard]] {
-        let cards = cards(for: modules, includesDevice: includesDevice)
+        rows(for: cards(for: modules, includesDevice: includesDevice))
+    }
+
+    static func rows(for cards: [DashboardCard]) -> [[DashboardCard]] {
+        let cards = cards.isEmpty ? [.emptyHint] : cards
         return stride(from: 0, to: cards.count, by: 2).map {
             Array(cards[$0..<min($0 + 2, cards.count)])
+        }
+    }
+}
+
+private struct DashboardCardReordering: ViewModifier {
+    let card: DashboardCard
+    let model: AppModel
+    let enabled: Bool
+    @State private var isTargeted = false
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if enabled, card != .emptyHint {
+            content
+                .draggable(card.layoutIdentifier)
+                .dropDestination(for: String.self) { identifiers, _ in
+                    guard let source = identifiers.first,
+                          source != card.layoutIdentifier else { return false }
+                    model.moveDashboardCard(source, to: card.layoutIdentifier)
+                    return true
+                } isTargeted: { isTargeted = $0 }
+                .overlay {
+                    RoundedRectangle(cornerRadius: ExperienceRadius.standard)
+                        .stroke(.accentColor.opacity(0.8), lineWidth: 2)
+                        .opacity(isTargeted ? 1 : 0)
+                        .allowsHitTesting(false)
+                }
+        } else {
+            content
         }
     }
 }

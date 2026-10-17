@@ -20,6 +20,7 @@ import MetricsKit
 /// a changing value inside a leaf.
 struct MenuBarBuilderView: View {
     @Bindable var model: AppModel
+    @State private var confirmsDashboardReset = false
 
     var body: some View {
         Form {
@@ -29,6 +30,45 @@ struct MenuBarBuilderView: View {
                 Text("Preview")
             } footer: {
                 Text("Hold Command and drag an item in the menu bar to reorder it.")
+            }
+
+            Section {
+                VStack(alignment: .leading, spacing: ExperienceSpacing.small) {
+                    HStack {
+                        Text("Drag cards to arrange the Dashboard")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Reset Layout") {
+                            confirmsDashboardReset = true
+                        }
+                        .controlSize(.small)
+                        .disabled(model.dashboardCardOrder.isEmpty)
+                    }
+                    DashboardPopoverView(
+                        model: model,
+                        showsAllWatchedModules: false,
+                        isSettingsPreview: true
+                    )
+                    .frame(maxWidth: .infinity)
+                    .accessibilityLabel("Dashboard layout preview. Drag cards to reorder them.")
+                }
+                .confirmationDialog(
+                    "Reset Dashboard layout?",
+                    isPresented: $confirmsDashboardReset,
+                    titleVisibility: .visible
+                ) {
+                    Button("Reset Layout", role: .destructive) {
+                        model.resetDashboardCardOrder()
+                    }
+                    Button("Cancel", role: .cancel) { }
+                } message: {
+                    Text("Cards return to their default order.")
+                }
+            } header: {
+                Text("Dashboard Preview")
+            } footer: {
+                Text("Drag any card onto another position. The Dashboard uses this order wherever it opens.")
             }
 
             Section {
