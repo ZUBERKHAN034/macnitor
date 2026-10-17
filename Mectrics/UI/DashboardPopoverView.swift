@@ -325,8 +325,35 @@ private struct DashboardCardReordering: ViewModifier {
                         .opacity(isTargeted ? 1 : 0)
                         .allowsHitTesting(false)
                 }
+                .overlay(alignment: .topTrailing) {
+                    Button(action: removeCard) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 17, weight: .semibold))
+                            .symbolRenderingMode(.palette)
+                            .foregroundStyle(.white, .red)
+                            .background(.regularMaterial, in: Circle())
+                            .frame(width: 24, height: 24)
+                            .contentShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .padding(5)
+                    .help("Remove card from Dashboard")
+                    .accessibilityLabel("Remove card from Dashboard")
+                }
         } else {
             content
+        }
+    }
+
+    private func removeCard() {
+        switch card {
+        case .module(let id):
+            // Keep a module's existing menu bar items if it was shown in both places.
+            model.setPlacement(model.placement(of: id) == .both ? .ownItems : .off, for: id)
+        case .device:
+            model.showsDeviceCard = false
+        case .emptyHint:
+            break
         }
     }
 }
