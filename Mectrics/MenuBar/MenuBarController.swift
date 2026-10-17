@@ -73,6 +73,7 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
     }
 
     @objc private func systemColorsDidChange() {
+        synchronizePopoverAppearance()
         for statusItem in items.values { statusItem.invalidateCachedRender() }
         // The logo's badge tint is a dynamic system colour too, and it keeps its
         // identity when the user picks a new accent.
@@ -279,6 +280,10 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         visibleModules: Set<MetricID>,
         from button: NSStatusBarButton
     ) {
+        // An unset NSPopover defaults to Vibrant Light, which can put a frosted
+        // layer behind the Dashboard regardless of its selected SwiftUI appearance.
+        synchronizePopoverAppearance()
+
         // Showing over an open popover swaps its content without closing it, so the
         // content being replaced gets no close callback; its visibility ends here.
         endPopoverVisibility()
@@ -322,6 +327,10 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         if !modules.isEmpty {
             onDetailVisibilityChanged?(modules, false)
         }
+    }
+
+    private func synchronizePopoverAppearance() {
+        popover.appearance = NSApp.effectiveAppearance
     }
 
     /// Drops the closed popover's SwiftUI content. A closed popover's window is only
