@@ -1400,9 +1400,14 @@ private struct DashboardNetworkFooter: View {
                 .accessibilityHidden(true)
 
             HStack(spacing: ExperienceSpacing.xSmall) {
-                Image(systemName: systemInfo.interfaceSymbol)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.secondary)
+                Circle()
+                    .fill(Color.primary.opacity(DashboardStyle.chipFillOpacity))
+                    .frame(width: 22, height: 22)
+                    .overlay {
+                        Image(systemName: systemInfo.interfaceSymbol)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(.secondary)
+                    }
                     .accessibilityHidden(true)
                 Text(systemInfo.localAddress ?? DashboardFormat.missingValue)
                     .font(.system(size: 10.5, weight: .medium))
