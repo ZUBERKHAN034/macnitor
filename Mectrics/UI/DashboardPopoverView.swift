@@ -1019,42 +1019,19 @@ private struct DashboardBatteryIcon: View {
     let accent: Color
 
     var body: some View {
-        VStack(spacing: 2) {
+        VStack(spacing: 1) {
             RoundedRectangle(cornerRadius: 2, style: .continuous)
-                .stroke(Color.primary.opacity(0.72), lineWidth: 1.7)
-                .frame(width: 14, height: 7)
+                .fill(Color.primary.opacity(0.16))
+                .frame(width: 14, height: 5)
             GeometryReader { geometry in
                 ZStack(alignment: .bottom) {
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(Color.primary.opacity(0.035))
-                        .padding(2)
-                    if fraction > 0 {
-                        RoundedRectangle(cornerRadius: 5, style: .continuous)
-                            .fill(
-                                LinearGradient(
-                                    colors: [accent, accent.opacity(0.76)],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                            )
-                            .frame(
-                                width: max(0, geometry.size.width - 6),
-                                height: max(
-                                    0,
-                                    (geometry.size.height - 6)
-                                        * min(max(fraction, 0), 1)
-                                )
-                            )
-                            .padding(.horizontal, 3)
-                            .padding(.bottom, 3)
-                    }
+                        .fill(Color.primary.opacity(0.16))
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .fill(accent)
+                        .frame(height: geometry.size.height * min(max(fraction, 0), 1))
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .stroke(Color.primary.opacity(0.78), lineWidth: 2)
-                        .accessibilityHidden(true)
-                }
                 .overlay {
                     Text(percentage)
                         .font(.system(size: 11, weight: .bold, design: .rounded))
@@ -1065,9 +1042,9 @@ private struct DashboardBatteryIcon: View {
                         .padding(.horizontal, 3)
                 }
             }
-            .frame(width: 38, height: 56)
+            .frame(width: 42, height: 54)
         }
-        .frame(width: 46, height: 64)
+        .frame(width: 46, height: 60)
         .accessibilityHidden(true)
     }
 }
