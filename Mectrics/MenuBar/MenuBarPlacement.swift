@@ -148,4 +148,29 @@ extension MenuBarPlacement {
     ) -> Bool {
         hasExistingMenuBar ? hadCompactHealthItem : true
     }
+
+    /// Whether the Dashboard icon may be hidden, given what the menu bar would keep.
+    ///
+    /// It may not be hidden while any alert rule routes to health — the icon is the one
+    /// place a rule alerts — or while nothing else would remain to click. Hiding is a
+    /// choice a person makes; an empty menu bar with no way back is not a choice it is
+    /// fair to offer.
+    static func canHideDashboardIcon(
+        healthRoutedMetricIDs: Set<MetricID>,
+        orderedOwnItems: [(module: MetricID, component: MenuBarComponent)]
+    ) -> Bool {
+        healthRoutedMetricIDs.isEmpty && !orderedOwnItems.isEmpty
+    }
+
+    /// Whether the Dashboard icon is in the menu bar, from the three things that decide
+    /// it: the master visibility switch, the kept-when-empty flag, and whether anything
+    /// is grouped into it. With the master switch on (its default) this is exactly the
+    /// behavior Mectrics had before the icon could be hidden.
+    static func showsDashboardItem(
+        grouped: Set<MetricID>,
+        keptWhenEmpty: Bool,
+        iconVisible: Bool
+    ) -> Bool {
+        iconVisible && (keptWhenEmpty || !grouped.isEmpty)
+    }
 }

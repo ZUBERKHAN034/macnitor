@@ -6,7 +6,7 @@ import IOKit
 /// `AppleSmartBattery` entry for health/cycle info.
 ///
 /// `value` = charge fraction (0...1). Detail: charging (1/0), timeToEmpty/Full (min),
-/// cycleCount, healthPercent, temperature (°C), amperage/voltage.
+/// cycleCount, healthPercent, temperature (°C), amperage/voltage, and battery power draw.
 /// On desktop Macs (no battery) `isAvailable == false`.
 public final class BatteryProvider: MetricProvider, @unchecked Sendable {
     public let id: MetricID = .battery
@@ -39,6 +39,7 @@ public final class BatteryProvider: MetricProvider, @unchecked Sendable {
 
         var detail: [String: Double] = [
             "charging": isCharging ? 1 : 0,
+            "fullyCharged": (desc["FullyCharged"] as? Bool ?? false) ? 1 : 0,
             "timeToEmpty": Double(timeToEmpty),
             "timeToFull": Double(timeToFull),
             "currentCapacity": Double(current),
@@ -93,11 +94,17 @@ public final class BatteryProvider: MetricProvider, @unchecked Sendable {
         else { return nil }
 
         var out: [String: Double] = [:]
+        if Self.systemChargeLimitIsHolding(service: service) {
+            out["systemChargeLimitReached"] = 1
+        }
         if let cycle = dict["CycleCount"] as? Int { out["cycleCount"] = Double(cycle) }
         // Fallback estimate when IOPS reports -1: minutes to empty (discharging) or
         // to full (charging); 65535 means "no estimate".
         if let remaining = dict["TimeRemaining"] as? Int, remaining > 0, remaining < 65535 {
             out["smartTimeRemaining"] = Double(remaining)
+        }
+        if let fullyCharged = dict["FullyCharged"] as? Bool {
+            out["fullyCharged"] = fullyCharged ? 1 : 0
         }
         if let designCap = dict["DesignCapacity"] as? Int,
            let maxCap = dict["AppleRawMaxCapacity"] as? Int ?? dict["MaxCapacity"] as? Int,
@@ -110,6 +117,26 @@ public final class BatteryProvider: MetricProvider, @unchecked Sendable {
         }
         if let voltage = dict["Voltage"] as? Int { out["voltage"] = Double(voltage) / 1000 }
         if let amperage = dict["Amperage"] as? Int { out["amperage"] = Double(amperage) }
+        if let voltage = out["voltage"], let amperage = out["amperage"] {
+            // AppleSmartBattery reports amperage in mA and voltage in V.
+            out["powerWatts"] = abs(voltage * amperage) / 1000
+        }
         return out
+    }
+
+    /// OpenDente identifies macOS's native charge-limit hold from bit 24 of
+    /// AppleSmartBattery's ChargerData.NotChargingReason value.
+    private static func systemChargeLimitIsHolding(service: io_service_t) -> Bool {
+        guard let chargerData = IORegistryEntryCreateCFProperty(
+            service,
+            "ChargerData" as CFString,
+            kCFAllocatorDefault,
+            0
+        )?.takeRetainedValue() as? [String: Any],
+        let rawReason = chargerData["NotChargingReason"] as? NSNumber
+        else { return false }
+
+        let systemChargeLimitBit = UInt64(1) << 24
+        return (rawReason.uint64Value & systemChargeLimitBit) != 0
     }
 }

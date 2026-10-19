@@ -20,21 +20,101 @@ import MetricsKit
 /// a changing value inside a leaf.
 struct MenuBarBuilderView: View {
     @Bindable var model: AppModel
+    @State private var confirmsDashboardReset = false
 
     var body: some View {
         Form {
             Section {
                 previewStrip
             } header: {
-                Text("Preview")
+                Text("Menubar Preview")
             } footer: {
                 Text("Hold Command and drag an item in the menu bar to reorder it.")
             }
 
             Section {
-                // The Dashboard is one of the things in the menu bar, so it reads
-                // as a row in the same list rather than as a switch somewhere else.
-                DashboardItemRow(model: model)
+                VStack(alignment: .leading, spacing: ExperienceSpacing.small) {
+                    HStack {
+                        Text("Drag cards to arrange the Dashboard")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Reset Layout") {
+                            confirmsDashboardReset = true
+                        }
+                        .controlSize(.small)
+                        .disabled(model.dashboardCardOrder.isEmpty)
+                    }
+                    DashboardPopoverView(
+                        model: model,
+                        showsAllWatchedModules: false,
+                        isSettingsPreview: true
+                    )
+                    .frame(maxWidth: .infinity)
+                    .accessibilityLabel("Dashboard layout preview. Drag cards to reorder them.")
+                }
+                .confirmationDialog(
+                    "Reset Dashboard layout?",
+                    isPresented: $confirmsDashboardReset,
+                    titleVisibility: .visible
+                ) {
+                    Button("Reset Layout", role: .destructive) {
+                        model.resetDashboardCardOrder()
+                    }
+                    Button("Cancel", role: .cancel) { }
+                } message: {
+                    Text("Cards return to their default order.")
+                }
+            } header: {
+                Text("Dashboard Preview")
+            } footer: {
+                Text("Drag any card onto another position. The Dashboard uses this order wherever it opens.")
+            }
+
+            Section {
+                Toggle(
+                    String(
+                        localized: "builder.dashboardIcon.show",
+                        defaultValue: "Show Dashboard icon"
+                    ),
+                    isOn: Binding(
+                        get: { model.dashboardIconVisible },
+                        set: { model.setDashboardIconVisible($0) }
+                    )
+                )
+                if let reason = model.dashboardIconHiddenBlockedReason {
+                    Text(reason)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Picker(
+                    String(
+                        localized: "builder.clickBehavior.label",
+                        defaultValue: "Clicking a menu bar item opens"
+                    ),
+                    selection: $model.moduleClickBehavior
+                ) {
+                    ForEach(ModuleClickBehavior.allCases) { behavior in
+                        Text(behavior.localizedName).tag(behavior)
+                    }
+                }
+            } header: {
+                Text(
+                    String(
+                        localized: "builder.dashboard.section",
+                        defaultValue: "Dashboard"
+                    )
+                )
+            } footer: {
+                Text(
+                    String(
+                        localized: "builder.clickBehavior.footer",
+                        defaultValue: "With the Dashboard chosen, clicking any module item opens the Dashboard; click a card for that module's detail."
+                    )
+                )
+            }
+
+            Section {
                 ForEach(model.availableModules, id: \.self) { id in
                     moduleRow(id)
                 }
@@ -59,6 +139,36 @@ struct MenuBarBuilderView: View {
                     ForEach(AccentChoice.allCases) { choice in
                         Text(choice.localizedName).tag(choice)
                     }
+                }
+                Picker(
+                    String(
+                        localized: "dashboard.appearance.label",
+                        defaultValue: "Dashboard appearance"
+                    ),
+                    selection: $model.dashboardAppearance
+                ) {
+                    ForEach(DashboardAppearance.allCases) { appearance in
+                        Text(appearance.localizedName).tag(appearance)
+                    }
+                }
+                HStack(spacing: ExperienceSpacing.small) {
+                    Text(String(
+                        localized: "dashboard.appearance.opacity",
+                        defaultValue: "Dashboard background opacity"
+                    ))
+                    Slider(
+                        value: $model.dashboardBackgroundOpacity,
+                        in: 0...DashboardAppearance.maximumBackgroundOpacity,
+                        step: 0.01
+                    )
+                    .accessibilityLabel(String(
+                        localized: "dashboard.appearance.opacity",
+                        defaultValue: "Dashboard background opacity"
+                    ))
+                    Text("\(Int((model.dashboardBackgroundOpacity * 100).rounded()))%")
+                        .monospacedDigit()
+                        .frame(width: 38, alignment: .trailing)
+                        .foregroundStyle(.secondary)
                 }
             } header: {
                 Text("Appearance")
@@ -177,147 +287,6 @@ struct MenuBarBuilderView: View {
     }
 }
 
-/// The Dashboard as a row in the modules list.
-///
-/// It is one of the things the menu bar holds, so it reads like the modules beside it:
-/// a name, where it sits, and its contents underneath. What a module shows as component
-/// chips, this shows as the readings grouped into it — added and taken out from right
-/// here, which is where someone looking at this row expects to do it.
-///
-/// It is the one row with no placement control, because it is the one item that cannot
-/// move: its health badge is the only thing in the app that speaks up unasked, and a
-/// menu bar that could be emptied completely would leave no way back into Settings.
-private struct DashboardItemRow: View {
-    @Bindable var model: AppModel
-
-    private var grouped: [MetricID] { model.orderedDashboardModules }
-    private var addable: [MetricID] {
-        model.availableModules.filter { model.placement(of: $0) != .grouped }
-    }
-    /// The Mac's own card is a card like any other, so it is listed and added here too,
-    /// under the name the card itself carries.
-    private var systemInfoTitle: String { DeviceCardName.localized }
-    private var isEmpty: Bool { grouped.isEmpty && !model.showsDeviceCard }
-    private var hasAnythingToAdd: Bool { !addable.isEmpty || !model.showsDeviceCard }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: ExperienceSpacing.small) {
-            LabeledContent {
-                // With cards inside there is nothing to decide — they would have
-                // nowhere to be shown — so the place is stated as text and the pop-up
-                // appears once it is empty (AGENTS.md §4: disclose, never dim).
-                if grouped.isEmpty {
-                    Picker(
-                        String(
-                            localized: "builder.placement.label",
-                            defaultValue: "Placement"
-                        ),
-                        selection: Binding(
-                            get: {
-                                model.dashboardItemEnabled
-                                    ? MenuBarPlacement.ownItems
-                                    : .off
-                            },
-                            set: { model.dashboardItemEnabled = $0 == .ownItems }
-                        )
-                    ) {
-                        Text(MenuBarPlacement.ownItems.localizedName)
-                            .tag(MenuBarPlacement.ownItems)
-                        Text(MenuBarPlacement.off.localizedName)
-                            .tag(MenuBarPlacement.off)
-                    }
-                    .pickerStyle(.menu)
-                    .labelsHidden()
-                    .fixedSize()
-                } else {
-                    Text(MenuBarPlacement.ownItems.localizedName)
-                        .foregroundStyle(.secondary)
-                }
-            } label: {
-                HStack(spacing: ExperienceSpacing.small) {
-                    DashboardItemPreview(model: model)
-                    Text(
-                        String(
-                            localized: "builder.dashboardRow.label",
-                            defaultValue: "Dashboard"
-                        )
-                    )
-                }
-            }
-            contents
-        }
-        .accessibilityElement(children: .contain)
-    }
-
-    @ViewBuilder
-    private var contents: some View {
-        HStack(alignment: .top, spacing: ExperienceSpacing.small) {
-            if isEmpty {
-                Text(
-                    String(
-                        localized: "builder.dashboardRow.empty",
-                        defaultValue: "Nothing grouped yet — it shows the health badge alone."
-                    )
-                )
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            } else {
-                // Chips keep their natural width and wrap onto another line, so a full
-                // Dashboard never squeezes a name into a column of single letters.
-                ChipFlowLayout(spacing: ExperienceSpacing.xSmall) {
-                    ForEach(grouped, id: \.self) { id in
-                        GroupedModuleChip(
-                            title: id.localizedName,
-                            symbol: MetricSymbol.name(for: id)
-                        ) {
-                            model.setPlacement(.off, for: id)
-                        }
-                    }
-                    if model.showsDeviceCard {
-                        GroupedModuleChip(
-                            title: systemInfoTitle,
-                            symbol: "desktopcomputer"
-                        ) {
-                            model.showsDeviceCard = false
-                        }
-                    }
-                }
-                // Ahead of the spacer, so the chips fill the row before it takes any.
-                .layoutPriority(1)
-            }
-            Spacer(minLength: 0)
-            if hasAnythingToAdd {
-                Menu {
-                    ForEach(addable, id: \.self) { id in
-                        Button(id.localizedName) {
-                            model.setPlacement(.grouped, for: id)
-                        }
-                    }
-                    if !model.showsDeviceCard {
-                        Button(systemInfoTitle) { model.showsDeviceCard = true }
-                    }
-                } label: {
-                    Label(
-                        String(
-                            localized: "builder.dashboardRow.add",
-                            defaultValue: "Add a reading"
-                        ),
-                        systemImage: "plus"
-                    )
-                    .labelStyle(.iconOnly)
-                }
-                .menuStyle(.borderlessButton)
-                .menuIndicator(.hidden)
-                .fixedSize()
-                .help(String(
-                    localized: "builder.dashboardRow.add",
-                    defaultValue: "Add a reading"
-                ))
-            }
-        }
-    }
-}
-
 /// The Mac's own card as a row in the modules list.
 ///
 /// It sits with the modules because it is one of the things the Dashboard can hold, and
@@ -352,110 +321,6 @@ private struct DeviceModuleRow: View {
             Label(DeviceCardName.localized, systemImage: "desktopcomputer")
         }
         .accessibilityElement(children: .contain)
-    }
-}
-
-/// One reading inside the Dashboard, with the control that takes it out.
-private struct GroupedModuleChip: View {
-    let title: String
-    let symbol: String
-    let onRemove: () -> Void
-
-    var body: some View {
-        HStack(spacing: ExperienceSpacing.xSmall) {
-            Label(title, systemImage: symbol)
-                .labelStyle(.titleAndIcon)
-                .font(.caption)
-                .lineLimit(1)
-            Button(action: onRemove) {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    // A real target rather than a glyph's own bounds.
-                    .frame(width: 16, height: 16)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(
-                String(
-                    localized: "builder.dashboardRow.remove",
-                    defaultValue: "Remove \(title) from the Dashboard"
-                )
-            )
-        }
-        .padding(.leading, ExperienceSpacing.small)
-        .padding(.trailing, ExperienceSpacing.xSmall)
-        .padding(.vertical, ExperienceSpacing.xSmall)
-        .background(
-            Capsule().fill(.secondary.opacity(ExperienceSurface.subtleFillOpacity))
-        )
-        .fixedSize()
-        .accessibilityElement(children: .contain)
-    }
-}
-
-/// Lays chips out left to right at their ideal size, starting a new line when the next
-/// one would not fit in the width offered.
-private struct ChipFlowLayout: Layout {
-    var spacing: CGFloat
-
-    func sizeThatFits(
-        proposal: ProposedViewSize,
-        subviews: Subviews,
-        cache: inout ()
-    ) -> CGSize {
-        let lines = rows(for: subviews, in: proposal.width ?? .infinity)
-        let width = lines.map(\.width).max() ?? 0
-        let height = lines.map(\.height).reduce(0, +)
-            + spacing * CGFloat(max(lines.count - 1, 0))
-        return CGSize(width: width, height: height)
-    }
-
-    func placeSubviews(
-        in bounds: CGRect,
-        proposal: ProposedViewSize,
-        subviews: Subviews,
-        cache: inout ()
-    ) {
-        var y = bounds.minY
-        for row in rows(for: subviews, in: bounds.width) {
-            var x = bounds.minX
-            for index in row.indices {
-                let size = subviews[index].sizeThatFits(.unspecified)
-                subviews[index].place(
-                    at: CGPoint(x: x, y: y + (row.height - size.height) / 2),
-                    proposal: ProposedViewSize(size)
-                )
-                x += size.width + spacing
-            }
-            y += row.height + spacing
-        }
-    }
-
-    private struct Row {
-        var indices: [Int] = []
-        var width: CGFloat = 0
-        var height: CGFloat = 0
-    }
-
-    private func rows(for subviews: Subviews, in maxWidth: CGFloat) -> [Row] {
-        var rows: [Row] = []
-        var current = Row()
-        for index in subviews.indices {
-            let size = subviews[index].sizeThatFits(.unspecified)
-            if !current.indices.isEmpty,
-               current.width + spacing + size.width > maxWidth {
-                rows.append(current)
-                current = Row()
-            }
-            current.width = current.indices.isEmpty
-                ? size.width
-                : current.width + spacing + size.width
-            current.height = max(current.height, size.height)
-            current.indices.append(index)
-        }
-        if !current.indices.isEmpty { rows.append(current) }
-        return rows
     }
 }
 

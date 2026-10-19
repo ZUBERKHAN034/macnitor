@@ -113,7 +113,10 @@ enum MenuBarComponent: String, CaseIterable, Identifiable {
         case .temperature:
             return "125°"
         case .netActivity, .netActivityGraph, .netDown, .netUp:
-            return "↓999M"
+            // `MetricFormat.bytesPerSecond` can use K, M, G, or T. M is the
+            // widest unit letter in the menu-bar font; reserving T made a real
+            // value such as "↓1014.0 KB/s" trip MetricStatusItem's width check.
+            return "↓9999.9 MB/s"
         case .value, .valueGraph:
             switch module {
             // The charging bolt is part of the value, so it belongs in the template.
@@ -183,9 +186,9 @@ extension MenuBarText {
         case .netActivityGraph:
             return .textGraph(string(for: .network, sample: sample))
         case .netDown:
-            return .text("↓\(MetricFormat.menuRate(sample.detail["down"] ?? 0))")
+            return .text("↓\(DashboardFormat.rate(sample.detail["down"]))")
         case .netUp:
-            return .text("↑\(MetricFormat.menuRate(sample.detail["up"] ?? 0))")
+            return .text("↑\(DashboardFormat.rate(sample.detail["up"]))")
         }
     }
 }

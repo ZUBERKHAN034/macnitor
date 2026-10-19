@@ -151,7 +151,7 @@ final class MetricStatusItem: NSObject {
     private static let gap: CGFloat = 4
 
     /// Leading space taken by the embedded module icon (glyph + gap).
-    private static let iconSlot: CGFloat = 16
+    private static let iconSlot: CGFloat = 12
 
     private static let batteryWidth: CGFloat = 25
     /// Wide enough for a three-digit charge inside the body at `batteryLabelFont`.
@@ -176,8 +176,7 @@ final class MetricStatusItem: NSObject {
         if let visual {
             contentWidth = width(
                 for: visual,
-                reservedTextWidth: reservedTextWidth,
-                attributes: attrs
+                reservedTextWidth: reservedTextWidth
             )
         } else {
             contentWidth = fallbackWidth(
@@ -197,9 +196,9 @@ final class MetricStatusItem: NSObject {
                 switch visual {
                 case .text(let text):
                     drawTextBlock(text, attrs: attrs,
-                                  slot: offset + textSlot(text, reservedTextWidth, attrs))
+                                  slot: offset + textSlot(reservedTextWidth))
                 case .textGraph(let text):
-                    let slot = offset + textSlot(text, reservedTextWidth, attrs)
+                    let slot = offset + textSlot(reservedTextWidth)
                     drawTextBlock(text, attrs: attrs, slot: slot)
                     drawSparkline(samples, in: NSRect(x: slot + gap, y: 3,
                                                       width: sparkWidth, height: height - 6),
@@ -239,14 +238,13 @@ final class MetricStatusItem: NSObject {
 
     private static func width(
         for visual: MenuBarVisual,
-        reservedTextWidth: CGFloat,
-        attributes: [NSAttributedString.Key: Any]
+        reservedTextWidth: CGFloat
     ) -> CGFloat {
         switch visual {
         case .text(let text):
-            return textSlot(text, reservedTextWidth, attributes)
+            return textSlot(reservedTextWidth)
         case .textGraph(let text):
-            return textSlot(text, reservedTextWidth, attributes) + gap + sparkWidth
+            return textSlot(reservedTextWidth) + gap + sparkWidth
         case .coreBars(let values):
             return CGFloat(max(values.count, 2)) * 4
         case .battery(_, _, let showsPercent):
@@ -336,15 +334,10 @@ final class MetricStatusItem: NSObject {
 
     /// Text remains inside the invariant slot. Templates are deliberately sized for
     /// the widest output of each formatter.
-    private static func textSlot(_ text: String, _ reserved: CGFloat,
-                                 _ attrs: [NSAttributedString.Key: Any]) -> CGFloat {
-        let widest = text.components(separatedBy: "\n")
-            .map { ceil(($0 as NSString).size(withAttributes: attrs).width) }
-            .max() ?? 0
-        assert(
-            widest <= reserved + 0.5,
-            "Menu bar template is too narrow for \(text)"
-        )
+    private static func textSlot(_ reserved: CGFloat) -> CGFloat {
+        // Templates reserve a fixed item width, but a transient hardware reading
+        // must never crash the app if it exceeds that slot. drawRightAligned scales
+        // only an oversized line to fit the existing slot.
         return reserved
     }
 
@@ -364,9 +357,19 @@ final class MetricStatusItem: NSObject {
     /// Draws `text` right-aligned so its right edge sits at `slot`.
     private static func drawRightAligned(_ text: String, attrs: [NSAttributedString.Key: Any],
                                          slot: CGFloat, baselineY: CGFloat) {
-        let size = (text as NSString).size(withAttributes: attrs)
+        var drawingAttributes = attrs
+        var size = (text as NSString).size(withAttributes: drawingAttributes)
+        if size.width > slot, let font = drawingAttributes[.font] as? NSFont {
+            let fitScale = max(0.01, (slot - 0.5) / size.width)
+            let scaledFont = font.withSize(font.pointSize * fitScale)
+            drawingAttributes[.font] = scaledFont
+            size = (text as NSString).size(withAttributes: drawingAttributes)
+        }
         let x = slot - ceil(size.width)
-        (text as NSString).draw(at: NSPoint(x: x, y: baselineY), withAttributes: attrs)
+        (text as NSString).draw(
+            at: NSPoint(x: x, y: baselineY),
+            withAttributes: drawingAttributes
+        )
     }
 
     private static func drawSparkline(_ values: [Double], in rect: NSRect,

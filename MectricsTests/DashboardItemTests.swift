@@ -178,6 +178,79 @@ final class DashboardItemTests: XCTestCase {
         )
     }
 
+    // MARK: - Hiding the Dashboard icon
+
+    /// Hiding the icon removes it from the item list and leaves the module items —
+    /// the icon leads only while it is shown.
+    func testHidingTheDashboardIconLeavesOnlyTheModuleItems() {
+        let items: [(module: MetricID, component: MenuBarComponent)] = [
+            (.cpu, .value),
+            (.network, .netActivity)
+        ]
+        XCTAssertEqual(
+            MenuBarPlacement.itemKeys(orderedItems: items, showsDashboardItem: false),
+            ["cpu|value", "network|netActivity"]
+        )
+    }
+
+    /// The icon may only be hidden while it has nothing to say and something remains:
+    /// never while a health-routed rule is on, and never while the menu bar would be
+    /// left empty.
+    func testTheDashboardIconCanOnlyBeHiddenSafely() {
+        let ownItems: [(module: MetricID, component: MenuBarComponent)] = [(.cpu, .value)]
+        XCTAssertFalse(
+            MenuBarPlacement.canHideDashboardIcon(
+                healthRoutedMetricIDs: [.cpu],
+                orderedOwnItems: ownItems
+            ),
+            "A health-routed rule keeps the icon: it is where that rule alerts"
+        )
+        XCTAssertFalse(
+            MenuBarPlacement.canHideDashboardIcon(
+                healthRoutedMetricIDs: [],
+                orderedOwnItems: []
+            ),
+            "Hiding the last item would strand the user"
+        )
+        XCTAssertTrue(
+            MenuBarPlacement.canHideDashboardIcon(
+                healthRoutedMetricIDs: [],
+                orderedOwnItems: ownItems
+            ),
+            "No rule and an item to click: the icon may go"
+        )
+    }
+
+    /// The defaults reproduce today's behavior exactly: the master switch starts on, so
+    /// the icon still shows when kept while empty or when a card is grouped, and hiding
+    /// it is the only new state.
+    func testTheDefaultsKeepTheIconShowingAsBefore() {
+        XCTAssertTrue(
+            MenuBarPlacement.showsDashboardItem(
+                grouped: [], keptWhenEmpty: true, iconVisible: true
+            ),
+            "An empty icon kept around still shows"
+        )
+        XCTAssertFalse(
+            MenuBarPlacement.showsDashboardItem(
+                grouped: [], keptWhenEmpty: false, iconVisible: true
+            ),
+            "An empty icon not kept around does not show"
+        )
+        XCTAssertTrue(
+            MenuBarPlacement.showsDashboardItem(
+                grouped: [.cpu], keptWhenEmpty: false, iconVisible: true
+            ),
+            "A grouped card shows the icon even when it is not kept while empty"
+        )
+        XCTAssertFalse(
+            MenuBarPlacement.showsDashboardItem(
+                grouped: [.cpu], keptWhenEmpty: true, iconVisible: false
+            ),
+            "Hiding the icon removes it however much is grouped into it"
+        )
+    }
+
     // MARK: - Looks
 
     /// A module in the menu bar has to draw something, so its last look cannot be

@@ -2,6 +2,16 @@ import AppKit
 import SwiftUI
 import MetricsKit
 
+enum PopoverToggleDecision {
+    static func shouldCloseCurrentPopover(
+        isShown: Bool,
+        isClosing: Bool,
+        matchesCurrentKind: Bool
+    ) -> Bool {
+        isShown && !isClosing && matchesCurrentKind
+    }
+}
+
 /// Creates and updates the menu bar items and manages the detail popover on click.
 @MainActor
 final class MenuBarController: NSObject, NSPopoverDelegate {
@@ -22,14 +32,27 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
     /// click on another item replaces the content rather than stacking a second one.
     private enum PopoverKind: Equatable {
         case module(MetricID)
+        /// The Dashboard, anchored to the Mectrics logo item.
         case dashboard
+        /// The Dashboard, anchored to a module item (`.dashboard` click behavior).
+        case moduleDashboard(MetricID)
+
+        var isDashboard: Bool {
+            switch self {
+            case .dashboard, .moduleDashboard: return true
+            case .module: return false
+            }
+        }
     }
 
-    /// The content the popover shows, kept until the popover has finished closing so
-    /// a click on the same item during the close animation still reads as a toggle.
+    /// The content currently shown in the shared popover.
     private var popoverKind: PopoverKind?
     /// True from the moment a close begins until something is shown again.
     private var isPopoverClosing = false
+    /// A rapid menu-bar click can arrive while AppKit is animating a close. Retain
+    /// only the latest requested presentation and show it after `popoverDidClose`,
+    /// so an old close callback can never clear the content of a newer presentation.
+    private var pendingPresentation: (@MainActor () -> Void)?
     /// Exactly the modules reported visible via `onDetailVisibilityChanged`, so the
     /// same set is reported hidden later — even if the dashboard's modules changed
     /// while it was open.
@@ -42,15 +65,6 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         popover.behavior = .transient
         popover.delegate = self
         popover.animates = !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
-        // A popover made key can outlive a switch to another app — clicking a window
-        // that is already frontmost is not the "interaction elsewhere" that transient
-        // behaviour watches for. Close it explicitly when Mectrics stops being active.
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(applicationDidResignActive),
-            name: NSApplication.didResignActiveNotification,
-            object: nil
-        )
         // Items skip redrawing when their inputs are unchanged, and the system accent
         // is a dynamic color that keeps its identity when the user picks a new one.
         NotificationCenter.default.addObserver(
@@ -61,12 +75,8 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         )
     }
 
-    @objc private func applicationDidResignActive() {
-        guard popover.isShown else { return }
-        popover.performClose(nil)
-    }
-
     @objc private func systemColorsDidChange() {
+        synchronizePopoverAppearance()
         for statusItem in items.values { statusItem.invalidateCachedRender() }
         // The logo's badge tint is a dynamic system colour too, and it keeps its
         // identity when the user picks a new accent.
@@ -77,6 +87,7 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
     /// Rebuilds the menu bar items from scratch based on the menu bar style and the
     /// enabled modules.
     func rebuild() {
+        pendingPresentation = nil
         // Every item is about to be removed, and with it whatever button the open
         // popover is anchored to. Close it first — at once, not animated out from an
         // anchor that no longer exists — so what it reported visible is reported
@@ -157,8 +168,8 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
     /// Brings what the open dashboard reports visible in line with the dashboard's
     /// current modules. Called when they change without a menu bar rebuild.
     func dashboardModulesChanged() {
-        guard popoverKind == .dashboard, !isPopoverClosing else { return }
-        let current = Set(model.orderedDashboardModules)
+        guard let kind = popoverKind, kind.isDashboard, !isPopoverClosing else { return }
+        let current = Set(dashboardCardModules(for: kind))
         let removed = reportedVisibleModules.subtracting(current)
         let added = current.subtracting(reportedVisibleModules)
         reportedVisibleModules = current
@@ -166,19 +177,47 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         if !added.isEmpty { onDetailVisibilityChanged?(added, true) }
     }
 
+    /// The modules a dashboard of `kind` shows as cards. The logo shows the grouped
+    /// modules; a module item in `.dashboard` click mode shows every watched module, so
+    /// a hidden logo never leaves the Dashboard empty.
+    private func dashboardCardModules(for kind: PopoverKind) -> [MetricID] {
+        switch kind {
+        case .dashboard: return model.orderedDashboardModules
+        case .moduleDashboard: return model.orderedEnabledModules
+        case .module: return []
+        }
+    }
+
     // MARK: - Popover
 
     private func togglePopover(for id: MetricID) {
+        if id == .memory {
+            MetricContextualActionRunner.run(.activityMonitor)
+            return
+        }
         // Anchor on the module's first item (a module can have several).
         guard let button = items.values.first(where: { $0.id == id })?.item.button else { return }
-        if popover.isShown && popoverKind == .module(id) {
+        if model.moduleClickBehavior.opensDashboard {
+            toggleDashboardFromModule(id: id, button: button)
+            return
+        }
+        if PopoverToggleDecision.shouldCloseCurrentPopover(
+            isShown: popover.isShown,
+            isClosing: isPopoverClosing,
+            matchesCurrentKind: popoverKind == .module(id)
+        ) {
             closePopover()
             return
         }
 
         let signpostID = PerformanceSignposts.beginModulePopover()
         show(
-            DetailPopoverView(model: model, moduleID: id),
+            DetailPopoverView(
+                model: model,
+                moduleID: id,
+                dashboardAppearance: model.dashboardAppearance,
+                dashboardBackgroundOpacity: model.dashboardBackgroundOpacity
+            ),
             as: .module(id),
             visibleModules: [id],
             from: button
@@ -186,20 +225,52 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         PerformanceSignposts.endModulePopover(signpostID)
     }
 
-    private func toggleDashboardPopover() {
-        guard let button = logoItem?.item.button else { return }
-        if popover.isShown && popoverKind == .dashboard {
+    /// A module item opening the Dashboard: anchored to the clicked item, showing every
+    /// watched module as a card. Toggled like the logo's dashboard.
+    private func toggleDashboardFromModule(id: MetricID, button: NSStatusBarButton) {
+        if PopoverToggleDecision.shouldCloseCurrentPopover(
+            isShown: popover.isShown,
+            isClosing: isPopoverClosing,
+            matchesCurrentKind: popoverKind == .moduleDashboard(id)
+        ) {
             closePopover()
             return
         }
+        presentDashboard(showsAllWatchedModules: true, kind: .moduleDashboard(id), from: button)
+    }
 
+    private func toggleDashboardPopover() {
+        guard let button = logoItem?.item.button else { return }
+        if PopoverToggleDecision.shouldCloseCurrentPopover(
+            isShown: popover.isShown,
+            isClosing: isPopoverClosing,
+            matchesCurrentKind: popoverKind == .dashboard
+        ) {
+            closePopover()
+            return
+        }
+        presentDashboard(showsAllWatchedModules: false, kind: .dashboard, from: button)
+    }
+
+    /// Shows the Dashboard in the shared popover. Every card is a detail surface: CPU,
+    /// Memory, and GPU show temperatures, and Energy Guard treats GPU and Fans as on
+    /// screen while the dashboard is open.
+    private func presentDashboard(
+        showsAllWatchedModules: Bool,
+        kind: PopoverKind,
+        from button: NSStatusBarButton
+    ) {
         let signpostID = PerformanceSignposts.beginDashboardPopover()
-        // Every card is a detail surface: CPU, Memory, and GPU show temperatures, and
-        // Energy Guard treats GPU and Fans as on screen while the dashboard is open.
+        let cardModules = showsAllWatchedModules
+            ? model.orderedEnabledModules
+            : model.orderedDashboardModules
         show(
-            DashboardPopoverView(model: model),
-            as: .dashboard,
-            visibleModules: Set(model.orderedDashboardModules),
+            DashboardPopoverView(
+                model: model,
+                showsAllWatchedModules: showsAllWatchedModules
+            ),
+            as: kind,
+            visibleModules: Set(cardModules),
             from: button
         )
         PerformanceSignposts.endDashboardPopover(signpostID)
@@ -213,6 +284,18 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         visibleModules: Set<MetricID>,
         from button: NSStatusBarButton
     ) {
+        guard !isPopoverClosing else {
+            pendingPresentation = { [weak self, weak button] in
+                guard let self, let button else { return }
+                self.show(content, as: kind, visibleModules: visibleModules, from: button)
+            }
+            return
+        }
+
+        // An unset NSPopover defaults to Vibrant Light, which can put a frosted
+        // layer behind the Dashboard regardless of its selected SwiftUI appearance.
+        synchronizePopoverAppearance()
+
         // Showing over an open popover swaps its content without closing it, so the
         // content being replaced gets no close callback; its visibility ends here.
         endPopoverVisibility()
@@ -239,6 +322,13 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         popover.performClose(nil)
     }
 
+    /// The native action menu consumes the outside click that would ordinarily close
+    /// a transient popover. Close the dashboard when that menu finishes tracking.
+    func closeAfterActionMenuDismisses() {
+        guard popover.isShown, popoverKind != nil, !isPopoverClosing else { return }
+        closePopover()
+    }
+
     /// Reports every module the popover reported visible as hidden. Every way a
     /// popover ends — toggled closed, replaced by another, closed by AppKit, or
     /// orphaned by a rebuild — passes through here, and only the first pass finds
@@ -251,6 +341,10 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         }
     }
 
+    private func synchronizePopoverAppearance() {
+        popover.appearance = NSApp.effectiveAppearance
+    }
+
     /// Drops the closed popover's SwiftUI content. A closed popover's window is only
     /// ordered out: its view tree would go on observing the model — every dashboard
     /// card re-evaluated each cycle — and running `.task` loops such as the top
@@ -260,11 +354,9 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         popover.contentViewController = nil
     }
 
-    // AppKit sends `willClose` the moment a close begins and `didClose` after the
-    // animation. A click that shows new content during that animation re-opens the
-    // popover once it finishes, so the late `didClose` then belongs to the content
-    // that is gone, not the content now on screen. Visibility therefore ends in
-    // `willClose`, and `didClose` forgets the content only if nothing was shown since.
+    // AppKit sends `willClose` at the beginning of the dismissal and `didClose` after
+    // its animation. New presentations are queued between these callbacks, so the old
+    // callback pair always finishes before the shared popover receives new content.
 
     /// AppKit's own closes (transient dismissal, resigning active) begin here.
     func popoverWillClose(_ notification: Notification) {
@@ -276,5 +368,12 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         guard isPopoverClosing else { return }
         popoverKind = nil
         releasePopoverContent()
+        isPopoverClosing = false
+
+        let pendingPresentation = pendingPresentation
+        self.pendingPresentation = nil
+        if let pendingPresentation {
+            Task { @MainActor in pendingPresentation() }
+        }
     }
 }

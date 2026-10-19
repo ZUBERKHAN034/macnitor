@@ -80,9 +80,10 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.mectrics.app
         PRODUCT_NAME: Mectrics
-        MARKETING_VERSION: "1.9.1"
-        CURRENT_PROJECT_VERSION: "13"
+        MARKETING_VERSION: "1.10.0"
+        CURRENT_PROJECT_VERSION: "14"
         GENERATE_INFOPLIST_FILE: YES
+        ENABLE_APP_SANDBOX: NO
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
         INFOPLIST_KEY_NSHumanReadableCopyright: "© 2026 Mectrics"
         # i18n: English development region; extract localized strings into the catalog.
@@ -125,8 +126,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.mectrics.app.widget
         PRODUCT_NAME: MectricsWidget
-        MARKETING_VERSION: "1.9.1"
-        CURRENT_PROJECT_VERSION: "13"
+        MARKETING_VERSION: "1.10.0"
+        CURRENT_PROJECT_VERSION: "14"
         INFOPLIST_FILE: MectricsWidget/Info.plist
         CODE_SIGN_STYLE: Automatic
         SWIFT_VERSION: "5.0"

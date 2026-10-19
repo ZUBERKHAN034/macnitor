@@ -111,6 +111,10 @@ Disk.
   when something needs attention and surfaces what is off, including the two conditions
   macOS reports itself. Take a card off from the dashboard; add one back in Settings. Move
   a module back to the menu bar and its items return as you left them.
+- **The Dashboard, with or without the icon.** Hide the Mectrics logo and open the
+  Dashboard from any module in the menu bar instead — click CPU or Network and every
+  reading appears as a card. Choose what a click opens, and whether the icon is shown, in
+  **Settings → Menu Bar**.
 - **Alert rules.** Sustained notifications with a live preview and test delivery, so you
   know what a rule will look like before it fires at 3am. Rules watch either a number you
   pick or a state macOS reports: your Mac slowing its CPU and GPU down to cool off, and

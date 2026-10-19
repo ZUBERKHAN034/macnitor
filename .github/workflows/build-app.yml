@@ -1,0 +1,60 @@
+name: Build app
+
+# Builds an unsigned Debug Mectrics.app and uploads it as a downloadable artifact, so a
+# change can be tried on a real Mac before it is released. Signing is off (no Developer ID
+# on the runner); release builds are still signed and notarized locally by
+# scripts/release.sh, exactly as before.
+#
+# To try a build on your Mac:
+#   1. Run this workflow (or push to the branch below), then download the artifact.
+#   2. Unzip, then remove the download quarantine with:
+#        xattr -cr Mectrics.app
+#   3. Open Mectrics.app. It is an LSUIElement agent, so it appears in the menu bar.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/dashboard-from-module-items]
+
+jobs:
+  build:
+    name: Mectrics.app (unsigned Debug)
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Show toolchain
+        run: xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate the Xcode project
+        run: xcodegen generate
+
+      - name: Build
+        run: |
+          xcodebuild build \
+            -project Mectrics.xcodeproj \
+            -scheme Mectrics \
+            -configuration Debug \
+            -destination 'platform=macOS' \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_ENTITLEMENTS="" \
+            DEVELOPMENT_TEAM=""
+
+      - name: Package the app
+        run: |
+          ditto -c -k --keepParent \
+            build/DerivedData/Build/Products/Debug/Mectrics.app \
+            Mectrics-Debug.zip
+
+      - name: Upload the app
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mectrics-Debug
+          path: Mectrics-Debug.zip
+          if-no-files-found: error

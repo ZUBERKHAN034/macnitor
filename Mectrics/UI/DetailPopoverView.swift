@@ -14,6 +14,9 @@ struct DetailPopoverView: View {
     var recoveryPlacement: MenuBarPlacement = .ownItems
     /// Outer width, padding included. The dashboard hosts this view at its own width.
     var width: CGFloat = 290
+    /// Set for standalone menu-bar detail popovers. Detail windows leave this unset.
+    var dashboardAppearance: DashboardAppearance?
+    var dashboardBackgroundOpacity = DashboardAppearance.defaultBackgroundOpacity
     @State private var copyConfirmationVisible = false
 
     private var sample: MetricSample? { model.latest[moduleID] }
@@ -55,6 +58,14 @@ struct DetailPopoverView: View {
         }
         .padding(ExperienceSpacing.medium)
         .frame(width: width)
+        .background {
+            if let dashboardAppearance {
+                DashboardCardBackground(
+                    fillOpacity: dashboardBackgroundOpacity,
+                    appearance: dashboardAppearance
+                )
+            }
+        }
     }
 
     @ViewBuilder
@@ -145,20 +156,44 @@ struct DetailPopoverView: View {
 
     @ViewBuilder
     private var detailRows: some View {
-        VStack(alignment: .leading, spacing: ExperienceSpacing.xSmall) {
-            ForEach(rows, id: \.0) { row in
-                HStack {
-                    Text(row.0).foregroundStyle(.secondary)
-                    Spacer()
-                    Text(row.1).monospacedDigit()
+        if moduleID == .disk {
+            DiskDetailSummary(
+                capacityRows: diskCapacityRows,
+                additionalRows: diskAdditionalRows
+            )
+        } else {
+            VStack(alignment: .leading, spacing: ExperienceSpacing.xSmall) {
+                ForEach(rows, id: \.0) { row in
+                    HStack {
+                        Text(row.0).foregroundStyle(.secondary)
+                        Spacer()
+                        Text(row.1).monospacedDigit()
+                    }
+                    .font(.callout)
                 }
-                .font(.callout)
             }
         }
     }
 
+    private var diskCapacityRows: [(String, String)] {
+        guard let d = sample?.detail else { return [] }
+        return [
+            (String(localized: "disk.used", defaultValue: "Used"), MetricFormat.storageBytes(d["used"] ?? 0)),
+            (String(localized: "disk.free", defaultValue: "Free"), MetricFormat.storageBytes(d["free"] ?? 0)),
+            (String(localized: "disk.total", defaultValue: "Total"), MetricFormat.storageBytes(d["total"] ?? 0))
+        ]
+    }
+
+    private var diskAdditionalRows: [(String, String)] {
+        let capacityLabels = Set(diskCapacityRows.map(\.0))
+        return rows.filter { !capacityLabels.contains($0.0) }
+    }
+
     private var footer: some View {
-        PopoverActionBar { model.onOpenSettings?() }
+        PopoverActionBar(
+            onOpenSettings: { model.onOpenSettings?() },
+            onMenuDismissed: { model.onPopoverActionMenuDismissed?() }
+        )
     }
 
     private var localAddress: (interface: String, address: String)? {
@@ -335,17 +370,17 @@ struct DetailPopoverView: View {
             return r
         case .disk:
             var r: [(String, String)] = [
-                (String(localized: "disk.used", defaultValue: "Used"), MetricFormat.bytes(d["used"] ?? 0)),
-                (String(localized: "disk.free", defaultValue: "Free"), MetricFormat.bytes(d["free"] ?? 0))
+                (String(localized: "disk.used", defaultValue: "Used"), MetricFormat.storageBytes(d["used"] ?? 0)),
+                (String(localized: "disk.free", defaultValue: "Free"), MetricFormat.storageBytes(d["free"] ?? 0))
             ]
             if let purgeable = d["purgeable"], purgeable > 0 {
                 r.append((String(localized: "disk.purgeable", defaultValue: "Purgeable"),
-                          MetricFormat.bytes(purgeable)))
+                          MetricFormat.storageBytes(purgeable)))
             }
             r.append(
                 (
                     String(localized: "disk.total", defaultValue: "Total"),
-                    MetricFormat.bytes(d["total"] ?? 0)
+                    MetricFormat.storageBytes(d["total"] ?? 0)
                 )
             )
             if let readRate = d["readRate"], let writeRate = d["writeRate"] {
@@ -417,6 +452,67 @@ struct DetailPopoverView: View {
     }
 }
 
+/// Capacity figures get the primary visual weight, while optional activity rows stay
+/// compact below them. Three flexible columns keep the values inside the popover.
+private struct DiskDetailSummary: View {
+    let capacityRows: [(String, String)]
+    let additionalRows: [(String, String)]
+
+    private let columns = Array(
+        repeating: GridItem(.flexible(minimum: 0), alignment: .leading),
+        count: 3
+    )
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: ExperienceSpacing.small) {
+            LazyVGrid(columns: columns, alignment: .leading, spacing: ExperienceSpacing.small) {
+                ForEach(capacityRows, id: \.0) { row in
+                    DiskCapacityMetric(label: row.0, value: row.1)
+                }
+            }
+            if !additionalRows.isEmpty {
+                VStack(alignment: .leading, spacing: ExperienceSpacing.xSmall) {
+                    ForEach(additionalRows, id: \.0) { row in
+                        HStack {
+                            Text(row.0).foregroundStyle(.secondary)
+                            Spacer()
+                            Text(row.1).monospacedDigit()
+                        }
+                        .font(.callout)
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct DiskCapacityMetric: View {
+    let label: String
+    let value: String
+
+    var body: some View {
+        let parts = DashboardFormat.split(value)
+        VStack(alignment: .leading, spacing: ExperienceSpacing.tiny) {
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Text(parts.number)
+                    .font(.system(size: 15.5, weight: .semibold, design: .rounded))
+                    .monospacedDigit()
+                Text(parts.unit)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
 private extension MetricContextualAction {
     var title: String {
         switch self {
@@ -435,11 +531,6 @@ private extension MetricContextualAction {
                 localized: "action.openBatterySettings",
                 defaultValue: "Open Battery Settings"
             )
-        case .networkSettings:
-            return String(
-                localized: "action.openNetworkSettings",
-                defaultValue: "Open Network Settings"
-            )
         case .copyLocalAddress:
             return String(
                 localized: "action.copyLocalAddress",
@@ -453,7 +544,6 @@ private extension MetricContextualAction {
         case .activityMonitor: return "gauge.with.dots.needle.67percent"
         case .storageSettings: return "internaldrive"
         case .batterySettings: return "battery.100percent"
-        case .networkSettings: return "network"
         case .copyLocalAddress: return "doc.on.doc"
         }
     }

@@ -21,6 +21,7 @@ final class MenuBarTemplateTests: XCTestCase {
 
     private static let byteCounts: [Double] = [
         0, 999, 1_000, 99_999, 999_000,
+        1_038_336,                                  // 1014.0 KB/s crash report value
         1_000_000, 120_000_000, 999_000_000,          // the wide "999MB" band
         1_000_000_000, 120_000_000_000, 999_000_000_000,
         1_000_000_000_000, 99_000_000_000_000, 8_000_000_000_000_000

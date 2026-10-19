@@ -40,8 +40,32 @@ enum DashboardFormat {
     /// The spaces inside "13.6 /" and "16.0 GB" do not break, so a narrow card wraps
     /// the line after the slash rather than stranding the unit on a line of its own.
     static func usedOfTotal(used: Double, total: Double) -> String {
-        let used = split(MetricFormat.bytes(used))
-        let total = split(MetricFormat.bytes(total))
+        usedOfTotal(used: MetricFormat.bytes(used), total: MetricFormat.bytes(total))
+    }
+
+    /// Storage capacity in the decimal units macOS uses for disk sizes.
+    static func storageUsedOfTotal(used: Double, total: Double) -> String {
+        usedOfTotal(
+            used: MetricFormat.storageBytes(used),
+            total: MetricFormat.storageBytes(total)
+        )
+    }
+
+    /// Active swap in decimal megabytes, using larger units as needed.
+    static func memorySwapUsed(_ bytes: Double) -> String {
+        let units = ["MB", "GB", "TB"]
+        var value = max(bytes, 0) / 1_000_000
+        var unitIndex = 0
+        while value >= 1_000 && unitIndex < units.count - 1 {
+            value /= 1_000
+            unitIndex += 1
+        }
+        return String(format: "%.2f %@", value, units[unitIndex])
+    }
+
+    private static func usedOfTotal(used: String, total: String) -> String {
+        let used = split(used)
+        let total = split(total)
         let totalText = "\(total.number)\u{00A0}\(total.unit)"
         guard used.unit != total.unit else {
             return "\(used.number)\u{00A0}/ \(totalText)"
@@ -80,6 +104,31 @@ enum DashboardFormat {
 
     static func temperature(_ celsius: Double) -> String {
         "\(Int(celsius.rounded()))°C"
+    }
+
+    /// Battery power is negative while the battery supplies the Mac, and zero on
+    /// adapter power. Unknown power-source state or absent hardware readings stay nil.
+    static func batteryPowerWatts(
+        sample: MetricSample,
+        isOnBattery: Bool?
+    ) -> Double? {
+        guard let isOnBattery else { return nil }
+        guard isOnBattery else { return 0 }
+        guard let watts = sample.detail["powerWatts"] else { return nil }
+        return -abs(watts)
+    }
+
+    static func batteryPowerText(_ watts: Double) -> String {
+        String(format: "%.2f W", watts)
+    }
+
+    /// Scale the recent draw history to the greatest observed draw so the chart
+    /// shows changing usage while the signed watt value remains the exact reading.
+    static func batteryPowerHistory(readings: [Double]) -> [Double] {
+        let validReadings = readings.filter { $0.isFinite && $0 >= 0 }
+        let peak = validReadings.max() ?? 0
+        guard peak > 0 else { return validReadings.map { _ in 0 } }
+        return validReadings.map { $0 / peak }
     }
 
     /// Spoken facts as one list, joined by the catalog's separator ("%1$@, %2$@";
@@ -144,7 +193,6 @@ enum BatteryPowerStatus: Equatable {
         }
     }
 
-    /// Drawn inside the dashboard's ring, as the system battery icon does.
     var symbolName: String? {
         switch self {
         case .charging: return "bolt.fill"
@@ -160,7 +208,7 @@ enum BatteryPowerStatus: Equatable {
         case .charging:
             return String(localized: "battery.timeToFull", defaultValue: "Time to full")
         case .onBattery:
-            return String(localized: "battery.timeRemaining", defaultValue: "Time remaining")
+            return String(localized: "battery.timeRemaining", defaultValue: "Time left")
         case .pluggedIn:
             return nil
         }
@@ -179,5 +227,29 @@ enum BatteryPowerStatus: Equatable {
         if let system, system > 0 { return system }
         guard let fallback = detail["smartTimeRemaining"], fallback > 0 else { return nil }
         return fallback
+    }
+}
+
+/// Color state for the Battery card's bolt, based on macOS power-source status.
+enum BatteryChargeIconState: Equatable {
+    case disconnected
+    case connected
+    case fullyCharged
+
+    static func resolve(
+        isOnBattery: Bool?,
+        isCharging: Bool,
+        isFullyCharged: Bool,
+        isSystemChargeLimitReached: Bool,
+        isAtFullCapacity: Bool
+    ) -> Self {
+        // Power-source state wins over a stale charging flag during transitions.
+        if isOnBattery == true { return .disconnected }
+        if isOnBattery == false,
+           isFullyCharged || isSystemChargeLimitReached || isAtFullCapacity {
+            return .fullyCharged
+        }
+        guard isOnBattery == false || isCharging else { return .disconnected }
+        return .connected
     }
 }

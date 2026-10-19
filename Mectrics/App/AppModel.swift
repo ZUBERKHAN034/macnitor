@@ -26,6 +26,8 @@ final class AppModel {
     /// on every power-source notification, so no view has to; nil until then.
     var isOnBattery: Bool?
 
+    private var batteryPowerHistory = BatteryPowerHistory()
+
     /// Consecutive provider attempts that returned no sample. Short interruptions keep
     /// the last valid value; repeated failures become an explicit error state.
     private(set) var consecutiveSamplingFailures: [MetricID: Int] = [:]
@@ -68,9 +70,10 @@ final class AppModel {
                 forKey: Self.groupedModulesKey
             )
             guard groupedModules != oldValue else { return }
-            let hadItem = Self.showsDashboardItem(
+            let hadItem = MenuBarPlacement.showsDashboardItem(
                 grouped: oldValue,
-                keptWhenEmpty: dashboardItemEnabled
+                keptWhenEmpty: dashboardItemEnabled,
+                iconVisible: dashboardIconVisible
             )
             resetFailuresForNewlyWatchedModules(
                 previouslyWatched: MenuBarPlacement.watchedModules(
@@ -138,6 +141,9 @@ final class AppModel {
     /// Called when a view asks for the settings window (wired by AppDelegate).
     @ObservationIgnored var onOpenSettings: (() -> Void)?
 
+    /// Closes the transient dashboard after its native action menu finishes tracking.
+    @ObservationIgnored var onPopoverActionMenuDismissed: (() -> Void)?
+
     /// Opens Settings on the Menu Bar pane, where the dashboard's modules are chosen
     /// (wired by AppDelegate).
     @ObservationIgnored var onOpenMenuBarSettings: (() -> Void)?
@@ -202,20 +208,67 @@ final class AppModel {
         }
     }
 
+    /// Whether the Mectrics logo item is in the menu bar at all. This is the master
+    /// switch; `dashboardItemEnabled` only decides whether the icon stays while the
+    /// Dashboard is empty, and a grouped card still brings it back while this is on.
+    var dashboardIconVisible: Bool {
+        didSet {
+            defaults.set(dashboardIconVisible, forKey: Self.dashboardIconVisibleKey)
+            guard dashboardIconVisible != oldValue else { return }
+            // The logo item's presence is exactly this flag, so hiding or showing it
+            // changes the list of status items.
+            onModulesChanged?()
+        }
+    }
+
+    /// What clicking a module's menu bar item opens. Read at click time — never baked
+    /// into a status item — so changing it never rebuilds the menu bar.
+    var moduleClickBehavior: ModuleClickBehavior {
+        didSet {
+            defaults.set(moduleClickBehavior.rawValue, forKey: Self.moduleClickBehaviorKey)
+        }
+    }
+
     /// Whether the Dashboard is in the menu bar: because something is grouped into it,
-    /// or because it was asked to stay while empty.
+    /// or because it was asked to stay while empty, and never when it has been hidden.
     var showsDashboardItem: Bool {
-        Self.showsDashboardItem(
+        MenuBarPlacement.showsDashboardItem(
             grouped: groupedModules,
-            keptWhenEmpty: dashboardItemEnabled
+            keptWhenEmpty: dashboardItemEnabled,
+            iconVisible: dashboardIconVisible
         )
     }
 
-    private static func showsDashboardItem(
-        grouped: Set<MetricID>,
-        keptWhenEmpty: Bool
-    ) -> Bool {
-        keptWhenEmpty || !grouped.isEmpty
+    /// Whether the Dashboard icon may be hidden right now. It may not while an alert
+    /// rule routes to health — the icon is where that rule alerts — or while nothing
+    /// else would be left in the menu bar.
+    var canHideDashboardIcon: Bool {
+        MenuBarPlacement.canHideDashboardIcon(
+            healthRoutedMetricIDs: healthMetricIDs,
+            orderedOwnItems: orderedEnabledItems
+        )
+    }
+
+    /// Hides or shows the Dashboard icon, refusing to hide it while doing so would
+    /// leave the menu bar without a health badge or without any item at all.
+    func setDashboardIconVisible(_ visible: Bool) {
+        guard visible || canHideDashboardIcon else { return }
+        dashboardIconVisible = visible
+    }
+
+    /// Why the Dashboard icon cannot be hidden right now, if it cannot.
+    var dashboardIconHiddenBlockedReason: String? {
+        guard dashboardIconVisible, !canHideDashboardIcon else { return nil }
+        if !healthMetricIDs.isEmpty {
+            return String(
+                localized: "builder.dashboardIcon.healthReason",
+                defaultValue: "The Dashboard icon cannot be hidden while an alert rule is on — it is where a rule alerts. Turn the rule off first."
+            )
+        }
+        return String(
+            localized: "builder.dashboardIcon.emptyReason",
+            defaultValue: "Give at least one module its own menu bar item first, so the menu bar still has something to click."
+        )
     }
 
     /// Whether the dashboard shows the card for the Mac itself — its macOS version and
@@ -224,6 +277,15 @@ final class AppModel {
     var showsDeviceCard: Bool {
         didSet {
             defaults.set(showsDeviceCard, forKey: Self.showsDeviceCardKey)
+        }
+    }
+
+    /// Persistent visual order for Dashboard cards, independent of menu bar item order.
+    /// Unknown or currently unavailable identifiers are ignored and newly enabled cards
+    /// are appended in the existing default module order.
+    var dashboardCardOrder: [String] {
+        didSet {
+            defaults.set(dashboardCardOrder, forKey: Self.dashboardCardOrderKey)
         }
     }
 
@@ -270,6 +332,16 @@ final class AppModel {
             defaults.set(accentChoice.rawValue, forKey: Self.accentKey)
             if accentChoice != oldValue { onAppearanceChanged?() }
         }
+    }
+
+    /// Visual treatment applied only to Dashboard cards.
+    var dashboardAppearance: DashboardAppearance {
+        didSet { defaults.set(dashboardAppearance.rawValue, forKey: Self.dashboardAppearanceKey) }
+    }
+
+    /// Card surface opacity, shared by all Dashboard appearance modes.
+    var dashboardBackgroundOpacity: Double {
+        didSet { defaults.set(dashboardBackgroundOpacity, forKey: Self.dashboardBackgroundOpacityKey) }
     }
 
     /// Called when a look-related setting changes so the menu bar redraws immediately
@@ -394,7 +466,48 @@ final class AppModel {
 
     /// The dashboard's modules in card order (the menu bar's module order).
     var orderedDashboardModules: [MetricID] {
-        availableModules.filter { groupedModules.contains($0) }
+        orderedDashboardCards.compactMap { card in
+            guard case .module(let id) = card else { return nil }
+            return id
+        }
+    }
+
+    var orderedDashboardCards: [DashboardCard] {
+        orderedCards(
+            for: availableModules.filter { groupedModules.contains($0) },
+            includesDevice: showsDeviceCard
+        )
+    }
+
+    func orderedCards(for modules: [MetricID], includesDevice: Bool) -> [DashboardCard] {
+        let eligible = modules.map { DashboardCard.module($0) }
+            + (includesDevice ? [.device] : [])
+        let byIdentifier = Dictionary(uniqueKeysWithValues: eligible.map { ($0.layoutIdentifier, $0) })
+        let saved = dashboardCardOrder.compactMap { byIdentifier[$0] }
+        let savedIDs = Set(saved.map(\.layoutIdentifier))
+        return saved + eligible.filter { !savedIDs.contains($0.layoutIdentifier) }
+    }
+
+    func moveDashboardCard(_ identifier: String, to targetIdentifier: String) {
+        var cards = orderedDashboardCards.map(\.layoutIdentifier)
+        guard let sourceIndex = cards.firstIndex(of: identifier),
+              let targetIndex = cards.firstIndex(of: targetIdentifier),
+              sourceIndex != targetIndex else { return }
+        let moved = cards.remove(at: sourceIndex)
+        cards.insert(moved, at: targetIndex)
+        dashboardCardOrder = cards
+    }
+
+    func moveDashboardCardToEnd(_ identifier: String) {
+        var cards = orderedDashboardCards.map(\.layoutIdentifier)
+        guard let index = cards.firstIndex(of: identifier), index < cards.count - 1 else { return }
+        let moved = cards.remove(at: index)
+        cards.append(moved)
+        dashboardCardOrder = cards
+    }
+
+    func resetDashboardCardOrder() {
+        dashboardCardOrder = []
     }
 
     /// Component choices worth offering for a module. Battery health and cycle count
@@ -534,17 +647,26 @@ final class AppModel {
     private var visibleDetailModules: Set<MetricID> = []
 
     /// Replaces the on-screen modules in one step. The dashboard shows several at once,
-    /// and a forced pass reads every active provider — the SMC included — so one
-    /// opening asks for one pass, not one per card. Back-to-back passes would also
-    /// measure CPU load and network rates over a few milliseconds.
+    /// and a targeted pass reads the SMC (and GPU when visible) without sampling
+    /// unrelated rate-based providers such as network twice within milliseconds.
     func setVisibleDetailModules(_ ids: Set<MetricID>) {
         guard ids != visibleDetailModules else { return }
         let gained = !ids.isSubset(of: visibleDetailModules)
         visibleDetailModules = ids
         refreshActiveMetrics()
-        // A newly opened surface should show a temperature immediately rather than
-        // waiting for the next heavy cycle.
-        if gained { engine.requestRefresh(includingHeavy: true) }
+        // A newly opened hardware surface should show temperatures immediately rather
+        // than waiting for the next heavy cycle. Do not force every active provider:
+        // network rates need the regular interval between counter samples.
+        if gained {
+            let visibleHardwareModules = ids.intersection([.cpu, .memory, .gpu])
+            if !visibleHardwareModules.isEmpty {
+                var immediateMetrics: Set<MetricID> = [.sensors]
+                if visibleHardwareModules.contains(.gpu) {
+                    immediateMetrics.insert(.gpu)
+                }
+                engine.requestRefresh(for: immediateMetrics, includingHeavy: true)
+            }
+        }
     }
 
     private let defaults = UserDefaults.standard
@@ -552,12 +674,17 @@ final class AppModel {
     private static let onboardingVersionKey = "completedOnboardingVersion"
     private static let currentOnboardingVersion = 2
     private static let accentKey = "accentChoice"
+    private static let dashboardAppearanceKey = "dashboardAppearance"
+    private static let dashboardBackgroundOpacityKey = "dashboardBackgroundOpacity"
     private static let menuBarIconsKey = "showMenuBarIcons"
     private static let dashboardItemEnabledKey = "dashboardItemEnabled"
+    private static let dashboardIconVisibleKey = "dashboardIconVisible"
+    private static let moduleClickBehaviorKey = "moduleClickBehavior"
     /// Read only to carry an upgrading Mac's Compact Health item over to the Dashboard.
     private static let legacyCompactHealthEnabledKey = "compactHealthEnabled"
     private static let groupedModulesKey = "groupedModules"
     private static let showsDeviceCardKey = "showsDeviceCard"
+    private static let dashboardCardOrderKey = "dashboardCardOrder"
     private static let adaptMonitoringKey = "adaptMonitoringToEnergyState"
     private static let answeredUpdateChecksKey = "hasAnsweredAutomaticUpdateChecks"
     private static let alertsKey = AlertConfigurationStorage.thresholdRulesKey
@@ -584,6 +711,12 @@ final class AppModel {
         self.hasCompletedOnboarding =
             defaults.integer(forKey: Self.onboardingVersionKey) >= Self.currentOnboardingVersion
         self.accentChoice = AccentChoice(rawValue: defaults.string(forKey: Self.accentKey) ?? "") ?? .pink
+        self.dashboardAppearance = DashboardAppearance(
+            rawValue: defaults.string(forKey: Self.dashboardAppearanceKey) ?? ""
+        ) ?? .regular
+        let savedDashboardOpacity = defaults.object(forKey: Self.dashboardBackgroundOpacityKey) as? Double
+            ?? DashboardAppearance.defaultBackgroundOpacity
+        self.dashboardBackgroundOpacity = Self.clampedDashboardBackgroundOpacity(savedDashboardOpacity)
         // Icons default to on; only an explicit user choice turns them off.
         self.showMenuBarIcons = defaults.object(forKey: Self.menuBarIconsKey) as? Bool ?? true
         self.adaptMonitoringToEnergyState =
@@ -613,10 +746,19 @@ final class AppModel {
                     forKey: Self.legacyCompactHealthEnabledKey
                 )
             )
+        // On by default, so nothing about today's menu bar changes for anyone who has
+        // not asked for it. Hiding the icon is a deliberate choice made in Settings.
+        self.dashboardIconVisible =
+            defaults.object(forKey: Self.dashboardIconVisibleKey) as? Bool ?? true
+        // Clicking a module item opens its own detail unless asked otherwise.
+        self.moduleClickBehavior = ModuleClickBehavior(
+            rawValue: defaults.string(forKey: Self.moduleClickBehaviorKey) ?? ""
+        ) ?? .ownDetail
         // On unless it was turned off, so the dashboard has something to say about the
         // Mac even before a module is grouped into it.
         self.showsDeviceCard =
             defaults.object(forKey: Self.showsDeviceCardKey) as? Bool ?? true
+        self.dashboardCardOrder = defaults.stringArray(forKey: Self.dashboardCardOrderKey) ?? []
         let groupable = available.filter { $0 != .sensors }
         self.groupedModules = MenuBarPlacement.groupedModules(
             stored: defaults.array(forKey: Self.groupedModulesKey) as? [String],
@@ -654,12 +796,32 @@ final class AppModel {
         engine.store.history(id, count: count).map(\.normalized)
     }
 
+    /// Raw samples are used when a card graphs a detail field instead of `value`.
+    func historySamples(_ id: MetricID, count: Int = 40) -> [MetricSample] {
+        engine.store.history(id, count: count)
+    }
+
+    /// Battery draw history captured with the power source that applied to each sample.
+    func batteryPowerReadings(count: Int) -> [Double] {
+        batteryPowerHistory.suffix(count)
+    }
+
     /// Applies one engine pass while preserving the last valid sample across short
     /// provider interruptions.
     func apply(_ report: SamplingCycleReport) {
         for (id, sample) in report.samples {
             latest[id] = sample
             consecutiveSamplingFailures[id] = 0
+            if id == .battery, let isOnBattery {
+                if isOnBattery {
+                    if let watts = sample.detail["powerWatts"], watts.isFinite, watts >= 0 {
+                        batteryPowerHistory.append(watts)
+                    }
+                } else {
+                    // Adapter power means the battery is not supplying the Mac.
+                    batteryPowerHistory.append(0)
+                }
+            }
         }
         for id in report.failedMetricIDs {
             consecutiveSamplingFailures[id, default: 0] += 1
@@ -669,6 +831,27 @@ final class AppModel {
         // the menu bar, so the items are rebuilt — but only then, not every cycle.
         if refreshComponentOptions() {
             onModulesChanged?()
+        }
+    }
+
+    private struct BatteryPowerHistory {
+        private static let capacity = 90
+        private var readings = Array(repeating: 0.0, count: capacity)
+        private var nextIndex = 0
+        private var storedCount = 0
+
+        mutating func append(_ reading: Double) {
+            readings[nextIndex] = reading
+            nextIndex = (nextIndex + 1) % Self.capacity
+            storedCount = min(storedCount + 1, Self.capacity)
+        }
+
+        func suffix(_ requestedCount: Int) -> [Double] {
+            let count = min(max(requestedCount, 0), storedCount)
+            let startIndex = (nextIndex - count + Self.capacity) % Self.capacity
+            return (0..<count).map { offset in
+                readings[(startIndex + offset) % Self.capacity]
+            }
         }
     }
 
@@ -960,6 +1143,11 @@ final class AppModel {
         if let data = try? JSONEncoder().encode(raw) {
             defaults.set(data, forKey: Self.systemAlertsKey)
         }
+    }
+
+    private static func clampedDashboardBackgroundOpacity(_ value: Double) -> Double {
+        guard value.isFinite else { return DashboardAppearance.defaultBackgroundOpacity }
+        return min(max(value, 0), DashboardAppearance.maximumBackgroundOpacity)
     }
 
     /// Legacy single-choice-per-module preference, read only for migration.

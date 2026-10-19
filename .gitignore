@@ -22,6 +22,8 @@ Packages/MetricsKit/Package.resolved
 build/
 dist/
 *.dmg
+# Ignore .commandcode directory and all its contents
+.commandcode/
 
 # Environment
 .env

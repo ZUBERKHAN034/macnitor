@@ -92,6 +92,19 @@ public final class MetricsEngine: @unchecked Sendable {
         }
     }
 
+    /// Requests an immediate pass for only the supplied metrics. This is useful when
+    /// a surface needs a just-in-time reading from a costly provider without sampling
+    /// rate-based providers (such as network) twice in rapid succession.
+    public func requestRefresh(
+        for metricIDs: Set<MetricID>,
+        includingHeavy: Bool = false
+    ) {
+        guard !metricIDs.isEmpty else { return }
+        queue.async { [weak self] in
+            self?.tick(forcingAllProviders: includingHeavy, only: metricIDs)
+        }
+    }
+
     /// Re-tunes the interval when the power state changes.
     public func updatePowerState(onBattery: Bool) {
         queue.async { [weak self] in
@@ -126,7 +139,10 @@ public final class MetricsEngine: @unchecked Sendable {
         t.resume()
     }
 
-    private func tick(forcingAllProviders: Bool = false) {
+    private func tick(
+        forcingAllProviders: Bool = false,
+        only requestedMetricIDs: Set<MetricID>? = nil
+    ) {
         cycleCount &+= 1
         let runMedium = forcingAllProviders
             || cycleCount % max(1, runtimePolicy.mediumEveryNCycles) == 0
@@ -137,6 +153,7 @@ public final class MetricsEngine: @unchecked Sendable {
         var attemptedAnyProvider = false
 
         for provider in providers {
+            if let requestedMetricIDs, !requestedMetricIDs.contains(provider.id) { continue }
             if let activeMetricIDs, !activeMetricIDs.contains(provider.id) { continue }
             if !forcingAllProviders,
                runtimePolicy.pausedMetricIDs.contains(provider.id) { continue }
