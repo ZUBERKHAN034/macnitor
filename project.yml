@@ -1,4 +1,4 @@
-# XcodeGen project definition — `xcodegen generate` produces Mactrics.xcodeproj.
+# XcodeGen project definition — `xcodegen generate` produces Macnitor.xcodeproj.
 # This file is git-friendly and readable; the .xcodeproj is generated output (not in git).
 #
 # Signing: no Apple Developer Team ID is committed here. `DEVELOPMENT_TEAM` is filled from
@@ -8,7 +8,7 @@
 #     xcodegen generate
 #
 # Leave it unset to build unsigned (what CI does) — the setting then resolves to empty.
-name: Mactrics
+name: Macnitor
 
 configs:
   Debug: debug
@@ -34,31 +34,31 @@ packages:
     exactVersion: 1.8.2
 
 targets:
-  Mactrics:
+  Macnitor:
     type: application
     platform: macOS
     sources:
-      - path: Mactrics
+      - path: Macnitor
         excludes:
           - Info.plist
-      - path: MactricsShared
+      - path: MacnitorShared
     dependencies:
       - package: MetricsKit
         product: MetricsKit
-      - target: MactricsCLI
+      - target: MacnitorCLI
         embed: true
         link: false
         codeSign: true
         copy:
           destination: wrapper
           subpath: Contents/Helpers
-      - target: MactricsWidget
+      - target: MacnitorWidget
         embed: true
       - sdk: Security.framework
       - package: Sparkle
         product: Sparkle
     info:
-      path: Mactrics/Info.plist
+      path: Macnitor/Info.plist
       properties:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
@@ -73,20 +73,22 @@ targets:
           - CFBundleTypeRole: Viewer
             CFBundleURLName: com.mectrics.app
             CFBundleURLSchemes:
+              - macnitor
+              - macitor
               - mactrics
               - mectrics
         LSApplicationCategoryType: public.app-category.utilities
-        NSHumanReadableCopyright: "© 2026 Mactrics"
+        NSHumanReadableCopyright: "© 2026 Macnitor"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.mectrics.app
-        PRODUCT_NAME: Mactrics
+        PRODUCT_NAME: Macnitor
         MARKETING_VERSION: "1.10.0"
         CURRENT_PROJECT_VERSION: "14"
         GENERATE_INFOPLIST_FILE: YES
         ENABLE_APP_SANDBOX: NO
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
-        INFOPLIST_KEY_NSHumanReadableCopyright: "© 2026 Mactrics"
+        INFOPLIST_KEY_NSHumanReadableCopyright: "© 2026 Macnitor"
         # i18n: English development region; extract localized strings into the catalog.
         DEVELOPMENT_LANGUAGE: en
         SWIFT_EMIT_LOC_STRINGS: YES
@@ -99,37 +101,37 @@ targets:
       configs:
         Debug:
           DEVELOPMENT_TEAM: ${MECTRICS_TEAM_ID}
-          CODE_SIGN_ENTITLEMENTS: Mactrics/Mactrics.entitlements
+          CODE_SIGN_ENTITLEMENTS: Macnitor/Macnitor.entitlements
         Release:
           DEVELOPMENT_TEAM: ${MECTRICS_TEAM_ID}
-          CODE_SIGN_ENTITLEMENTS: Mactrics/Mactrics.entitlements
+          CODE_SIGN_ENTITLEMENTS: Macnitor/Macnitor.entitlements
           ENABLE_HARDENED_RUNTIME: YES
         Performance:
           DEVELOPMENT_TEAM: ${MECTRICS_TEAM_ID}
-          CODE_SIGN_ENTITLEMENTS: Mactrics/Mactrics.entitlements
+          CODE_SIGN_ENTITLEMENTS: Macnitor/Macnitor.entitlements
           ENABLE_HARDENED_RUNTIME: YES
           ENABLE_TESTABILITY: YES
           ENABLE_CODE_COVERAGE: NO
 
-  MactricsWidget:
+  MacnitorWidget:
     type: app-extension
     platform: macOS
     sources:
-      - path: MactricsWidget
+      - path: MacnitorWidget
         excludes:
           - Info.plist
-          - MactricsWidget.entitlements
-      - path: MactricsShared
+          - MacnitorWidget.entitlements
+      - path: MacnitorShared
     dependencies:
       - package: MetricsKit
         product: MetricsKit
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.mectrics.app.widget
-        PRODUCT_NAME: MactricsWidget
+        PRODUCT_NAME: MacnitorWidget
         MARKETING_VERSION: "1.10.0"
         CURRENT_PROJECT_VERSION: "14"
-        INFOPLIST_FILE: MactricsWidget/Info.plist
+        INFOPLIST_FILE: MacnitorWidget/Info.plist
         CODE_SIGN_STYLE: Automatic
         SWIFT_VERSION: "5.0"
         DEVELOPMENT_LANGUAGE: en
@@ -140,25 +142,25 @@ targets:
       configs:
         Debug:
           DEVELOPMENT_TEAM: ${MECTRICS_TEAM_ID}
-          CODE_SIGN_ENTITLEMENTS: MactricsWidget/MactricsWidget.entitlements
+          CODE_SIGN_ENTITLEMENTS: MacnitorWidget/MacnitorWidget.entitlements
           ENABLE_APP_SANDBOX: YES
         Release:
           DEVELOPMENT_TEAM: ${MECTRICS_TEAM_ID}
-          CODE_SIGN_ENTITLEMENTS: MactricsWidget/MactricsWidget.entitlements
+          CODE_SIGN_ENTITLEMENTS: MacnitorWidget/MacnitorWidget.entitlements
           ENABLE_APP_SANDBOX: YES
           ENABLE_HARDENED_RUNTIME: YES
         Performance:
           DEVELOPMENT_TEAM: ${MECTRICS_TEAM_ID}
-          CODE_SIGN_ENTITLEMENTS: MactricsWidget/MactricsWidget.entitlements
+          CODE_SIGN_ENTITLEMENTS: MacnitorWidget/MacnitorWidget.entitlements
           ENABLE_APP_SANDBOX: YES
           ENABLE_HARDENED_RUNTIME: YES
 
-  MactricsCLI:
+  MacnitorCLI:
     type: tool
     platform: macOS
     sources:
-      - path: Packages/MetricsKit/Sources/MactricsCLI
-      - path: Packages/MetricsKit/Sources/MactricsCLICore
+      - path: Packages/MetricsKit/Sources/MacnitorCLI
+      - path: Packages/MetricsKit/Sources/MacnitorCLICore
     dependencies:
       - package: MetricsKit
         product: MetricsKit
@@ -166,10 +168,10 @@ targets:
         product: ArgumentParser
     settings:
       base:
-        PRODUCT_NAME: mactrics
+        PRODUCT_NAME: macnitor
         # Keep the Swift module distinct from the case-insensitive app module output.
         # The executable filename remains the lowercase public command.
-        PRODUCT_MODULE_NAME: MactricsCLI
+        PRODUCT_MODULE_NAME: MacnitorCLI
         PRODUCT_BUNDLE_IDENTIFIER: com.mectrics.cli
         SWIFT_VERSION: "6.0"
         ENABLE_CODE_COVERAGE: NO
@@ -186,13 +188,13 @@ targets:
           ENABLE_HARDENED_RUNTIME: YES
           ENABLE_CODE_COVERAGE: NO
 
-  MactricsTests:
+  MacnitorTests:
     type: bundle.unit-test
     platform: macOS
     sources:
-      - path: MactricsTests
+      - path: MacnitorTests
     dependencies:
-      - target: Mactrics
+      - target: Macnitor
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.mectrics.app.tests
@@ -200,29 +202,29 @@ targets:
         SWIFT_VERSION: "5.0"
 
 schemes:
-  Mactrics:
+  Macnitor:
     build:
       targets:
-        Mactrics: all
-        MactricsTests: [test]
+        Macnitor: all
+        MacnitorTests: [test]
     run:
       config: Debug
     test:
       config: Debug
       gatherCoverageData: false
       targets:
-        - name: MactricsTests
+        - name: MacnitorTests
           parallelizable: false
     archive:
       config: Release
-  MactricsPerformance:
+  MacnitorPerformance:
     build:
       targets:
-        Mactrics: all
-        MactricsTests: [test]
+        Macnitor: all
+        MacnitorTests: [test]
     test:
       config: Performance
       gatherCoverageData: false
       targets:
-        - name: MactricsTests
+        - name: MacnitorTests
           parallelizable: false

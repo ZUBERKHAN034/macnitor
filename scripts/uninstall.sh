@@ -1,15 +1,15 @@
 #!/bin/zsh
 #
-# Removes Mactrics and everything it stored on this Mac.
+# Removes Macnitor and everything it stored on this Mac.
 #
 #     ./scripts/uninstall.sh          # asks first, lists what it will delete
 #     ./scripts/uninstall.sh --yes    # no prompt
 #
-# Deleting Mactrics.app on its own leaves your settings behind, which is why a
+# Deleting Macnitor.app on its own leaves your settings behind, which is why a
 # reinstall skips onboarding — macOS keeps preferences and containers when an
 # app goes to the Trash. This removes those too, so a reinstall starts clean.
 #
-# Mactrics installs no helper tool or LaunchDaemon. If the optional Terminal
+# Macnitor installs no helper tool or LaunchDaemon. If the optional Terminal
 # command was installed, macOS may ask for administrator permission to remove
 # its symbolic link from /usr/local/bin.
 set -euo pipefail
@@ -17,16 +17,24 @@ set -euo pipefail
 assume_yes=0
 [[ "${1:-}" == "--yes" || "${1:-}" == "-y" ]] && assume_yes=1
 
-app="/Applications/Mactrics.app"
+app="/Applications/Macnitor.app"
+previous_app="/Applications/Macitor.app"
+older_app="/Applications/Mactrics.app"
 legacy_app="/Applications/Mectrics.app"
-cli_link="/usr/local/bin/mactrics"
+cli_link="/usr/local/bin/macnitor"
+previous_cli_link="/usr/local/bin/macitor"
+older_cli_link="/usr/local/bin/mactrics"
 legacy_cli_link="/usr/local/bin/mectrics"
 targets=(
   "$app"
+  "$previous_app"
+  "$older_app"
   "$legacy_app"
   "$HOME/Library/Preferences/com.mectrics.app.plist"
   "$HOME/Library/Group Containers/group.com.mectrics.app"
   "$HOME/Library/Containers/com.mectrics.app.widget"
+  "$HOME/Library/Application Support/Macnitor"
+  "$HOME/Library/Application Support/Macitor"
   "$HOME/Library/Application Support/Mactrics"
   "$HOME/Library/Application Support/Mectrics"
   "$HOME/Library/Caches/com.mectrics.app"
@@ -37,15 +45,37 @@ targets=(
 
 if [[ -L "$cli_link" ]]; then
   cli_target="$(readlink "$cli_link")"
-  if [[ "$cli_target" == */Mactrics.app/Contents/Helpers/mactrics \
+  if [[ "$cli_target" == */Macnitor.app/Contents/Helpers/macnitor \
+     || "$cli_target" == */Macitor.app/Contents/Helpers/macitor \
+     || "$cli_target" == */Mactrics.app/Contents/Helpers/mactrics \
      || "$cli_target" == */Mectrics.app/Contents/Helpers/mectrics ]]; then
     targets+=("$cli_link")
+  fi
+fi
+if [[ -L "$previous_cli_link" ]]; then
+  cli_target="$(readlink "$previous_cli_link")"
+  if [[ "$cli_target" == */Macnitor.app/Contents/Helpers/macnitor \
+     || "$cli_target" == */Macitor.app/Contents/Helpers/macitor \
+     || "$cli_target" == */Mactrics.app/Contents/Helpers/mactrics \
+     || "$cli_target" == */Mectrics.app/Contents/Helpers/mectrics ]]; then
+    targets+=("$previous_cli_link")
+  fi
+fi
+if [[ -L "$older_cli_link" ]]; then
+  cli_target="$(readlink "$older_cli_link")"
+  if [[ "$cli_target" == */Macnitor.app/Contents/Helpers/macnitor \
+     || "$cli_target" == */Macitor.app/Contents/Helpers/macitor \
+     || "$cli_target" == */Mactrics.app/Contents/Helpers/mactrics \
+     || "$cli_target" == */Mectrics.app/Contents/Helpers/mectrics ]]; then
+    targets+=("$older_cli_link")
   fi
 fi
 if [[ -L "$legacy_cli_link" ]]; then
   cli_target="$(readlink "$legacy_cli_link")"
   if [[ "$cli_target" == */Mectrics.app/Contents/Helpers/mectrics \
-     || "$cli_target" == */Mactrics.app/Contents/Helpers/mactrics ]]; then
+     || "$cli_target" == */Mactrics.app/Contents/Helpers/mactrics \
+     || "$cli_target" == */Macitor.app/Contents/Helpers/macitor \
+     || "$cli_target" == */Macnitor.app/Contents/Helpers/macnitor ]]; then
     targets+=("$legacy_cli_link")
   fi
 fi
@@ -56,7 +86,7 @@ for t in "${targets[@]}"; do
 done
 
 if (( ${#present[@]} == 0 )); then
-  echo "Nothing to remove — Mactrics is not installed and left no data."
+  echo "Nothing to remove — Macnitor is not installed and left no data."
   exit 0
 fi
 
@@ -73,16 +103,23 @@ if (( ! assume_yes )); then
   [[ "$reply" == [yY] ]] || { echo "Cancelled."; exit 1; }
 fi
 
-# Quit first. A running Mactrics writes its preferences on the way out, which
+# Quit first. A running Macnitor writes its preferences on the way out, which
 # would put the file straight back after it was deleted.
+osascript -e 'quit app "Macnitor"' 2>/dev/null || true
+osascript -e 'quit app "Macitor"' 2>/dev/null || true
 osascript -e 'quit app "Mactrics"' 2>/dev/null || true
 osascript -e 'quit app "Mectrics"' 2>/dev/null || true
 for _ in 1 2 3 4 5; do
-  pgrep -x Mactrics >/dev/null 2>&1 || pgrep -x Mectrics >/dev/null 2>&1 || break
+  pgrep -x Macnitor >/dev/null 2>&1 || pgrep -x Macitor >/dev/null 2>&1 \
+    || pgrep -x Mactrics >/dev/null 2>&1 \
+    || pgrep -x Mectrics >/dev/null 2>&1 || break
   sleep 1
 done
+pkill -x Macnitor 2>/dev/null || true
+pkill -x Macitor 2>/dev/null || true
 pkill -x Mactrics 2>/dev/null || true
 pkill -x Mectrics 2>/dev/null || true
+pkill -f 'MacnitorWidget.appex' 2>/dev/null || true
 pkill -f 'MactricsWidget.appex' 2>/dev/null || true
 pkill -f 'MectricsWidget.appex' 2>/dev/null || true
 
@@ -96,7 +133,8 @@ defaults delete com.mectrics.app 2>/dev/null || true
 # for to delete one JSON snapshot.
 failed=()
 for t in "${present[@]}"; do
-  if [[ "$t" == "$cli_link" ]]; then
+  if [[ "$t" == "$cli_link" || "$t" == "$previous_cli_link" \
+     || "$t" == "$older_cli_link" || "$t" == "$legacy_cli_link" ]]; then
     rm -f "$t" 2>/dev/null \
       || sudo rm -f "$t" \
       || failed+=("$t")
@@ -107,7 +145,7 @@ done
 
 echo
 if (( ${#failed[@]} == 0 )); then
-  echo "Removed. Mactrics left no command links, helper tools, daemons, or files elsewhere."
+  echo "Removed. Macnitor left no command links, helper tools, daemons, or files elsewhere."
 else
   echo "Removed everything except:"
   printf '  %s\n' "${failed[@]}"

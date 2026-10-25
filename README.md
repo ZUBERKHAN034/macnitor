@@ -17,7 +17,7 @@ live in your menu bar, readable at a glance, and the bar never jumps around.</p>
 
 <p><a href="https://mectrics.app"><b>mectrics.app</b></a></p>
 
-<a href="https://www.producthunt.com/products/mectrics?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-mectrics" target="_blank" rel="noopener noreferrer"><img alt="Mactrics - Your Mac's vitals in the menu bar. Free and open source. | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1210872&amp;theme=light&amp;t=1785433284857"></a>
+<a href="https://www.producthunt.com/products/mectrics?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-mectrics" target="_blank" rel="noopener noreferrer"><img alt="Macnitor - Your Mac's vitals in the menu bar. Free and open source. | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1210872&amp;theme=light&amp;t=1785433284857"></a>
 
 </div>
 
@@ -25,7 +25,7 @@ live in your menu bar, readable at a glance, and the bar never jumps around.</p>
 
 ## What it is
 
-**Mactrics** is a native macOS menu bar system monitor. It starts as a single icon: click
+**Macnitor** is a native macOS menu bar system monitor. It starts as a single icon: click
 it and your readings open as a dashboard of cards. Give any module an item of its own and
 it draws a readable value in the menu bar, with a live sparkline where a trend tells you
 something. So CPU can sit in view every second while Disk and Battery stay one click
@@ -38,7 +38,7 @@ It is built around three commitments:
 
 | | |
 |---|---|
-| 🔒 **Private by construction** | Zero telemetry. No analytics, no identifiers, no crash reports. The only network request Mactrics ever makes is an update check, and it asks you once whether it may make that check on its own. The request carries nothing about you or your Mac, and an update is never installed without you. |
+| 🔒 **Private by construction** | Zero telemetry. No analytics, no identifiers, no crash reports. The only network request Macnitor ever makes is an update check, and it asks you once whether it may make that check on its own. The request carries nothing about you or your Mac, and an update is never installed without you. |
 | 🪶 **Light on the machine** | About **27 MB** of memory and **a few percent of one CPU core** while it sits in your menu bar, the same number Activity Monitor shows you. Sampling slows down on battery and backs off in Low Power Mode and when your Mac runs hot. |
 | 📐 **Stable in the menu bar** | Items reserve a fixed width, so values change without anything shifting sideways. |
 
@@ -55,14 +55,14 @@ comfortably inside; CPU currently sits just above. The
 down, and so is [how to run them yourself](CONTRIBUTING.md#performance-validation).
 
 <div align="center">
-  <a href="https://github.com/farukkamcici/mectrics/releases/latest/download/Mectrics.dmg"><b>⬇︎ Download Mactrics 1.9.1</b></a><br>
+  <a href="https://github.com/farukkamcici/mectrics/releases/latest/download/Mectrics.dmg"><b>⬇︎ Download Macnitor 1.9.1</b></a><br>
   <sub>macOS 15+ · signed and notarized · 5.4 MB</sub>
 </div>
 
 ## Modules
 
 <div align="center">
-  <img src="docs/assets/menubar.png" alt="Mactrics in the macOS menu bar: CPU with a live sparkline, memory, network throughput, and the Dashboard icon holding everything else" width="570">
+  <img src="docs/assets/menubar.png" alt="Macnitor in the macOS menu bar: CPU with a live sparkline, memory, network throughput, and the Dashboard icon holding everything else" width="570">
 </div>
 
 Unavailable hardware hides itself. No Fans module on a fanless MacBook Air, no Battery on
@@ -111,7 +111,7 @@ Disk.
   when something needs attention and surfaces what is off, including the two conditions
   macOS reports itself. Take a card off from the dashboard; add one back in Settings. Move
   a module back to the menu bar and its items return as you left them.
-- **The Dashboard, with or without the icon.** Hide the Mactrics logo and open the
+- **The Dashboard, with or without the icon.** Hide the Macnitor logo and open the
   Dashboard from any module in the menu bar instead — click CPU or Network and every
   reading appears as a card. Choose what a click opens, and whether the icon is shown, in
   **Settings → Menu Bar**.
@@ -164,32 +164,32 @@ Requires **macOS 15 (Sequoia)** or newer.
 
 [**Download Mectrics.dmg**](https://github.com/farukkamcici/mectrics/releases/latest/download/Mectrics.dmg)
 from the [latest release](https://github.com/farukkamcici/mectrics/releases/latest), open it,
-and drag Mactrics to Applications. The app is signed with a Developer ID and notarized by
+and drag Macnitor to Applications. The app is signed with a Developer ID and notarized by
 Apple, so it opens without a Gatekeeper detour.
 
-Mactrics has no Dock icon and no window. After launching, look for it in the menu bar.
+Macnitor has no Dock icon and no window. After launching, look for it in the menu bar.
 
 Updates are checked only when you ask, under **Settings → General → Check for Updates…**.
 
 The interface is available in English, Turkish, Russian, Spanish, French, Brazilian
 Portuguese, and Simplified Chinese. Choose **Settings → General → Language**, then relaunch
-Mactrics when prompted.
+Macnitor when prompted.
 
 ### Headless automation
 
-The app bundle includes a read-only `mactrics` CLI for Macs whose menu bar is not visible.
+The app bundle includes a read-only `macnitor` CLI for Macs whose menu bar is not visible.
 The app remains the place where alert rules are configured. The CLI reads those rules and
 exposes them to scripts and agents without changing any settings.
 
-Choose **Settings → Alerts → Install CLI…** once to make `mactrics` available in every
-Terminal. This creates a symbolic link at `/usr/local/bin/mactrics`; it does not download
+Choose **Settings → Alerts → Install CLI…** once to make `macnitor` available in every
+Terminal. This creates a symbolic link at `/usr/local/bin/macnitor`; it does not download
 another executable or install a background service. macOS may ask for administrator
 permission.
 
 Check the enabled rules without parsing output:
 
 ```bash
-mactrics check
+macnitor check
 ```
 
 `check` exits with `0` when every current reading is within its limit, `1` when at least
@@ -197,13 +197,13 @@ one limit is crossed, and `2` when no rules are configured or the result cannot 
 determined because a reading is unavailable. Add `--json` when details are needed:
 
 ```bash
-mactrics check --json
+macnitor check --json
 ```
 
 Take a one-shot snapshot of every available module:
 
 ```bash
-mactrics snapshot --json
+macnitor snapshot --json
 ```
 
 The snapshot includes each module's primary value, unit, timestamp, and detail fields;
@@ -211,7 +211,7 @@ unsupported hardware is listed as unavailable rather than reported as zero. Stre
 alert activation and recovery events as newline-delimited JSON with:
 
 ```bash
-mactrics alerts watch --json
+macnitor alerts watch --json
 ```
 
 `watch` does not print an initial snapshot. It waits quietly until a rule activates or
@@ -221,7 +221,7 @@ the current state is needed immediately.
 For a supervised, long-running stream, add a heartbeat interval:
 
 ```bash
-mactrics alerts watch --json --heartbeat 60
+macnitor alerts watch --json --heartbeat 60
 ```
 
 Heartbeat mode uses tagged NDJSON records. It writes a `ready` record immediately, periodic
@@ -242,32 +242,32 @@ settings, widgets, or history.
 
 Invalid commands and flags exit with `64`; corrupt saved configuration exits with `78`; an
 internal output failure exits with `70`. These are separate from `check`'s `0` / `1` / `2`
-health result. Run `mactrics doctor` (or `mactrics doctor --json`) to validate the executable,
+health result. Run `macnitor doctor` (or `macnitor doctor --json`) to validate the executable,
 saved rules, available alert coverage, installed command link, and current power source.
 
-Run the CLI as the same macOS user who configured Mactrics. A root-owned cron job reads root's
+Run the CLI as the same macOS user who configured Macnitor. A root-owned cron job reads root's
 preferences instead. Cron also commonly has a restricted `PATH`, so use
-`/usr/local/bin/mactrics check` or set `PATH` explicitly. `check` is the command for cron and
+`/usr/local/bin/macnitor check` or set `PATH` explicitly. `check` is the command for cron and
 other one-shot probes; `alerts watch` is a persistent stream and should be run under a process
 supervisor rather than launched repeatedly by cron. A watch session takes a snapshot of the
 enabled rules when it starts, so restart it after changing rules in the app.
 
 ### Uninstall
 
-Dragging Mactrics to the Trash removes the app but not its settings. macOS keeps those
+Dragging Macnitor to the Trash removes the app but not its settings. macOS keeps those
 for every app, which is why a reinstall goes straight back to your old layout instead of
 showing onboarding again. For a clean removal, choose **Settings → General → Uninstall…**.
-Mactrics unregisters its login item, quits, then removes the app, its settings, alert rules,
-Attention Log, caches, and its optional `/usr/local/bin/mactrics` link. macOS may ask for
+Macnitor unregisters its login item, quits, then removes the app, its settings, alert rules,
+Attention Log, caches, and its optional `/usr/local/bin/macnitor` link. macOS may ask for
 administrator permission when that link is present.
 
 macOS may retain the widget's protected cached snapshot after removal; it reclaims that
-container once the extension is gone. If Mactrics cannot be opened, use the manual
+container once the extension is gone. If Macnitor cannot be opened, use the manual
 uninstall script instead:
 
 ```bash
-curl -fsSL -o /tmp/mactrics-uninstall.sh https://raw.githubusercontent.com/farukkamcici/mectrics/main/scripts/uninstall.sh
-zsh /tmp/mactrics-uninstall.sh
+curl -fsSL -o /tmp/macnitor-uninstall.sh https://raw.githubusercontent.com/farukkamcici/mectrics/main/scripts/uninstall.sh
+zsh /tmp/macnitor-uninstall.sh
 ```
 
 It lists what it will delete and asks before touching anything.
@@ -275,11 +275,11 @@ It lists what it will delete and asks before touching anything.
 ### Build from source
 
 ```bash
-git clone https://github.com/farukkamcici/mectrics.git mactrics
-cd mactrics
+git clone https://github.com/farukkamcici/mectrics.git macnitor
+cd macnitor
 brew install xcodegen
 xcodegen generate
-open Mactrics.xcodeproj      # then ⌘R
+open Macnitor.xcodeproj      # then ⌘R
 ```
 
 Full setup notes, including code signing, are in [`CONTRIBUTING.md`](CONTRIBUTING.md).
@@ -295,7 +295,7 @@ The single network request the app can make is an update check, and only when yo
 
 ## Non-goals
 
-Knowing what a project will not do is what keeps it small enough to trust. Mactrics reads
+Knowing what a project will not do is what keeps it small enough to trust. Macnitor reads
 the machine it runs on and reports what it finds. Everything below is out of scope, and an
 issue asking for one of them will be closed with a link here rather than a debate.
 
@@ -305,7 +305,7 @@ issue asking for one of them will be closed with a link here rather than a debat
   nothing here will grow one.
 - **Anything outside the machine.** Remote hosts, SaaS quotas, API usage, container fleets:
   all reasonable things to monitor, none of them this app's job.
-- **Acting on what it finds.** Mactrics does not kill processes, purge caches, or change
+- **Acting on what it finds.** Macnitor does not kill processes, purge caches, or change
   system settings. It shows you the number and hands you off to the tool that owns the
   action, which is why the popovers open Activity Monitor and System Settings instead of
   reimplementing them.
@@ -320,7 +320,7 @@ Forks are welcome to disagree with every line of this. That is what the MIT lice
 
 Contributions are welcome, new hardware coverage and translations especially.
 
-If Mactrics is useful to you, you can [support its ongoing development through GitHub
+If Macnitor is useful to you, you can [support its ongoing development through GitHub
 Sponsors](https://github.com/sponsors/farukkamcici).
 
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): setup, the development loop, how to add a metric

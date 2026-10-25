@@ -1,6 +1,6 @@
 # Architecture
 
-How mactrics is put together and why. This assumes general application experience rather
+How macnitor is put together and why. This assumes general application experience rather
 than familiarity with AppKit, IOKit, or the SMC.
 
 ## The split
@@ -24,7 +24,7 @@ flowchart LR
         ST --> AE
     end
 
-    subgraph app["Mactrics.app — LSUIElement agent, no Dock icon"]
+    subgraph app["Macnitor.app — LSUIElement agent, no Dock icon"]
         AM["<b>AppModel</b><br/><i>@Observable</i>"]
         MB["<b>MenuBarController</b><br/>one NSStatusItem per component,<br/>or one logo item"]
         PO["<b>Popovers</b><br/>details · dashboard · Settings"]
@@ -34,8 +34,8 @@ flowchart LR
         AM --> AL
     end
 
-    WG["<b>MactricsWidget</b><br/><i>WidgetKit extension</i>"]
-    CLI["<b>mactrics CLI</b><br/><i>check · snapshot · watch · doctor</i>"]
+    WG["<b>MacnitorWidget</b><br/><i>WidgetKit extension</i>"]
+    CLI["<b>macnitor CLI</b><br/><i>check · snapshot · watch · doctor</i>"]
 
     EG -->|"sampling policy"| SS
     ST -->|"snapshot"| AM
@@ -135,7 +135,7 @@ Both state conditions run through the same sustained-duration and cooldown machi
 number rules (`SystemConditionMonitor`): a state has to persist for the rule's window before
 it alerts, because a build that pushes the chip into throttling for twenty seconds is
 ordinary work, not news. `EnergyGuard` reads the same thermal enum it uses to slow its own
-sampling, so Mactrics eases off on exactly the states it would report.
+sampling, so Macnitor eases off on exactly the states it would report.
 
 ## Menu bar rendering
 
@@ -164,7 +164,7 @@ starts empty for anyone who already had a menu bar.
 **The Dashboard icon can be hidden, and a module click can open the Dashboard.** A master
 `dashboardIconVisible` switch (default on) takes the logo item out of the menu bar even
 when cards are grouped into it, and `moduleClickBehavior` decides what a module item
-opens: its own detail (the default, and the behavior Mactrics has always had) or the
+opens: its own detail (the default, and the behavior Macnitor has always had) or the
 Dashboard, anchored to the clicked item and showing every watched module as a card. Both
 live in **Settings → Menu Bar**, and the defaults reproduce the pre-hiding menu bar
 exactly. Hiding the icon is a change in which items exist, so it goes through the rebuild
@@ -209,8 +209,8 @@ everything it turns on goes to the Dashboard.
 
 ### Single icon
 
-`MactricsStatusItem` has nothing to redraw. Its image is a template drawn in code from the
-app icon's geometry (`MactricsGlyph`), so it is sharp at every backing scale, and AppKit
+`MacnitorStatusItem` has nothing to redraw. Its image is a template drawn in code from the
+app icon's geometry (`MacnitorGlyph`), so it is sharp at every backing scale, and AppKit
 tints a template for light, dark, and tinted menu bars on its own. The item's length is
 fixed at 26 pt and even, and the 20 × 14 pt
 image has whole, even sides, so at 1x the logo sits on whole pixels instead of being
@@ -233,7 +233,7 @@ has something to report. A thin symbol gains from colour; a solid letter loses. 
 drawn in the label colour of the menu bar's own appearance and the badge carries the tint
 beside it — which makes the badged mark a two-colour image and therefore not a template.
 That has a cost the plain logo does not pay: it is drawn for one appearance, so the
-appearance is part of its cache key and of `MactricsStatusItem`'s render inputs, and a Mac
+appearance is part of its cache key and of `MacnitorStatusItem`'s render inputs, and a Mac
 changing theme redraws it on the next cycle. Every colour is resolved inside
 `performAsCurrentDrawingAppearance`, the tint included — `.unavailable` tints with
 `secondaryLabelColor`, and resolving that against the wrong appearance put a light-grey
@@ -256,7 +256,7 @@ popovers use, so a click on another item replaces its content rather than
 stacking a second popover, and it is dismissed the same way. It is a popover, not a panel:
 it is on screen from a click until the next click elsewhere, and is not the always-visible
 second surface the floating panel was (see [Health](#health)). It is anchored to the
-Mactrics logo when that item is present, and to the clicked module item when the click
+Macnitor logo when that item is present, and to the clicked module item when the click
 behavior opens the Dashboard from a module.
 
 - Cards follow the menu bar's module order, then a Device card that no provider backs:
@@ -307,12 +307,12 @@ behavior opens the Dashboard from a module.
 
 ## Windows and the Dock
 
-Mactrics is an `LSUIElement` agent: it launches with no Dock icon and no main window. It
+Macnitor is an `LSUIElement` agent: it launches with no Dock icon and no main window. It
 becomes a regular application only while one of its own standard windows is on screen —
 Settings, the Attention Log, Diagnostics, a metric detail, About, What's New, onboarding —
 and drops back to `.accessory` when the last of them closes.
 
-[`DockPresence`](../Mactrics/App/DockPresence.swift) owns that decision and every window
+[`DockPresence`](../Macnitor/App/DockPresence.swift) owns that decision and every window
 controller reports to it. The question cannot be answered from `NSApplication.windows`:
 that collection also holds the window behind each status item, which is visible for the
 whole life of the app, so "any visible window" is permanently true and the icon never goes
@@ -348,21 +348,21 @@ banner.
 
 That banner is why the Compact Health item no longer exists. The two read the same
 `healthConditions` and showed the same worst condition, one in a banner and one in an icon
-beside it — the duplication this section exists to record. The state rides on the Mactrics
+beside it — the duplication this section exists to record. The state rides on the Macnitor
 icon as a badge instead, so one icon means one icon. Nothing was lost with the item: its
 switch is gone with it. The Dashboard icon is the badge's one home, which is why it cannot
 be hidden while an alert rule is on — a rule still notifies and logs either way, but the
 badge has nowhere else to live.
 
-The bundled `mactrics` CLI is a read-only automation interface for unattended machines,
+The bundled `macnitor` CLI is a read-only automation interface for unattended machines,
 not another dashboard. The app owns configuration. The CLI reads its enabled rules and can:
 
 - wait for actual activation and recovery transitions, then print each new event as text
   or newline-delimited JSON without emitting an initial snapshot;
 - list the effective rules in a stable, versioned JSON envelope;
-- compare one fresh set of readings with the configured limits through `mactrics check`
+- compare one fresh set of readings with the configured limits through `macnitor check`
   and return a script-friendly exit code;
-- capture every available module once through `mactrics snapshot`, including the full
+- capture every available module once through `macnitor snapshot`, including the full
   detail dictionary in its versioned JSON output.
 
 The one-shot check deliberately reports `limitCrossed`, not `active`: it does not wait for
@@ -393,14 +393,14 @@ its rule configuration at startup; changing rules in the app requires restarting
 This keeps incident state transitions deterministic and is stated in the public help.
 
 The executable remains inside the signed app bundle. The optional **Install CLI…** action
-creates `/usr/local/bin/mactrics` as a symbolic link to that executable, so app updates also
+creates `/usr/local/bin/macnitor` as a symbolic link to that executable, so app updates also
 update the command. It downloads no second binary and installs no background service. The
 installer refuses to overwrite an unrelated command at that path, and app removal also
-removes a link that belongs to Mactrics.
+removes a link that belongs to Macnitor.
 
 The internal `metricskit-demo` executable is separate. It renders every provider in a live
 terminal view for development and hardware validation, is available only through SwiftPM,
-and is not embedded in `Mactrics.app`.
+and is not embedded in `Macnitor.app`.
 
 ## Widget
 
@@ -458,7 +458,7 @@ the widget is positioned as "at a glance" while the menu bar carries the real-ti
   diagnose a failed budget because observation has its own cost.
 - A gate covers two workloads, because they fail for different reasons: the menu bar on its
   own, and Settings deliberately open. `--profile` declares the rules and layout under
-  measurement, `--settings <pane>` sends the app a `mactrics://` route so the window that
+  measurement, `--settings <pane>` sends the app a `macnitor://` route so the window that
   is being measured is the one that was asked for.
 
 ### Where the cost actually is
@@ -571,10 +571,10 @@ minutes does not qualify the memory-growth gate and cannot be described as a soa
 - `MetricsKitTests` covers computation correctness (Δbytes/Δt, CPU percentages), alert
   state transitions and JSON contracts, and store behaviour including concurrent reads
   and writes.
-- `MactricsCLITests` covers typed parsing, public exit codes, golden JSON fixtures,
+- `MacnitorCLITests` covers typed parsing, public exit codes, golden JSON fixtures,
   provider-failure freshness, stdout/stderr separation, and actual executable processes
   with isolated preferences.
-- `MactricsTests` covers app-layer logic: alert rules, Energy Guard, the Attention Log,
+- `MacnitorTests` covers app-layer logic: alert rules, Energy Guard, the Attention Log,
   diagnostics export redaction, module placement and what
   each one watches, the dashboard's card layout and formatting, and URL routing.
 - XCTest microbenchmarks cover the ring-buffer hot path, menu bar formatting, and Energy
@@ -586,11 +586,11 @@ minutes does not qualify the memory-growth gate and cannot be described as a soa
 ## Repository layout
 
 ```
-mactrics/
+macnitor/
 ├── project.yml               # XcodeGen definition — the source of the Xcode project
 ├── AGENTS.md                 # conventions (source of truth for contributors)
 ├── docs/                     # this document, its assets, and the folder index
-├── Mactrics/                 # menu bar app (SwiftUI + AppKit)
+├── Macnitor/                 # menu bar app (SwiftUI + AppKit)
 │   ├── App/                  # AppDelegate, AppModel, login item, widget snapshots
 │   ├── MenuBar/              # NSStatusItem controllers, menu bar styles, sparkline drawing
 │   ├── UI/                   # popovers, dashboard, logo, formatting, themes, localization
@@ -602,18 +602,18 @@ mactrics/
 │   ├── Release/              # About, What's New, update status (Sparkle)
 │   ├── Settings/             # General / Menu Bar builder / Alerts
 │   └── Resources/            # Localizable.xcstrings, assets, privacy manifest
-├── MactricsShared/           # types shared between app and widget
-├── MactricsWidget/           # small/medium/large WidgetKit overview
-├── MactricsTests/            # app-layer unit tests
+├── MacnitorShared/           # types shared between app and widget
+├── MacnitorWidget/           # small/medium/large WidgetKit overview
+├── MacnitorTests/            # app-layer unit tests
 ├── Packages/MetricsKit/      # the metric engine (SwiftPM)
 │   ├── Sources/MetricsKit/   # providers, scheduler, store, alerts, engine, sharing
-│   ├── Sources/MactricsCLICore/ # testable command parsing, sampling, output contracts
-│   ├── Sources/MactricsCLI/  # read-only user automation interface
+│   ├── Sources/MacnitorCLICore/ # testable command parsing, sampling, output contracts
+│   ├── Sources/MacnitorCLI/  # read-only user automation interface
 │   ├── Sources/MetricsKitDemo/ # internal live provider readout
 │   └── Tests/                # engine and CLI contract suites
 └── scripts/
     ├── release.sh            # archive → sign → DMG → notarize → staple
     ├── release-candidate.sh  # private notarized candidate, no appcast mutation
     ├── performance/          # Release process and CLI measurement gates
-    └── uninstall.sh          # manual removal for a Mactrics that will not open
+    └── uninstall.sh          # manual removal for a Macnitor that will not open
 ```

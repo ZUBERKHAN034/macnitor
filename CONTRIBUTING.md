@@ -1,4 +1,4 @@
-# Contributing to mactrics
+# Contributing to macnitor
 
 Thanks for considering a contribution. This document covers the practical steps; the
 conventions themselves live in [`AGENTS.md`](AGENTS.md), which is the source of truth for
@@ -15,17 +15,17 @@ this repository. Please read it before your first pull request — it is short.
 3. **Absence is not zero.** When a reading is unavailable, render a dash. Never fabricate
    `0%` and never offer a component this Mac cannot report.
 4. **Zero telemetry.** The only network call the app may make is an explicit update check.
-5. **`project.yml` is the source.** `Mactrics.xcodeproj` is generated output and is not
+5. **`project.yml` is the source.** `Macnitor.xcodeproj` is generated output and is not
    committed. Run `xcodegen generate` after adding or removing files.
 
 ## Setting up
 
 ```bash
-git clone https://github.com/farukkamcici/mectrics.git mactrics
-cd mactrics
+git clone https://github.com/farukkamcici/mectrics.git macnitor
+cd macnitor
 brew install xcodegen
 xcodegen generate
-open Mactrics.xcodeproj
+open Macnitor.xcodeproj
 ```
 
 Requirements: macOS 15+, Xcode 16 or newer, Swift 6.
@@ -52,15 +52,15 @@ The metric engine is a standalone SwiftPM package, so most core work needs no Xc
 cd Packages/MetricsKit
 swift test
 swift run metricskit-demo               # internal live readout of every provider
-swift run mactrics --help               # read-only user automation interface
-swift run mactrics check --json         # alert-rule check with a script-friendly exit code
-swift run mactrics snapshot --json      # one current reading from every available module
-swift run mactrics alerts watch --json  # saved app rules as an NDJSON event stream
-swift run mactrics alerts watch --json --heartbeat 60
-swift run mactrics doctor --json        # configuration and sampling-coverage diagnosis
+swift run macnitor --help               # read-only user automation interface
+swift run macnitor check --json         # alert-rule check with a script-friendly exit code
+swift run macnitor snapshot --json      # one current reading from every available module
+swift run macnitor alerts watch --json  # saved app rules as an NDJSON event stream
+swift run macnitor alerts watch --json --heartbeat 60
+swift run macnitor doctor --json        # configuration and sampling-coverage diagnosis
 ```
 
-CLI contract tests live in `Tests/MactricsCLITests`. They exercise typed parsing, exact exit
+CLI contract tests live in `Tests/MacnitorCLITests`. They exercise typed parsing, exact exit
 codes, stdout/stderr separation, versioned JSON fixtures, injected provider failures, and the
 real built executable. Add or update a fixture deliberately when changing a public JSON
 schema. Valid version 1 `check`, `snapshot`, rule-list, and untagged alert-event output is a
@@ -70,10 +70,10 @@ For app-layer changes:
 
 ```bash
 xcodegen generate
-xcodebuild -project Mactrics.xcodeproj -scheme Mactrics -configuration Debug build
+xcodebuild -project Macnitor.xcodeproj -scheme Macnitor -configuration Debug build
 ```
 
-mactrics is an `LSUIElement` agent — no Dock icon, no main window. Verify visual changes in
+macnitor is an `LSUIElement` agent — no Dock icon, no main window. Verify visual changes in
 the menu bar and popover directly.
 
 ## Performance validation
@@ -85,8 +85,8 @@ measure it directly:
 ```bash
 xcodegen generate
 xcodebuild build \
-  -project Mactrics.xcodeproj \
-  -scheme Mactrics \
+  -project Macnitor.xcodeproj \
+  -scheme Macnitor \
   -configuration Release \
   -destination 'platform=macOS' \
   -derivedDataPath build/performance/DerivedData \
@@ -98,15 +98,15 @@ xcodebuild build \
   DEVELOPMENT_TEAM=""
 
 ./scripts/performance/measure.sh \
-  --app build/performance/DerivedData/Build/Products/Release/Mactrics.app \
+  --app build/performance/DerivedData/Build/Products/Release/Macnitor.app \
   --scenario idle-ac
 
 ./scripts/performance/measure-cli.sh \
-  --app build/performance/DerivedData/Build/Products/Release/Mactrics.app
+  --app build/performance/DerivedData/Build/Products/Release/Macnitor.app
 
 xcodebuild test \
-  -project Mactrics.xcodeproj \
-  -scheme MactricsPerformance \
+  -project Macnitor.xcodeproj \
+  -scheme MacnitorPerformance \
   -destination 'platform=macOS'
 ```
 
@@ -117,14 +117,14 @@ Run them back to back on a quiet Mac, on AC power, with nothing else launched:
 
 ```bash
 ./scripts/performance/measure.sh \
-  --app build/performance/DerivedData/Build/Products/Release/Mactrics.app \
+  --app build/performance/DerivedData/Build/Products/Release/Macnitor.app \
   --profile scripts/performance/profiles/alerts-ac.json \
   --scenario alerts-ac-menu-only
 ```
 
 ```bash
 ./scripts/performance/measure.sh \
-  --app build/performance/DerivedData/Build/Products/Release/Mactrics.app \
+  --app build/performance/DerivedData/Build/Products/Release/Macnitor.app \
   --profile scripts/performance/profiles/alerts-ac.json \
   --settings menu-bar \
   --scenario alerts-ac-settings-open
@@ -134,7 +134,7 @@ A profile is a small JSON file under `scripts/performance/profiles/` declaring t
 rules and the menu bar layout to measure. The launcher encodes it as old-style plist data
 on the app's own command line, so a declared workload still never touches the contributor's
 preferences. `--settings <general|menu-bar|alerts>` opens a pane by sending the running app
-a `mactrics://` route, which is why the run refuses to start next to another Mactrics: a
+a `macnitor://` route, which is why the run refuses to start next to another Macnitor: a
 second copy would answer the route instead.
 
 Every run records `power-source.csv` beside its samples. Adaptive sampling makes a run that
@@ -175,9 +175,9 @@ not be presented as evidence of long-run stability or as a universal result for 
 Activity Monitor's process CPU scale assigns 100% to one logical core, so preserve the
 measurement window when comparing its display with a gate report.
 
-The `MactricsPerformance` scheme uses an optimized `Performance` configuration with
+The `MacnitorPerformance` scheme uses an optimized `Performance` configuration with
 testability enabled. The shipping `Release` configuration stays non-testable. Ordinary app
-logic tests use the Debug `Mactrics` scheme; CI runs those tests in addition to building the
+logic tests use the Debug `Macnitor` scheme; CI runs those tests in addition to building the
 app.
 
 For a private distribution-equivalent candidate, use `scripts/release-candidate.sh` with
@@ -219,9 +219,9 @@ budget; a provider that blocks the queue degrades every other module.
 
 ## Adding a translation
 
-1. Add the language and its identifier to `Mactrics/App/AppLanguage.swift`.
-2. Add it to both `Mactrics/Resources/Localizable.xcstrings` and
-   `MactricsWidget/Localizable.xcstrings`.
+1. Add the language and its identifier to `Macnitor/App/AppLanguage.swift`.
+2. Add it to both `Macnitor/Resources/Localizable.xcstrings` and
+   `MacnitorWidget/Localizable.xcstrings`.
 3. Translate every entry in both catalogs; partial catalogs are not accepted.
 4. Verify the language picker and relaunch flow, then check the widget under that system
    language.

@@ -11,7 +11,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- **Hide the Dashboard icon and open the Dashboard from any module.** The Mactrics logo
+- **Hide the Dashboard icon and open the Dashboard from any module.** The Macnitor logo
   item can now be switched off, and a menu bar module can be told to open the Dashboard
   instead of its own detail — click CPU or Network and every watched reading appears as
   a card, with a click drilling into a module's full detail as before. Both live in
@@ -124,7 +124,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- Mactrics can now check for updates on its own, if you let it. It asks once, in onboarding
+- Macnitor can now check for updates on its own, if you let it. It asks once, in onboarding
   or on a later launch where it has nothing else to say, and the answer is changeable in
   **Settings → General → Updates**. Consent changes when the appcast is fetched, never what
   the request carries: system profiling stays off, so nothing about you or the Mac is
@@ -136,10 +136,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- `mactrics alerts watch --json --heartbeat <seconds>` now provides a tagged NDJSON stream
+- `macnitor alerts watch --json --heartbeat <seconds>` now provides a tagged NDJSON stream
   with immediate readiness, periodic liveness and freshness information, alert events, and
   sampling-coverage transitions.
-- `mactrics doctor` validates saved rules, hardware coverage, the executable and optional
+- `macnitor doctor` validates saved rules, hardware coverage, the executable and optional
   command link, and emits the same diagnosis as versioned JSON with `--json`.
 - End-to-end CLI contract tests now execute the real binary with isolated preferences and
   lock down exit codes, stream separation, sampling failures, and version 1 JSON fixtures.
@@ -147,7 +147,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   long-run memory growth, and embedded CLI latency with machine-local JSON/CSV reports. It
   runs declared workloads from `scripts/performance/profiles/`, can open a Settings pane so
   that window is measured too, and logs the power source alongside every sample.
-- `mactrics://menu-bar` opens the Menu Bar pane of Settings, completing a route table that
+- `macnitor://menu-bar` opens the Menu Bar pane of Settings, completing a route table that
   already covered the overview and alerts.
 - Points-of-interest signposts and XCTest microbenchmarks cover launch-to-first-sample,
   popover presentation, menu bar formatting, Energy Guard decisions, and the ring-buffer
@@ -195,7 +195,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   show is now settled once it has been seen.
 - The menu bar previews in Settings reserve the same fixed width as the real items, so
   chips no longer resize as values change.
-- The Dock icon now goes away when you close the last Mactrics window. It was decided by
+- The Dock icon now goes away when you close the last Macnitor window. It was decided by
   scanning every window the app owned, which always found the window behind a status item,
   so once the icon appeared it stayed for the rest of the session.
 - Closing Settings now releases the window instead of holding it for the session, returning
@@ -209,11 +209,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- A bundled, read-only `mactrics` CLI for headless Macs. It reuses the alert rules enabled
+- A bundled, read-only `macnitor` CLI for headless Macs. It reuses the alert rules enabled
   in the app, streams activation and recovery events as text or newline-delimited JSON,
   lists configured rules, provides a cron-friendly `check` with meaningful exit codes,
   and captures every available module through a one-shot `snapshot`.
-- A one-click CLI installer in Alert settings. It creates `/usr/local/bin/mactrics` as a
+- A one-click CLI installer in Alert settings. It creates `/usr/local/bin/macnitor` as a
   link to the signed executable inside the app, with no second download or background
   service.
 - Two alert rules for what macOS itself reports, alongside the existing number
@@ -232,14 +232,14 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   fan data but does not return the usual SMC fan-count key.
 
 - Temperatures are no longer sampled for a module that is only being watched by an alert
-  rule. Reading the SMC is the most expensive thing Mactrics does, and a rule on CPU
+  rule. Reading the SMC is the most expensive thing Macnitor does, and a rule on CPU
   usage never needed it.
 
 ### Fixed
 
 - What's New now appears after an update actually installs. It was only ever shown when
   the app was reopened from the Finder, and an update does not do that — it quits
-  Mactrics and starts it again. A menu bar app has no Dock icon to click either, so in
+  Macnitor and starts it again. A menu bar app has no Dock icon to click either, so in
   practice the release notes never appeared for anyone who upgraded.
 - Disk read and write throughput no longer reports an impossible figure after a volume
   is ejected. Throughput is the difference between two lifetime byte counters summed
@@ -258,7 +258,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- Mactrics uses noticeably less CPU while it sits in the menu bar. A status item is only
+- Macnitor uses noticeably less CPU while it sits in the menu bar. A status item is only
   redrawn when its reading actually changed, disk space is read through a cheap system
   call instead of one that wakes a background service every second, and the graphics and
   sensor readings copy only the values they need.
@@ -284,7 +284,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Complete English, Turkish, Russian, Spanish, French, and Brazilian Portuguese
   localizations for the app and widgets, with an in-app language picker under General
   Settings.
-- A built-in clean uninstall flow that removes Mactrics, its preferences, alert rules,
+- A built-in clean uninstall flow that removes Macnitor, its preferences, alert rules,
   local history, and caches without requiring administrator access.
 
 ### Changed
@@ -326,7 +326,7 @@ roughly one idle wake per second.
 - **Diagnostics** — a local-only system summary that can be copied or exported as plain text.
 - **Three-step onboarding**, accent themes, and launch-at-login via `SMAppService`.
 - **MetricsKit** — a UI-independent SwiftPM engine (providers, adaptive scheduler,
-  pre-allocated ring buffer store) with a `mactrics-cli` terminal readout.
+  pre-allocated ring buffer store) with a `macnitor-cli` terminal readout.
 - **Internationalization** — English base strings extracted into a String Catalog; adding a
   language requires no code change.
 

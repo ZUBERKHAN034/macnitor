@@ -55,7 +55,7 @@ public struct SharedMetricSnapshotStore: Sendable {
                 in: .userDomainMask
             ).first!
             self.fileURL = applicationSupport
-                .appendingPathComponent("Mactrics", isDirectory: true)
+                .appendingPathComponent("Macnitor", isDirectory: true)
                 .appendingPathComponent(Self.fileName)
         }
     }

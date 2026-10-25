@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-mactrics is pre-1.0. Only the latest commit on `main` and the most recent release receive
+macnitor is pre-1.0. Only the latest commit on `main` and the most recent release receive
 security fixes.
 
 ## Reporting a vulnerability

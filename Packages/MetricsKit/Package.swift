@@ -9,8 +9,8 @@ let package = Package(
     products: [
         // UI-independent core: providers, scheduler, store, and engine.
         .library(name: "MetricsKit", targets: ["MetricsKit"]),
-        // Read-only automation interface shipped inside Mactrics.app.
-        .executable(name: "mactrics", targets: ["MactricsCLI"]),
+        // Read-only automation interface shipped inside Macnitor.app.
+        .executable(name: "macnitor", targets: ["MacnitorCLI"]),
         // Internal provider readout for development and hardware validation.
         .executable(name: "metricskit-demo", targets: ["MetricsKitDemo"])
     ],
@@ -26,15 +26,15 @@ let package = Package(
         // lock, so strict concurrency checks the boundaries we actually cross.
         .target(name: "MetricsKit"),
         .target(
-            name: "MactricsCLICore",
+            name: "MacnitorCLICore",
             dependencies: [
                 "MetricsKit",
                 .product(name: "ArgumentParser", package: "swift-argument-parser")
             ]
         ),
         .executableTarget(
-            name: "MactricsCLI",
-            dependencies: ["MactricsCLICore"]
+            name: "MacnitorCLI",
+            dependencies: ["MacnitorCLICore"]
         ),
         .executableTarget(
             name: "MetricsKitDemo",
@@ -45,8 +45,8 @@ let package = Package(
             dependencies: ["MetricsKit"]
         ),
         .testTarget(
-            name: "MactricsCLITests",
-            dependencies: ["MactricsCLICore"],
+            name: "MacnitorCLITests",
+            dependencies: ["MacnitorCLICore"],
             resources: [.copy("Fixtures")]
         )
     ]

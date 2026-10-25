@@ -1,6 +1,6 @@
 import Foundation
 
-/// Data-quality state shared by every Mactrics presentation surface.
+/// Data-quality state shared by every Macnitor presentation surface.
 ///
 /// This type intentionally contains no localized copy or UI styling. The app and
 /// widget translate it into their native presentation language.

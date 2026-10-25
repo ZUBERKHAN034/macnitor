@@ -29,7 +29,7 @@ jobs:
         run: swift test
 
   app:
-    name: Mactrics.app (xcodebuild)
+    name: Macnitor.app (xcodebuild)
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v7
@@ -49,8 +49,8 @@ jobs:
       - name: Build
         run: |
           xcodebuild build \
-            -project Mactrics.xcodeproj \
-            -scheme Mactrics \
+            -project Macnitor.xcodeproj \
+            -scheme Macnitor \
             -configuration Debug \
             -destination 'platform=macOS' \
             CODE_SIGNING_ALLOWED=NO \
@@ -62,8 +62,8 @@ jobs:
       - name: Test app logic
         run: |
           xcodebuild test \
-            -project Mactrics.xcodeproj \
-            -scheme Mactrics \
+            -project Macnitor.xcodeproj \
+            -scheme Macnitor \
             -destination 'platform=macOS' \
             ENABLE_CODE_COVERAGE=NO \
             CODE_SIGNING_ALLOWED=NO \
@@ -83,7 +83,7 @@ jobs:
 
       - name: Generated output must not be committed
         run: |
-          if git ls-files | grep -E '^(Mactrics\.xcodeproj/|DerivedData/|\.build/|.*\.DS_Store$)'; then
+          if git ls-files | grep -E '^(Macnitor\.xcodeproj/|DerivedData/|\.build/|.*\.DS_Store$)'; then
             echo "::error::Generated or OS output is committed. project.yml is the source of the Xcode project."
             exit 1
           fi

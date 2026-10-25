@@ -10,7 +10,7 @@
 -->
 
 - [ ] `swift test` passes in `Packages/MetricsKit`
-- [ ] `xcodebuild -project Mactrics.xcodeproj -scheme Mactrics -configuration Debug build` succeeds with no new warnings
+- [ ] `xcodebuild -project Macnitor.xcodeproj -scheme Macnitor -configuration Debug build` succeeds with no new warnings
 - [ ] Checked in the running app (menu bar + popover), not only in tests
 
 ## Conventions checklist
@@ -20,5 +20,5 @@
 - [ ] Menu bar item width still does not depend on the current value (width template updated if a format changed)
 - [ ] Missing readings render as a dash, never as a fabricated `0`
 - [ ] No telemetry, and no network call outside the explicit update check
-- [ ] `xcodegen generate` was run if files were added or removed; `Mactrics.xcodeproj/` is not committed
+- [ ] `xcodegen generate` was run if files were added or removed; `Macnitor.xcodeproj/` is not committed
 - [ ] No AI attribution in commits (no `Co-Authored-By:` or "Generated with" trailers)

@@ -3,7 +3,7 @@
 set -euo pipefail
 
 repo_root=${0:A:h:h:h}
-test_root=$(mktemp -d "${TMPDIR:-/tmp}/mactrics-performance-tests.XXXXXX")
+test_root=$(mktemp -d "${TMPDIR:-/tmp}/macnitor-performance-tests.XXXXXX")
 trap 'rm -rf "$test_root"' EXIT
 
 pass_dir="$test_root/pass"
@@ -49,9 +49,9 @@ if grep -Ev '^[[:space:]]*#' "$repo_root/scripts/performance/measure.sh" \
 fi
 grep -q -- '-ApplePersistenceIgnoreState YES' \
   "$repo_root/scripts/performance/measure.sh"
-grep -q 'alert_rules=__mactrics_performance_empty__' \
+grep -q 'alert_rules=__macnitor_performance_empty__' \
   "$repo_root/scripts/performance/measure.sh"
-grep -q 'enabled_components=__mactrics_performance_empty__' \
+grep -q 'enabled_components=__macnitor_performance_empty__' \
   "$repo_root/scripts/performance/measure.sh"
 grep -q 'defaults export com.mectrics.app' \
   "$repo_root/scripts/performance/measure.sh"
