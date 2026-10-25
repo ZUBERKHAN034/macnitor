@@ -10,7 +10,7 @@ enum MacnitorGlyph {
     /// Width : height of the M.
     static let aspectRatio: CGFloat = size.width / size.height
     /// Width : height of the menu bar waveform mark.
-    static let menuBarAspectRatio: CGFloat = 26.0 / 14.0
+    static let menuBarAspectRatio: CGFloat = 11.0 / 7.0
 
     /// The waveform green used to accent the in-app M mark.
     static let tipColor = NSColor(srgbRed: 64 / 255, green: 255 / 255, blue: 180 / 255, alpha: 1)
@@ -49,12 +49,12 @@ enum MacnitorGlyph {
         return image
     }
 
-    /// Eleven rounded bars form the mirrored waveform from the supplied menu bar mark.
+    /// Eleven rounded bars form the compact, mirrored M-waveform from the supplied mark.
     /// Vector geometry keeps the template crisp and lets AppKit render it black or white
     /// for the current menu bar appearance.
     static func waveformPath(in rect: CGRect) -> CGPath {
-        let heights: [CGFloat] = [0.40, 0.60, 0.98, 0.76, 0.50, 0.34,
-                                  0.50, 0.76, 0.98, 0.60, 0.40]
+        let heights: [CGFloat] = [0.36, 0.60, 1.00, 0.44, 0.36, 0.38,
+                                  0.36, 0.44, 1.00, 0.60, 0.36]
         let pitch = rect.width / 12
         let barWidth = pitch * 0.72
         let barHeight = rect.height * 0.76
@@ -78,7 +78,7 @@ enum MacnitorGlyph {
         return path
     }
 
-    /// The fixed menu bar image, built once: 26 × 14 pt. Its even dimensions keep it sharp
+    /// The fixed menu bar image, built once: 22 × 14 pt. Its even dimensions keep it sharp
     /// and centered in the Dashboard's fixed-width status item at 1x.
     static let menuBarImage: NSImage = templateImage(height: 14)
 
