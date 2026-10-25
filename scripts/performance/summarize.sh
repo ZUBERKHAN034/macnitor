@@ -17,7 +17,7 @@ header=$(head -n 1 "$samples")
   exit 65
 }
 
-work_dir=$(mktemp -d "${TMPDIR:-/tmp}/mectrics-performance.XXXXXX")
+work_dir=$(mktemp -d "${TMPDIR:-/tmp}/mactrics-performance.XXXXXX")
 trap 'rm -rf "$work_dir"' EXIT
 
 awk -F, '$3 == "measured" { print $4 }' "$samples" > "$work_dir/cpu"

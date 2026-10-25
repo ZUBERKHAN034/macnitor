@@ -14,7 +14,7 @@ Each question is answered once, at the depth the person asking needs.
 
 | You want to know | Read |
 |---|---|
-| What Mectrics costs while it runs, in plain terms | [`README.md`](../README.md) — "Light on the machine" |
+| What Mactrics costs while it runs, in plain terms | [`README.md`](../README.md) — "Light on the machine" |
 | What was measured, on what, and which budgets are met today | [Architecture → Power and performance](architecture.md#power-and-performance) |
 | *Why* it costs that, and where the cost actually is | [Architecture → Where the cost actually is](architecture.md#where-the-cost-actually-is) |
 | How to reproduce a measurement yourself | [`CONTRIBUTING.md`](../CONTRIBUTING.md#performance-validation) |

@@ -1,5 +1,5 @@
 name: Bug report
-description: Something in mectrics behaves incorrectly
+description: Something in mactrics behaves incorrectly
 labels: ["bug"]
 body:
   - type: markdown
@@ -73,7 +73,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: mectrics version
+      label: mactrics version
       description: From About, or the commit hash if you built from source.
       placeholder: 0.1.0 (or commit 56f7807)
     validations:

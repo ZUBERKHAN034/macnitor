@@ -1,6 +1,6 @@
 name: Build app
 
-# Builds an unsigned Debug Mectrics.app and uploads it as a downloadable artifact, so a
+# Builds an unsigned Debug Mactrics.app and uploads it as a downloadable artifact, so a
 # change can be tried on a real Mac before it is released. Signing is off (no Developer ID
 # on the runner); release builds are still signed and notarized locally by
 # scripts/release.sh, exactly as before.
@@ -8,8 +8,8 @@ name: Build app
 # To try a build on your Mac:
 #   1. Run this workflow (or push to the branch below), then download the artifact.
 #   2. Unzip, then remove the download quarantine with:
-#        xattr -cr Mectrics.app
-#   3. Open Mectrics.app. It is an LSUIElement agent, so it appears in the menu bar.
+#        xattr -cr Mactrics.app
+#   3. Open Mactrics.app. It is an LSUIElement agent, so it appears in the menu bar.
 
 on:
   workflow_dispatch:
@@ -18,7 +18,7 @@ on:
 
 jobs:
   build:
-    name: Mectrics.app (unsigned Debug)
+    name: Mactrics.app (unsigned Debug)
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v7
@@ -35,8 +35,8 @@ jobs:
       - name: Build
         run: |
           xcodebuild build \
-            -project Mectrics.xcodeproj \
-            -scheme Mectrics \
+            -project Mactrics.xcodeproj \
+            -scheme Mactrics \
             -configuration Debug \
             -destination 'platform=macOS' \
             -derivedDataPath build/DerivedData \
@@ -49,12 +49,12 @@ jobs:
       - name: Package the app
         run: |
           ditto -c -k --keepParent \
-            build/DerivedData/Build/Products/Debug/Mectrics.app \
-            Mectrics-Debug.zip
+            build/DerivedData/Build/Products/Debug/Mactrics.app \
+            Mactrics-Debug.zip
 
       - name: Upload the app
         uses: actions/upload-artifact@v4
         with:
-          name: Mectrics-Debug
-          path: Mectrics-Debug.zip
+          name: Mactrics-Debug
+          path: Mactrics-Debug.zip
           if-no-files-found: error

@@ -26,7 +26,7 @@ if [[ "$skip_appcast" != 0 && "$skip_appcast" != 1 ]]; then
   echo "MECTRICS_SKIP_APPCAST must be 0 or 1" >&2
   exit 64
 fi
-archive_path="$release_root/Mectrics.xcarchive"
+archive_path="$release_root/Mactrics.xcarchive"
 export_path="$release_root/export"
 export_options_path="$release_root/ExportOptions.plist"
 staging_path="$release_root/dmg"
@@ -45,8 +45,8 @@ mkdir -p "$release_root"
 xcodegen generate
 rm -rf "$archive_path" "$export_path"
 xcodebuild archive \
-  -project Mectrics.xcodeproj \
-  -scheme Mectrics \
+  -project Mactrics.xcodeproj \
+  -scheme Mactrics \
   -configuration Release \
   -archivePath "$archive_path" \
   -destination "generic/platform=macOS" \
@@ -67,8 +67,8 @@ xcodebuild -exportArchive \
   -exportOptionsPlist "$export_options_path" \
   -allowProvisioningUpdates
 
-app_path="$export_path/Mectrics.app"
-cli_path="$app_path/Contents/Helpers/mectrics"
+app_path="$export_path/Mactrics.app"
+cli_path="$app_path/Contents/Helpers/mactrics"
 [[ -x "$cli_path" ]]
 codesign --verify --strict --verbose=2 "$cli_path"
 codesign --verify --deep --strict --verbose=2 "$app_path"
@@ -84,12 +84,12 @@ fi
 
 rm -rf "$staging_path"
 mkdir -p "$staging_path"
-ditto "$app_path" "$staging_path/Mectrics.app"
+ditto "$app_path" "$staging_path/Mactrics.app"
 ln -s /Applications "$staging_path/Applications"
 
 rm -f "$dmg_path"
 hdiutil create \
-  -volname "Mectrics" \
+  -volname "Mactrics" \
   -srcfolder "$staging_path" \
   -ov \
   -format UDZO \

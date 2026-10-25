@@ -4,7 +4,7 @@ set -euo pipefail
 zmodload zsh/datetime
 
 usage() {
-  echo "Usage: $0 --app <Mectrics.app> [--iterations N] [--baseline summary.json] [--output directory]"
+  echo "Usage: $0 --app <Mactrics.app> [--iterations N] [--baseline summary.json] [--output directory]"
 }
 
 repo_root=${0:A:h:h:h}
@@ -29,7 +29,7 @@ done
   exit 64
 }
 app_path=${app_path:A}
-cli="$app_path/Contents/Helpers/mectrics"
+cli="$app_path/Contents/Helpers/mactrics"
 info_plist="$app_path/Contents/Info.plist"
 [[ -x "$cli" && -f "$info_plist" ]] || { echo "Embedded CLI not found" >&2; exit 66; }
 version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$info_plist")

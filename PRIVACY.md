@@ -1,13 +1,13 @@
 # Privacy
 
-Mectrics collects no analytics, telemetry, identifiers, or crash reports. System
+Mactrics collects no analytics, telemetry, identifiers, or crash reports. System
 metrics stay on the Mac and are stored locally only for the features the user enables.
 
 The app does not send hardware information, usage data, metric history, or alert
 settings to any server. It makes exactly one kind of network request: an update check
 against the published appcast.
 
-Mectrics asks once whether it may make that check on its own, in onboarding or on a later
+Mactrics asks once whether it may make that check on its own, in onboarding or on a later
 launch, and the answer can be changed at any time in **Settings → General → Updates**. Until
 it is answered, and whenever the answer is no, the appcast is fetched only when the user
 chooses **Check for Updates…**.

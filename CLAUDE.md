@@ -10,12 +10,12 @@ Guidance for Claude Code (and other agents) working in this repository.
 - **English-only repo.** Code, comments, docs, commit messages, and base UI strings are all
   in English. The user may chat in Turkish; that never changes what lands in the repo.
 - **i18n:** user-facing strings via `String(localized:)` / `Text` → String Catalog
-  (`Mectrics/Resources/Localizable.xcstrings`). Never hardcode user-facing prose.
+  (`Mactrics/Resources/Localizable.xcstrings`). Never hardcode user-facing prose.
 - **Menu bar width must be stable** — fixed reserved widths, right-aligned text
   (`MetricStatusItem`). Never let item width depend on the current value.
 - **Zero telemetry**, adaptive sampling, keep it lightweight (< 60 MB RAM).
 - `project.yml` is the source; run `xcodegen generate` after adding files or editing it.
-  Never commit `Mectrics.xcodeproj/`, `DerivedData/`, `.build/`.
+  Never commit `Mactrics.xcodeproj/`, `DerivedData/`, `.build/`.
 - **Never add Claude (or any AI agent) as a commit contributor.** No `Co-Authored-By:`
   trailers, no "Generated with" lines, no AI attribution of any kind. Commits are authored
   solely by the human. (See AGENTS.md §8.)
@@ -30,8 +30,8 @@ cd Packages/MetricsKit && swift test && swift run metricskit-demo
 
 ```bash
 xcodegen generate
-xcodebuild -project Mectrics.xcodeproj -scheme Mectrics -configuration Debug build
-open ~/Library/Developer/Xcode/DerivedData/Mectrics-*/Build/Products/Debug/Mectrics.app
+xcodebuild -project Mactrics.xcodeproj -scheme Mactrics -configuration Debug build
+open ~/Library/Developer/Xcode/DerivedData/Mactrics-*/Build/Products/Debug/Mactrics.app
 ```
 
 ## Notes

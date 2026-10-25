@@ -1,4 +1,4 @@
-# AGENTS.md — Working agreement for mectrics
+# AGENTS.md — Working agreement for mactrics
 
 This file is the **source of truth** for conventions in this repository. It applies to any
 AI agent or human contributor. `CLAUDE.md` points here.
@@ -23,15 +23,15 @@ may write in Turkish). Nothing from that chat leaks into the repo in another lan
   ring-buffer store, engine. **No UI, no localization** (data-only, English identifiers).
   - `swift build`, `swift test`, `swift run metricskit-demo` (internal live provider
     readout).
-  - `swift run mectrics` runs the read-only user CLI. It reads alert configuration from
+  - `swift run mactrics` runs the read-only user CLI. It reads alert configuration from
     the app and offers `check`, `snapshot`, event streaming, and rule listing.
-    `Tests/MectricsCLITests` owns its process, exit-code, JSON-fixture, and failure-path
+    `Tests/MactricsCLITests` owns its process, exit-code, JSON-fixture, and failure-path
     contracts.
   - Builds in the **Swift 6 language mode** and must stay warning-free. `MetricProvider`
     requires `Sendable`; providers are `@unchecked Sendable` because the engine samples
     them on one serial queue. Guard anything read outside that queue with a lock.
-- `Mectrics/` — the menu bar app (SwiftUI + AppKit).
-- `project.yml` — XcodeGen project definition. **This is the source**; `Mectrics.xcodeproj`
+- `Mactrics/` — the menu bar app (SwiftUI + AppKit).
+- `project.yml` — XcodeGen project definition. **This is the source**; `Mactrics.xcodeproj`
   is generated. After editing `project.yml` **or adding/removing source files**, run
   `xcodegen generate`.
 - `docs/` — the architecture deep dive, and nothing else. Contributor-facing only: planning
@@ -39,7 +39,7 @@ may write in Turkish). Nothing from that chat leaks into the repo in another lan
   repository. The release procedure lives in `scripts/release.sh`, which is self-documenting
   through its required environment variables.
 
-Do **not** commit: `Mectrics.xcodeproj/`, `DerivedData/`, `.build/`, or
+Do **not** commit: `Mactrics.xcodeproj/`, `DerivedData/`, `.build/`, or
 `Packages/MetricsKit/Package.resolved` (see `.gitignore`). That last one is not an
 oversight: `xcodebuild` on the app writes the app's whole package graph into it — Sparkle
 included, though MetricsKit does not depend on Sparkle — and `swift build` in the package
@@ -51,8 +51,8 @@ pinned to an exact version in `Package.swift`, so nothing rests on the file.
 
 - All user-facing strings go through `String(localized:)` or SwiftUI `Text`/`Label`.
 - Never hardcode user-facing prose as a plain `String` without localization.
-- App strings live in `Mectrics/Resources/Localizable.xcstrings`; widget strings live in
-  `MectricsWidget/Localizable.xcstrings`. Both catalogs ship English, Turkish, Russian,
+- App strings live in `Mactrics/Resources/Localizable.xcstrings`; widget strings live in
+  `MactricsWidget/Localizable.xcstrings`. Both catalogs ship English, Turkish, Russian,
   Spanish, French, Brazilian Portuguese, and Simplified Chinese.
 - The General Settings language picker is backed by `AppLanguage`. Adding a language means
   adding its case and identifier there, then translating every entry in both catalogs.
@@ -142,7 +142,7 @@ pinned to an exact version in `Package.swift`, so nothing rests on the file.
   summaries, onboarding, and recovery actions go through them, never through
   `enabledComponents` directly.
 - **The Dashboard is fixed-width, and it is also the health item.**
-  `MectricsStatusItem` has a fixed, even length, so its even-sided image sits on whole
+  `MactricsStatusItem` has a fixed, even length, so its even-sided image sits on whole
   pixels at 1x. A badge **never changes that size**: a mark that grew when something went
   wrong would move every item after it. The accessibility label is assigned once; the
   image, value, and tooltip change only on a severity transition or a theme change, and an
@@ -159,7 +159,7 @@ pinned to an exact version in `Package.swift`, so nothing rests on the file.
 ## 4. Surfaces and Settings
 
 - **The menu bar is the only live surface.** The always-on-top floating panel and its
-  global hotkey were removed; the supported overview lives in the menu bar — the Mectrics
+  global hotkey were removed; the supported overview lives in the menu bar — the Mactrics
   item's dashboard. It is a transient popover in the shared `NSPopover`, on screen only
   from a click until the next click elsewhere. Do not reintroduce a second always-visible
   rendering surface.
@@ -198,7 +198,7 @@ pinned to an exact version in `Package.swift`, so nothing rests on the file.
   standard output pipe-safe. `check` and alert streaming sample only the metrics they need;
   `snapshot` samples every available module once. It is read-only; alert configuration
   remains in the app.
-- Every Settings pane is reachable by a `mectrics://` route (`overview`, `menu-bar`,
+- Every Settings pane is reachable by a `mactrics://` route (`overview`, `menu-bar`,
   `alerts`), so a destination the app can show is a destination it can be sent to.
 - **The Dock icon belongs to `DockPresence`, not to a window scan.** The app launches as
   `.accessory` and becomes `.regular` only while one of its own standard windows is on
@@ -222,9 +222,9 @@ pinned to an exact version in `Package.swift`, so nothing rests on the file.
   recovery events only; opt-in heartbeat mode uses tagged `ready`, `heartbeat`, `alert`, and
   `status` records that expose sampling coverage and freshness. Watch rules are frozen at
   startup and the process must be restarted after an app-side rule change.
-- The optional CLI installation is a symbolic link at `/usr/local/bin/mectrics` pointing
+- The optional CLI installation is a symbolic link at `/usr/local/bin/mactrics` pointing
   into the signed app bundle. Never download or copy a second binary, overwrite an unrelated
-  command at that path, or install a daemon. App removal also removes a Mectrics-owned link.
+  command at that path, or install a daemon. App removal also removes a Mactrics-owned link.
 - **Settings holds configuration, not routine actions.** Quit, copy, and export belong to
   the surfaces that own them (popover, Diagnostics, Attention Log), not to a preferences
   pane. The destructive, one-time app removal action is the sole exception because no
@@ -255,11 +255,11 @@ pinned to an exact version in `Package.swift`, so nothing rests on the file.
   what `summarize.sh` divides by. A figure computed in MiB is about 5% smaller and is not
   comparable with anything else quoted here.
 - **Memory is measured as `phys_footprint`, never as `ps rss`.** Run
-  `footprint -p $(pgrep -x Mectrics)` on a **Release** build and quote its
+  `footprint -p $(pgrep -x Mactrics)` on a **Release** build and quote its
   `phys_footprint`. That is the figure Activity Monitor's "Memory" column shows and the
   one the budget above refers to. `ps rss` counts shared framework pages that every
   SwiftUI app maps and no app pays for individually; on this app it reads roughly three
-  times higher and makes Mectrics look far heavier than it is. Quoting RSS in a README,
+  times higher and makes Mactrics look far heavier than it is. Quoting RSS in a README,
   an issue, or a launch thread understates the product against its own budget.
 - `cost` decides how often a provider runs: `.light` every base cycle, `.medium`
   (battery, disk) and `.heavy` (SMC/GPU/sensors) thinned by `SamplingRuntimePolicy`.
@@ -278,7 +278,7 @@ pinned to an exact version in `Package.swift`, so nothing rests on the file.
   ran. Never generalize a short smoke run into a soak result or a guarantee for every Mac.
 - Performance launchers use process-only preference overrides, suppress saved-window
   restoration, and restore the exact preferences snapshot after the process exits. A run
-  must leave the contributor's real Mectrics preferences unchanged. A domain that did not
+  must leave the contributor's real Mactrics preferences unchanged. A domain that did not
   exist before a run must not exist after it, and the removal is retried because cfprefsd
   can flush a departing process's writes after it has gone.
 - A gate covers **two** workloads, because they fail differently: the menu bar alone, and
@@ -352,7 +352,7 @@ cd Packages/MetricsKit && swift test && swift run metricskit-demo
 
 # App
 xcodegen generate
-xcodebuild -project Mectrics.xcodeproj -scheme Mectrics -configuration Debug build
+xcodebuild -project Mactrics.xcodeproj -scheme Mactrics -configuration Debug build
 ```
 
 ## 8. Commits
