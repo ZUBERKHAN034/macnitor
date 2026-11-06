@@ -82,6 +82,13 @@ struct MenuBarBuilderView: View {
                         set: { model.setDashboardIconVisible($0) }
                     )
                 )
+                Toggle(
+                    String(localized: "duobar.replaceDashboard", defaultValue: "Replace Dashboard icon with DuoBar"),
+                    isOn: $model.usesDuoBarDashboard
+                )
+                Text(String(localized: "duobar.replaceDashboard.help", defaultValue: "Shows live battery, network, and audio status in the menu bar. Clicking it opens DuoBar controls."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 if let reason = model.dashboardIconHiddenBlockedReason {
                     Text(reason)
                         .font(.caption)

@@ -55,6 +55,7 @@ targets:
       - target: MacnitorWidget
         embed: true
       - sdk: Security.framework
+      - sdk: CoreWLAN.framework
       - package: Sparkle
         product: Sparkle
     info:
