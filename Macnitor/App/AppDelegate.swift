@@ -1,5 +1,4 @@
 import AppKit
-import CoreWLAN
 import MetricsKit
 
 enum StartupPresentation: Equatable {
@@ -78,7 +77,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var aboutWindow: AboutWindowController!
     private var whatsNewWindow: WhatsNewWindowController!
     private let updates = UpdateController()
-    private let duoBarAudio = DuoBarAudioMonitor()
     private var onboarding: OnboardingWindowController?
     private let thresholds = ThresholdMonitor(
         notificationHandler: AlertNotificationDelivery.threshold
@@ -123,66 +121,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         menuBar = MenuBarController(model: model)
         menuBar.rebuild()
-        model.onDuoBarVolumeChanged = { [weak self] volume in
-            self?.duoBarAudio.setVolume(volume)
-        }
-        model.onDuoBarMuteChanged = { [weak self] muted in
-            self?.duoBarAudio.setMuted(muted)
-        }
-        model.onOpenWiFiSettings = {
-            if let url = URL(string: "x-apple.systempreferences:com.apple.WiFi-Settings.extension") {
-                NSWorkspace.shared.open(url)
-            }
-        }
-        model.onDuoBarOutputSelected = { [weak self] uid in
-            self?.duoBarAudio.setDefaultOutput(uid: uid)
-        }
-        model.onDuoBarInputSelected = { [weak self] uid in
-            self?.duoBarAudio.setDefaultInput(uid: uid)
-        }
-        model.onDuoBarWiFiPowerChanged = { [weak self] enabled in
-            guard let self, let interface = CWWiFiClient.shared().interface() else { return }
-            do {
-                try interface.setPower(enabled)
-                self.model.duoBarWiFiPoweredOn = interface.powerOn()
-                self.menuBar.refresh()
-            } catch {
-                self.model.duoBarWiFiPoweredOn = interface.powerOn()
-            }
-        }
-        model.onDuoBarPopoverOpened = { [weak self] in
-            guard let self else { return }
-            self.model.duoBarWiFiPoweredOn = CWWiFiClient.shared().interface()?.powerOn()
-            self.duoBarAudio.refreshStatus()
-            self.menuBar.refresh()
-        }
-        duoBarAudio.onChange = { [weak self] state in
-            guard let self else { return }
-            self.model.duoBarVolume = state.volume
-            self.model.duoBarMuted = state.muted
-            self.model.duoBarVolumeSettable = state.canSetVolume
-            self.model.duoBarMuteSettable = state.canSetMute
-            self.model.duoBarAudioOutputs = state.outputs
-            self.model.duoBarSelectedOutputUID = state.selectedOutputUID
-            self.model.duoBarAudioInputs = state.inputs
-            self.model.duoBarSelectedInputUID = state.selectedInputUID
-            self.menuBar.refresh()
-        }
-        model.onDuoBarModeChanged = { [weak self] in
-            guard let self else { return }
-            if self.model.usesDuoBarDashboard {
-                self.model.duoBarWiFiPoweredOn = CWWiFiClient.shared().interface()?.powerOn()
-                self.duoBarAudio.start()
-            } else {
-                self.duoBarAudio.stop()
-            }
-            self.menuBar.dashboardPresentationModeChanged()
-            self.menuBar.refresh()
-        }
-        if model.usesDuoBarDashboard {
-            model.duoBarWiFiPoweredOn = CWWiFiClient.shared().interface()?.powerOn()
-            duoBarAudio.start()
-        }
         PerformanceSignposts.menuBarReady()
         energyGuard = EnergyGuardController(model: model)
         menuBar.onDetailVisibilityChanged = { [weak self] ids, visible in
@@ -335,7 +273,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             CFRunLoopRemoveSource(CFRunLoopGetMain(), powerSourceRunLoopSource, .defaultMode)
         }
         model.engine.stop()
-        duoBarAudio.stop()
         energyGuard.stop()
     }
 

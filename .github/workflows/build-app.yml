@@ -19,7 +19,7 @@ on:
 jobs:
   build:
     name: Macnitor.app (unsigned Debug)
-    runs-on: macos-15-intel
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v7
 

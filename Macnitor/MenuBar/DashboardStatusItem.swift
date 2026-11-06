@@ -1,5 +1,4 @@
 import AppKit
-import SwiftUI
 
 /// The one Macnitor waveform item of the single-icon style. Clicking it opens the
 /// dashboard popover.
@@ -32,12 +31,6 @@ final class DashboardStatusItem: NSObject {
     private struct RenderInputs: Equatable {
         let state: HealthState
         let appearanceName: NSAppearance.Name
-        let isDuoBar: Bool
-        let batteryLevel: Double?
-        let isCharging: Bool
-        let volumeLevel: Double?
-        let isMuted: Bool
-        let networkAvailable: Bool
     }
 
     override init() {
@@ -67,63 +60,24 @@ final class DashboardStatusItem: NSObject {
     /// with any colour vision. Only the badge takes the severity colour — the M keeps the
     /// menu bar's own label colour, because a solid mark painted orange on a dark menu
     /// bar reads as dimmer than the white one it replaced, not as louder.
-    func update(
-        _ state: HealthState,
-        isDuoBar: Bool = false,
-        batteryLevel: Double? = nil,
-        isCharging: Bool = false,
-        volumeLevel: Double? = nil,
-        isMuted: Bool = false,
-        networkAvailable: Bool = false
-    ) {
+    func update(_ state: HealthState) {
         guard let button = item.button else { return }
         let appearance = button.effectiveAppearance
-        let inputs = RenderInputs(
-            state: state,
-            appearanceName: appearance.name,
-            isDuoBar: isDuoBar,
-            batteryLevel: batteryLevel,
-            isCharging: isCharging,
-            volumeLevel: volumeLevel,
-            isMuted: isMuted,
-            networkAvailable: networkAvailable
-        )
+        let inputs = RenderInputs(state: state, appearanceName: appearance.name)
         guard inputs != lastRender else { return }
         lastRender = inputs
         let isNormal = state == .normal
-        if isDuoBar {
-            var renderedImage: CGImage?
-            appearance.performAsCurrentDrawingAppearance {
-                let colorScheme: ColorScheme = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? .dark : .light
-                let renderer = ImageRenderer(content: DuoBarGlyphView(
-                    batteryLevel: batteryLevel,
-                    isCharging: isCharging,
-                    volumeLevel: volumeLevel,
-                    isMuted: isMuted,
-                    networkAvailable: networkAvailable,
-                    healthSymbol: isNormal ? nil : state.symbolName
-                ).environment(\.colorScheme, colorScheme))
-                renderer.scale = 2
-                renderedImage = renderer.cgImage
-            }
-            if let renderedImage {
-                button.image = NSImage(cgImage: renderedImage, size: NSSize(width: 22, height: 22))
-            }
-        } else {
-            button.image = MacnitorGlyph.menuBarImage(
-                badge: isNormal ? nil : state.symbolName,
-                tint: state.tint,
-                appearance: appearance
-            )
-        }
+        button.image = MacnitorGlyph.menuBarImage(
+            badge: isNormal ? nil : state.symbolName,
+            tint: state.tint,
+            appearance: appearance
+        )
         // The normal waveform is a template AppKit tints for every menu bar; the badged one
         // carries its own two colours and must not be recoloured as one silhouette.
         button.contentTintColor = nil
         button.setAccessibilityValue(state.localizedName)
         // Hovering says what is wrong, or what a click does when nothing is.
-        button.toolTip = isDuoBar
-            ? String(localized: "duobar.statusItem.help", defaultValue: "DuoBar: battery, network, and audio controls")
-            : isNormal
+        button.toolTip = isNormal
             ? String(
                 localized: "dashboard.statusItem.help",
                 defaultValue: "Show the Dashboard"
