@@ -38,30 +38,9 @@ struct DuoBarPopoverView: View {
                 emptyMessage: "No input devices",
                 onSelect: { model.onDuoBarInputSelected?($0) }
             )
-
-            Divider()
-
-            HStack {
-                Button("Settings") { model.onOpenSettings?() }
-                    .buttonStyle(.plain)
-                Spacer()
-                Button("Quit") { NSApp.terminate(nil) }
-                    .buttonStyle(.plain)
-            }
-            .font(.caption)
-            .foregroundStyle(.secondary)
         }
         .padding(12)
         .frame(width: DashboardPopoverView.width)
-        .background {
-            // Keep the same Macnitor appearance choice used by the Dashboard.
-            DashboardCardBackground(
-                fillOpacity: model.dashboardBackgroundOpacity,
-                appearance: model.dashboardAppearance,
-                cornerRadius: ExperienceRadius.panel
-            )
-        }
-        .clipped()
         .onAppear { model.onDuoBarPopoverOpened?() }
     }
 
