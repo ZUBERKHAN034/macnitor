@@ -33,7 +33,7 @@ struct DuoBarGlyphView: View {
 
             if showsChargingBolt {
                 Image(systemName: "bolt.fill")
-                    .font(.system(size: ringDiameter * 0.75 * (50 / 1.16 / 230), weight: .bold))
+                    .font(.system(size: ringDiameter * (50 / 1.16 / 230), weight: .bold))
                     .symbolRenderingMode(.monochrome)
                     .foregroundStyle(.primary)
                     .position(chargingBoltPosition)
