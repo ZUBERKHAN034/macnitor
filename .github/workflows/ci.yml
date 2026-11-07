@@ -52,6 +52,7 @@ jobs:
             -project Macnitor.xcodeproj \
             -scheme Macnitor \
             -configuration Debug \
+            -derivedDataPath build/ci-derived \
             -destination 'platform=macOS' \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
@@ -59,11 +60,22 @@ jobs:
             CODE_SIGN_ENTITLEMENTS="" \
             DEVELOPMENT_TEAM=""
 
+      - name: Package app build
+        run: ditto -c -k --sequesterRsrc --keepParent build/ci-derived/Build/Products/Debug/Macnitor.app Macnitor-Debug.zip
+
+      - name: Upload app build
+        uses: actions/upload-artifact@v7
+        with:
+          path: Macnitor-Debug.zip
+          archive: false
+          retention-days: 14
+
       - name: Test app logic
         run: |
           xcodebuild test \
             -project Macnitor.xcodeproj \
             -scheme Macnitor \
+            -derivedDataPath build/ci-derived \
             -destination 'platform=macOS' \
             ENABLE_CODE_COVERAGE=NO \
             CODE_SIGNING_ALLOWED=NO \
