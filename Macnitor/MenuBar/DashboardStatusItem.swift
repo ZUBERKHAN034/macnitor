@@ -115,7 +115,7 @@ final class DashboardStatusItem: NSObject {
                 renderedImage = renderer.cgImage
             }
             if let renderedImage {
-                button.image = NSImage(cgImage: renderedImage, size: NSSize(width: 22, height: 22))
+                button.image = NSImage(cgImage: renderedImage, size: NSSize(width: 24, height: 24))
             }
         } else {
             button.image = MacnitorGlyph.menuBarImage(
