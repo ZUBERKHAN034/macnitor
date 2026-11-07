@@ -43,14 +43,19 @@ struct DuoBarGlyphView: View {
             .opacity(wifiMarkOpacity)
 
             Image(systemName: "network.slash")
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(size: 12.4 * designScale, weight: .semibold))
                 .symbolRenderingMode(.monochrome)
+                .frame(
+                    width: 12.4 * designScale * 1.65,
+                    height: 12.4 * designScale * 1.4
+                )
+                .offset(y: -1.25 * designScale)
                 .opacity(offlineMarkOpacity)
                 .accessibilityHidden(true)
 
             if boltProgress > 0 {
                 Image(systemName: "bolt.fill")
-                    .font(.system(size: ringDiameter * (50 / 1.16 / 230), weight: .bold))
+                    .font(.system(size: scaledRingDiameter * (50 / 1.16 / 230), weight: .bold))
                     .symbolRenderingMode(.monochrome)
                     .foregroundStyle(.primary)
                     .position(chargingBoltPosition)
@@ -160,6 +165,7 @@ struct DuoBarGlyphView: View {
             }
         }
         .frame(width: scaledRingDiameter, height: scaledRingDiameter)
+        .offset(y: ringOffset)
         .foregroundStyle(.primary)
         .animation(.easeInOut(duration: 0.2), value: activeVolumeDotCount)
     }
