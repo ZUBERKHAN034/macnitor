@@ -130,7 +130,16 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
     /// state it already shows is dropped before it reaches AppKit.
     func refresh() {
         let accent = model.accentNSColor
-        logoItem?.update(model.healthState)
+        let battery = model.latest[.battery]
+        logoItem?.update(
+            model.healthState,
+            isDuoBar: model.usesDuoBarDashboard,
+            batteryLevel: battery?.normalized,
+            isCharging: battery?.detail["charging"] == 1,
+            volumeLevel: model.duoBarVolume,
+            isMuted: model.duoBarMuted,
+            networkAvailable: NetworkInfo.primaryIPv4() != nil
+        )
         // History is shared by every item of the same module, and only charted
         // components need it at all.
         var histories: [MetricID: [Double]] = [:]
@@ -175,6 +184,33 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         reportedVisibleModules = current
         if !removed.isEmpty { onDetailVisibilityChanged?(removed, false) }
         if !added.isEmpty { onDetailVisibilityChanged?(added, true) }
+    }
+
+    /// Swaps the Dashboard's content in place when the optional DuoBar presentation
+    /// changes, without rebuilding any status items or changing the anchor.
+    func dashboardPresentationModeChanged() {
+        guard popover.isShown, let kind = popoverKind, kind.isDashboard else { return }
+        let button: NSStatusBarButton?
+        switch kind {
+        case .dashboard:
+            button = logoItem?.item.button
+        case .moduleDashboard(let id):
+            button = items.values.first(where: { $0.id == id })?.item.button
+        case .module:
+            return
+        }
+        guard let button else { return }
+        if model.usesDuoBarDashboard {
+            show(DuoBarPopoverView(model: model), as: kind, visibleModules: [], from: button)
+        } else {
+            let showsAllWatchedModules: Bool
+            if case .moduleDashboard = kind {
+                showsAllWatchedModules = true
+            } else {
+                showsAllWatchedModules = false
+            }
+            presentDashboard(showsAllWatchedModules: showsAllWatchedModules, kind: kind, from: button)
+        }
     }
 
     /// The modules a dashboard of `kind` shows as cards. The logo shows the grouped
@@ -247,6 +283,15 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
             matchesCurrentKind: popoverKind == .dashboard
         ) {
             closePopover()
+            return
+        }
+        if model.usesDuoBarDashboard {
+            show(
+                DuoBarPopoverView(model: model),
+                as: .dashboard,
+                visibleModules: [],
+                from: button
+            )
             return
         }
         presentDashboard(showsAllWatchedModules: false, kind: .dashboard, from: button)

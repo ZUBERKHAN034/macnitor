@@ -26,6 +26,34 @@ final class AppModel {
     /// on every power-source notification, so no view has to; nil until then.
     var isOnBattery: Bool?
 
+    /// Live Core Audio output values used by the optional DuoBar dashboard item.
+    var duoBarVolume: Double?
+    var duoBarMuted = false
+    var duoBarVolumeSettable = false
+    var duoBarMuteSettable = false
+    var duoBarAudioOutputs: [DuoBarAudioOutput] = []
+    var duoBarSelectedOutputUID: String?
+    var duoBarAudioInputs: [DuoBarAudioOutput] = []
+    var duoBarSelectedInputUID: String?
+    var duoBarWiFiPoweredOn: Bool?
+    @ObservationIgnored var onDuoBarVolumeChanged: ((Double) -> Void)?
+    @ObservationIgnored var onDuoBarMuteChanged: ((Bool) -> Void)?
+    @ObservationIgnored var onDuoBarOutputSelected: ((String) -> Void)?
+    @ObservationIgnored var onDuoBarInputSelected: ((String) -> Void)?
+    @ObservationIgnored var onDuoBarWiFiPowerChanged: ((Bool) -> Void)?
+    @ObservationIgnored var onDuoBarPopoverOpened: (() -> Void)?
+    @ObservationIgnored var onDuoBarModeChanged: (() -> Void)?
+
+    /// Replaces the standard Dashboard mark and popover with DuoBar's compact status
+    /// indicator and controls. The watched cards and their sampling remain unchanged.
+    var usesDuoBarDashboard: Bool {
+        didSet {
+            defaults.set(usesDuoBarDashboard, forKey: Self.duoBarDashboardKey)
+            guard usesDuoBarDashboard != oldValue else { return }
+            onDuoBarModeChanged?()
+        }
+    }
+
     private var batteryPowerHistory = BatteryPowerHistory()
 
     /// Consecutive provider attempts that returned no sample. Short interruptions keep
@@ -164,6 +192,7 @@ final class AppModel {
     @ObservationIgnored var onOpenMetricDetail: ((MetricID) -> Void)?
 
     @ObservationIgnored var onEnergyGuardPreferenceChanged: (() -> Void)?
+    @ObservationIgnored var onOpenWiFiSettings: (() -> Void)?
 
     /// One-shot flag for the current onboarding experience. Versioning lets a
     /// substantially redesigned welcome appear once for existing users without
@@ -680,6 +709,7 @@ final class AppModel {
     private static let dashboardItemEnabledKey = "dashboardItemEnabled"
     private static let dashboardIconVisibleKey = "dashboardIconVisible"
     private static let moduleClickBehaviorKey = "moduleClickBehavior"
+    private static let duoBarDashboardKey = "usesDuoBarDashboard"
     /// Read only to carry an upgrading Mac's Compact Health item over to the Dashboard.
     private static let legacyCompactHealthEnabledKey = "compactHealthEnabled"
     private static let groupedModulesKey = "groupedModules"
@@ -750,6 +780,7 @@ final class AppModel {
         // not asked for it. Hiding the icon is a deliberate choice made in Settings.
         self.dashboardIconVisible =
             defaults.object(forKey: Self.dashboardIconVisibleKey) as? Bool ?? true
+        self.usesDuoBarDashboard = defaults.bool(forKey: Self.duoBarDashboardKey)
         // Clicking a module item opens its own detail unless asked otherwise.
         self.moduleClickBehavior = ModuleClickBehavior(
             rawValue: defaults.string(forKey: Self.moduleClickBehaviorKey) ?? ""
