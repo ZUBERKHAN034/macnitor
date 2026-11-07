@@ -354,9 +354,9 @@ struct DuoBarPopoverView: View {
             isAtFullCapacity: (batteryPercent ?? 0) >= 100
         )
         switch state {
-        case .disconnected: Color.secondary
-        case .connected: Color.blue
-        case .fullyCharged: Color.green
+        case .disconnected: return .secondary
+        case .connected: return .blue
+        case .fullyCharged: return .green
         }
     }
 
