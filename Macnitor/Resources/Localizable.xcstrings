@@ -5560,6 +5560,54 @@
         }
       }
     },
+    "battery.chargingOnHold": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "new", "value": "Charging On Hold" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Carga en pausa" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Charge en attente" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Carregamento em espera" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Зарядка приостановлена" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Şarj Beklemede" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "充电暂停" } }
+      }
+    },
+    "battery.usingAdapter": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "new", "value": "Using Adapter" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Usando el adaptador" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Sur adaptateur" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Usando o adaptador" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Питание от адаптера" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Adaptör Kullanılıyor" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "使用电源适配器" } }
+      }
+    },
+    "duobar.nearbyNetworks": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "new", "value": "Nearby Networks" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Redes cercanas" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Réseaux à proximité" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Redes próximas" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Сети поблизости" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Yakındaki Ağlar" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "附近网络" } }
+      }
+    },
+    "duobar.nearbyNetworks.hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "new", "value": "Open Wi-Fi settings to view nearby networks" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Abre los ajustes de Wi-Fi para ver las redes cercanas" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Ouvrez les réglages Wi-Fi pour voir les réseaux à proximité" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Abra os ajustes de Wi-Fi para ver as redes próximas" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Откройте настройки Wi-Fi, чтобы посмотреть сети поблизости" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Yakındaki ağları görmek için Wi-Fi ayarlarını açın" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "打开 Wi-Fi 设置以查看附近的网络" } }
+      }
+    },
     "battery.cycles": {
       "extractionState": "extracted_with_value",
       "localizations": {
