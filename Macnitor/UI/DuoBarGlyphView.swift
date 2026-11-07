@@ -130,10 +130,10 @@ struct DuoBarGlyphView: View {
         let percentage = Int((min(max(volumeLevel, 0), 1) * 100).rounded())
         if isMuted || percentage == 0 { return 0 }
         switch percentage {
-        case 1...25: 1
-        case 26...50: 2
-        case 51...75: 3
-        default: 4
+        case 1...25: return 1
+        case 26...50: return 2
+        case 51...75: return 3
+        default: return 4
         }
     }
 
