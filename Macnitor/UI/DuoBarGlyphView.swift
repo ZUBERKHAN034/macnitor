@@ -7,6 +7,8 @@ struct DuoBarGlyphView: View {
     let volumeLevel: Double?
     let isMuted: Bool
     let networkAvailable: Bool
+    let wifiSignal: DuoBarWiFiSignal
+    let bluetoothState: DuoBarBluetoothState
     let healthSymbol: String?
 
     var body: some View {
@@ -21,9 +23,10 @@ struct DuoBarGlyphView: View {
                     .stroke(.primary, style: StrokeStyle(lineWidth: 2.1, lineCap: .round))
                     .rotationEffect(.degrees(90))
             }
-            Image(systemName: networkAvailable ? "wifi" : "wifi.slash")
+            Image(systemName: wifiSignal == .disconnected || wifiSignal == .unavailable ? "wifi.slash" : "wifi")
                 .font(.system(size: 10, weight: .medium))
                 .symbolRenderingMode(.monochrome)
+                .opacity(wifiSignal == .weak ? 0.62 : wifiSignal == .medium ? 0.82 : 1)
                 .offset(y: -1)
             if isCharging {
                 Image(systemName: "bolt.fill")
@@ -33,7 +36,7 @@ struct DuoBarGlyphView: View {
             HStack(spacing: 1.7) {
                 ForEach(0..<4, id: \.self) { index in
                     Circle()
-                        .fill(.primary.opacity(isVolumeDotActive(index) ? 1 : 0.28))
+                        .fill(.primary.opacity(bluetoothDotOpacity(index)))
                         .frame(width: 2.4, height: 2.4)
                 }
             }
@@ -51,9 +54,11 @@ struct DuoBarGlyphView: View {
         .accessibilityHidden(true)
     }
 
-    private func isVolumeDotActive(_ index: Int) -> Bool {
-        guard let volumeLevel, !isMuted else { return false }
-        let count = min(4, max(0, Int((volumeLevel * 4).rounded(.up))))
-        return index < count
+    private func bluetoothDotOpacity(_ index: Int) -> Double {
+        switch bluetoothState {
+        case .on: return 1
+        case .off: return 0.22
+        case .unavailable: return index == 0 ? 0.68 : 0.16
+        }
     }
 }

@@ -138,7 +138,9 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
             isCharging: battery?.detail["charging"] == 1,
             volumeLevel: model.duoBarVolume,
             isMuted: model.duoBarMuted,
-            networkAvailable: NetworkInfo.primaryIPv4() != nil
+            networkAvailable: NetworkInfo.primaryIPv4() != nil,
+            wifiSignal: model.duoBarWiFiSignal,
+            bluetoothState: model.duoBarBluetooth
         )
         // History is shared by every item of the same module, and only charted
         // components need it at all.

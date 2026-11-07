@@ -30,6 +30,17 @@ struct DuoBarPopoverView: View {
                 }
             }
 
+            statusRow(
+                title: "Wi-Fi",
+                detail: model.duoBarNetworkName ?? wifiStatusText,
+                symbol: model.duoBarWiFiSignal == .disconnected || model.duoBarWiFiSignal == .unavailable ? "wifi.slash" : "wifi"
+            )
+            statusRow(
+                title: "Bluetooth",
+                detail: bluetoothStatusText,
+                symbol: "bluetooth"
+            )
+
             Divider()
 
             VStack(alignment: .leading, spacing: 8) {
@@ -206,5 +217,34 @@ struct DuoBarPopoverView: View {
         }
         .clipped()
         .onAppear { model.onDuoBarPopoverOpened?() }
+    }
+
+    private var wifiStatusText: String {
+        switch model.duoBarWiFiSignal {
+        case .strong: "Strong signal"
+        case .medium: "Medium signal"
+        case .weak: "Weak signal"
+        case .disconnected: "Not connected"
+        case .unavailable: "Unavailable"
+        }
+    }
+
+    private var bluetoothStatusText: String {
+        switch model.duoBarBluetooth {
+        case .on: "On"
+        case .off: "Off"
+        case .unavailable: "Unavailable"
+        }
+    }
+
+    private func statusRow(title: String, detail: String, symbol: String) -> some View {
+        HStack(spacing: 9) {
+            Image(systemName: symbol).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.subheadline.weight(.medium))
+                Text(detail).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+            }
+            Spacer(minLength: 0)
+        }
     }
 }
