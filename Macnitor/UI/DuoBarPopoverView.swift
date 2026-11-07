@@ -299,14 +299,14 @@ struct DuoBarPopoverView: View {
     }
 
     private var networkSymbol: String {
-        if wifiSignal == .disconnected || wifiSignal == .unavailable {
+        if model.duoBarWiFiSignal == .disconnected || model.duoBarWiFiSignal == .unavailable {
             return isNetworkConnected ? "network" : "wifi.slash"
         }
         return "wifi"
     }
 
     private var wifiStrengthVariable: Double {
-        switch wifiSignal {
+        switch model.duoBarWiFiSignal {
         case .strong: 1
         case .medium: 0.66
         case .weak: 0.33
@@ -354,9 +354,9 @@ struct DuoBarPopoverView: View {
             isAtFullCapacity: (batteryPercent ?? 0) >= 100
         )
         switch state {
-        case .disconnected: .secondary
-        case .connected: .blue
-        case .fullyCharged: .green
+        case .disconnected: Color.secondary
+        case .connected: Color.blue
+        case .fullyCharged: Color.green
         }
     }
 
