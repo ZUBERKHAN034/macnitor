@@ -40,7 +40,6 @@ final class DashboardStatusItem: NSObject {
         let isMuted: Bool
         let networkAvailable: Bool
         let wifiSignal: DuoBarWiFiSignal
-        let bluetoothState: DuoBarBluetoothState
     }
 
     override init() {
@@ -78,8 +77,7 @@ final class DashboardStatusItem: NSObject {
         volumeLevel: Double? = nil,
         isMuted: Bool = false,
         networkAvailable: Bool = false,
-        wifiSignal: DuoBarWiFiSignal = .unavailable,
-        bluetoothState: DuoBarBluetoothState = .unavailable
+        wifiSignal: DuoBarWiFiSignal = .unavailable
     ) {
         guard let button = item.button else { return }
         let appearance = button.effectiveAppearance
@@ -92,8 +90,7 @@ final class DashboardStatusItem: NSObject {
             volumeLevel: volumeLevel,
             isMuted: isMuted,
             networkAvailable: networkAvailable,
-            wifiSignal: wifiSignal,
-            bluetoothState: bluetoothState
+            wifiSignal: wifiSignal
         )
         guard inputs != lastRender else { return }
         lastRender = inputs
@@ -106,7 +103,6 @@ final class DashboardStatusItem: NSObject {
                 isMuted: isMuted,
                 networkAvailable: networkAvailable,
                 wifiSignal: wifiSignal,
-                bluetoothState: bluetoothState,
                 healthSymbol: isNormal ? nil : state.symbolName
             )
             if let duoBarHostingView {

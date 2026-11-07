@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Compact live mark using DuoBar's measured ring, Wi-Fi, and lower-dot geometry.
+/// Compact live mark using DuoBar's measured ring, Wi-Fi, and volume-dot geometry.
 struct DuoBarGlyphView: View {
     let batteryLevel: Double?
     let showsChargingBolt: Bool
@@ -8,12 +8,15 @@ struct DuoBarGlyphView: View {
     let isMuted: Bool
     let networkAvailable: Bool
     let wifiSignal: DuoBarWiFiSignal
-    let bluetoothState: DuoBarBluetoothState
     let healthSymbol: String?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var boltProgress: CGFloat = 0
     @State private var boltGapProgress: CGFloat = 0
     @State private var animatedBatteryProgress: CGFloat = 0
+    @State private var displayedWiFiSignal: DuoBarWiFiSignal = .unavailable
+    @State private var wifiMarkOpacity: CGFloat = 0
+    @State private var offlineMarkOpacity: CGFloat = 1
+    @State private var wifiTransitionTask: Task<Void, Never>?
 
     private let iconSize: CGFloat = 24
     private let designScale: CGFloat = 24 / 32
@@ -21,26 +24,28 @@ struct DuoBarGlyphView: View {
     private let ringYOffset: CGFloat = -0.8
     private let referenceStrokeRatio: CGFloat = 0.076378
 
+    private var resolvedWiFiSignal: DuoBarWiFiSignal {
+        networkAvailable ? wifiSignal : .disconnected
+    }
+
     var body: some View {
         ZStack {
             Canvas { context, size in
                 drawRing(in: &context, size: size)
-                drawBluetoothDots(in: &context, size: size)
             }
 
-            if wifiSignal == .disconnected || wifiSignal == .unavailable {
-                Image(systemName: "network.slash")
-                    .font(.system(size: 9.3, weight: .semibold))
-                    .symbolRenderingMode(.monochrome)
-                    .contentTransition(.symbolEffect(.replace))
-                    .transition(.opacity)
-            } else {
-                Canvas { context, size in
-                    drawWiFi(in: &context, size: size)
-                }
-                .id(wifiSignal)
-                .transition(.opacity)
+            volumeDotRow
+
+            Canvas { context, size in
+                drawWiFi(in: &context, size: size, signal: displayedWiFiSignal)
             }
+            .opacity(wifiMarkOpacity)
+
+            Image(systemName: "network.slash")
+                .font(.system(size: 9.3, weight: .semibold))
+                .symbolRenderingMode(.monochrome)
+                .opacity(offlineMarkOpacity)
+                .accessibilityHidden(true)
 
             if boltProgress > 0 {
                 Image(systemName: "bolt.fill")
@@ -67,6 +72,31 @@ struct DuoBarGlyphView: View {
             boltProgress = showsChargingBolt ? 1 : 0
             boltGapProgress = showsChargingBolt ? 1 : 0
             animatedBatteryProgress = CGFloat(batteryLevel ?? 0)
+            displayedWiFiSignal = resolvedWiFiSignal
+            let isOffline = resolvedWiFiSignal == .disconnected || resolvedWiFiSignal == .unavailable
+            wifiMarkOpacity = isOffline ? 0 : 1
+            offlineMarkOpacity = isOffline ? 1 : 0
+        }
+        .onChange(of: resolvedWiFiSignal) { signal in
+            wifiTransitionTask?.cancel()
+            let isOffline = signal == .disconnected || signal == .unavailable
+            if isOffline {
+                withAnimation(.easeInOut(duration: 0.24)) {
+                    wifiMarkOpacity = 0
+                    offlineMarkOpacity = 1
+                }
+                wifiTransitionTask = Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(240))
+                    guard !Task.isCancelled else { return }
+                    displayedWiFiSignal = signal
+                }
+            } else {
+                displayedWiFiSignal = signal
+                withAnimation(.easeInOut(duration: 0.24)) {
+                    wifiMarkOpacity = 1
+                    offlineMarkOpacity = 0
+                }
+            }
         }
         .onChange(of: batteryLevel) { level in
             let target = CGFloat(level ?? 0)
@@ -91,8 +121,46 @@ struct DuoBarGlyphView: View {
                 boltGapProgress = showing ? 1 : 0
             }
         }
-        .animation(.easeInOut(duration: 0.2), value: wifiSignal)
+        .onDisappear { wifiTransitionTask?.cancel() }
         .accessibilityHidden(true)
+    }
+
+    private var activeVolumeDotCount: Int? {
+        guard let volumeLevel else { return nil }
+        let percentage = Int((min(max(volumeLevel, 0), 1) * 100).rounded())
+        if isMuted || percentage == 0 { return 0 }
+        switch percentage {
+        case 1...25: 1
+        case 26...50: 2
+        case 51...75: 3
+        default: 4
+        }
+    }
+
+    private var volumeDotRow: some View {
+        let radius = scaledRingDiameter * 0.455450
+        let dotDiameter = scaledRingDiameter * 0.096502
+        let angles: [Double] = [-32.273, -10.813, 10.813, 32.273]
+        return ZStack {
+            ForEach(0..<4, id: \.self) { index in
+                let radians = angles[index] * .pi / 180
+                Circle()
+                    .frame(width: dotDiameter, height: dotDiameter)
+                    .opacity(dotOpacity(at: index))
+                    .offset(
+                        x: CGFloat(sin(radians)) * radius,
+                        y: CGFloat(cos(radians)) * radius
+                    )
+            }
+        }
+        .frame(width: scaledRingDiameter, height: scaledRingDiameter)
+        .foregroundStyle(.primary)
+        .animation(.easeInOut(duration: 0.2), value: activeVolumeDotCount)
+    }
+
+    private func dotOpacity(at index: Int) -> Double {
+        guard let activeVolumeDotCount else { return 0.30 }
+        return index < activeVolumeDotCount ? 1 : 0.30
     }
 
     private var scaledRingDiameter: CGFloat { ringDiameter * designScale }
@@ -170,14 +238,14 @@ struct DuoBarGlyphView: View {
         return path
     }
 
-    private func drawWiFi(in context: inout GraphicsContext, size: CGSize) {
-        guard wifiSignal != .disconnected, wifiSignal != .unavailable else { return }
+    private func drawWiFi(in context: inout GraphicsContext, size: CGSize, signal: DuoBarWiFiSignal) {
+        guard signal != .disconnected, signal != .unavailable else { return }
         let diameter = scaledRingDiameter
         let center = CGPoint(x: size.width / 2, y: size.height / 2 + ringOffset)
         let apex = CGPoint(x: center.x, y: center.y + diameter * 0.128157)
         let lineWidth = diameter * 0.060540
         let levelCount: Int
-        switch wifiSignal {
+        switch signal {
         case .strong: levelCount = 3
         case .medium: levelCount = 2
         case .weak: levelCount = 1
@@ -215,28 +283,6 @@ struct DuoBarGlyphView: View {
             }
         }
         return path
-    }
-
-    private func drawBluetoothDots(in context: inout GraphicsContext, size: CGSize) {
-        let diameter = scaledRingDiameter
-        let center = CGPoint(x: size.width / 2, y: size.height / 2 + ringOffset)
-        let radius = diameter * 0.455450
-        let angles: [CGFloat] = [-32.273, -10.813, 10.813, 32.273]
-        let dotDiameter = diameter * 0.096502
-
-        for (index, angle) in angles.enumerated() {
-            let radians = angle * .pi / 180
-            let x = center.x + sin(radians) * radius
-            let y = center.y + cos(radians) * radius
-            let rect = CGRect(x: x - dotDiameter / 2, y: y - dotDiameter / 2, width: dotDiameter, height: dotDiameter)
-            let opacity: Double
-            switch bluetoothState {
-            case .on: opacity = 1
-            case .off: opacity = 0.30
-            case .unavailable: opacity = index == 0 ? 0.68 : 0.16
-            }
-            context.fill(Path(ellipseIn: rect), with: .color(.primary.opacity(opacity)))
-        }
     }
 
     private func point(on radius: CGFloat, degrees: Double, center: CGPoint) -> CGPoint {
