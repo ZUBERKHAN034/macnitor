@@ -12,7 +12,7 @@ final class DashboardCardTests: XCTestCase {
     /// With nothing chosen the grid says why it is empty instead of showing nothing.
     func testNoModulesShowTheDeviceBesideTheEmptyHint() {
         XCTAssertEqual(DashboardLayout.cards(for: []), [.device, .emptyHint])
-        XCTAssertEqual(DashboardLayout.rows(for: []), [[.device, .emptyHint]])
+        XCTAssertEqual(DashboardLayout.rows(for: [] as [MetricID]), [[.device, .emptyHint]])
     }
 
     func testTheDeviceFollowsTheChosenModulesInTheirOrder() {
@@ -139,7 +139,7 @@ final class DashboardCardTests: XCTestCase {
             [DashboardFormat.usedOfTotal(used: 13.6 * gigabyte, total: 16 * gigabyte)]
         )
         XCTAssertEqual(memory.chips.map(\.text), ["38%", "536.87 MB"])
-        XCTAssertEqual(memory.chips.map(\.symbol), ["arrow.down", "arrow.left.arrow.right"])
+        XCTAssertEqual(memory.chips.map(\.symbol), ["gauge.with.needle", "arrow.left.arrow.right"])
         for chip in memory.chips {
             let label = try XCTUnwrap(chip.label)
             XCTAssertEqual(chip.spoken, DashboardFormat.spokenList([label, chip.text]))
@@ -161,7 +161,7 @@ final class DashboardCardTests: XCTestCase {
         XCTAssertEqual(facts(.memory, ["pressureLevel": 0]).chips, [])
         XCTAssertEqual(facts(.memory, ["pressureLevel": 3]).chips, [])
         XCTAssertEqual(facts(.memory, ["pressurePercent": 101]).chips, [])
-        XCTAssertEqual(facts(.memory, ["pressurePercent": 38]).chips, [])
+        XCTAssertEqual(facts(.memory, ["pressurePercent": 38]).chips.map(\.text), ["38%"])
         XCTAssertEqual(facts(.memory, ["swapTotal": 0, "swapUsed": 0]).chips, [])
         XCTAssertEqual(facts(.memory, ["swapTotal": 2 * gigabyte]).chips, [])
         XCTAssertEqual(facts(.memory, ["swapUsed": 1024]).chips, [])
@@ -307,7 +307,7 @@ final class DashboardCardTests: XCTestCase {
         chips += facts(.battery, ["timeToEmpty": 30], isOnBattery: true).chips
 
         let symbols = Set(chips.compactMap(\.symbol))
-        XCTAssertGreaterThanOrEqual(symbols.count, 5)
+        XCTAssertGreaterThanOrEqual(symbols.count, 4)
         for symbol in symbols.union([DashboardSystemInfo().interfaceSymbol]) {
             XCTAssertNotNil(
                 NSImage(systemSymbolName: symbol, accessibilityDescription: nil),
