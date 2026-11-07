@@ -69,6 +69,8 @@ targets:
         SUEnableAutomaticChecks: false
         SUEnableSystemProfiling: false
         SUFeedURL: https://raw.githubusercontent.com/farukkamcici/mectrics/main/appcast.xml
+        NSLocationWhenInUseUsageDescription: "Macnitor uses your location permission only when you open DuoBar details to read the connected Wi-Fi network name."
+        NSBluetoothAlwaysUsageDescription: "Macnitor reads Bluetooth controller power state to update the optional DuoBar menu bar glyph."
         SUPublicEDKey: 3waOnY63hGNluXrW0DoG+raMzWhoRH4gnvBW+KUG4qU=
         CFBundleURLTypes:
           - CFBundleTypeRole: Viewer

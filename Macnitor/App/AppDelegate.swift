@@ -79,6 +79,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var whatsNewWindow: WhatsNewWindowController!
     private let updates = UpdateController()
     private let duoBarAudio = DuoBarAudioMonitor()
+    private let duoBarSystem = DuoBarSystemMonitor()
     private var onboarding: OnboardingWindowController?
     private let thresholds = ThresholdMonitor(
         notificationHandler: AlertNotificationDelivery.threshold
@@ -152,10 +153,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         model.onDuoBarPopoverOpened = { [weak self] in
             guard let self else { return }
-            self.model.duoBarWiFiPoweredOn = CWWiFiClient.shared().interface()?.powerOn()
+            self.duoBarSystem.requestDetails()
             self.duoBarAudio.refreshStatus()
             self.menuBar.refresh()
         }
+        duoBarSystem.onChange = { [weak self] state in
+            guard let self else { return }
+            self.model.duoBarWiFiPoweredOn = state.wifiPoweredOn
+            self.model.duoBarWiFiSignal = state.wifi
+            self.model.duoBarNetworkName = state.networkName
+            self.model.duoBarBluetooth = state.bluetooth
+            self.menuBar.refresh()
+        }
+        model.onDuoBarRequestDetails = { [weak self] in self?.duoBarSystem.requestDetails() }
         duoBarAudio.onChange = { [weak self] state in
             guard let self else { return }
             self.model.duoBarVolume = state.volume
@@ -171,17 +181,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model.onDuoBarModeChanged = { [weak self] in
             guard let self else { return }
             if self.model.usesDuoBarDashboard {
-                self.model.duoBarWiFiPoweredOn = CWWiFiClient.shared().interface()?.powerOn()
                 self.duoBarAudio.start()
+                self.duoBarSystem.start()
             } else {
                 self.duoBarAudio.stop()
+                self.duoBarSystem.stop()
             }
             self.menuBar.dashboardPresentationModeChanged()
             self.menuBar.refresh()
         }
         if model.usesDuoBarDashboard {
-            model.duoBarWiFiPoweredOn = CWWiFiClient.shared().interface()?.powerOn()
             duoBarAudio.start()
+            duoBarSystem.start()
         }
         PerformanceSignposts.menuBarReady()
         energyGuard = EnergyGuardController(model: model)
@@ -336,6 +347,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         model.engine.stop()
         duoBarAudio.stop()
+        duoBarSystem.stop()
         energyGuard.stop()
     }
 

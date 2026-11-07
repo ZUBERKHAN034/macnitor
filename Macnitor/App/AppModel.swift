@@ -36,6 +36,9 @@ final class AppModel {
     var duoBarAudioInputs: [DuoBarAudioOutput] = []
     var duoBarSelectedInputUID: String?
     var duoBarWiFiPoweredOn: Bool?
+    var duoBarWiFiSignal: DuoBarWiFiSignal = .unavailable
+    var duoBarNetworkName: String?
+    var duoBarBluetooth: DuoBarBluetoothState = .unavailable
     @ObservationIgnored var onDuoBarVolumeChanged: ((Double) -> Void)?
     @ObservationIgnored var onDuoBarMuteChanged: ((Bool) -> Void)?
     @ObservationIgnored var onDuoBarOutputSelected: ((String) -> Void)?
@@ -43,12 +46,13 @@ final class AppModel {
     @ObservationIgnored var onDuoBarWiFiPowerChanged: ((Bool) -> Void)?
     @ObservationIgnored var onDuoBarPopoverOpened: (() -> Void)?
     @ObservationIgnored var onDuoBarModeChanged: (() -> Void)?
+    @ObservationIgnored var onDuoBarRequestDetails: (() -> Void)?
 
     /// Replaces the standard Dashboard mark and popover with DuoBar's compact status
     /// indicator and controls. The watched cards and their sampling remain unchanged.
     var usesDuoBarDashboard: Bool {
         didSet {
-            defaults.set(usesDuoBarDashboard, forKey: Self.duoBarDashboardKey)
+            defaults.set(usesDuoBarDashboard, forKey: DuoBarPreference.key)
             guard usesDuoBarDashboard != oldValue else { return }
             onDuoBarModeChanged?()
         }
@@ -709,7 +713,6 @@ final class AppModel {
     private static let dashboardItemEnabledKey = "dashboardItemEnabled"
     private static let dashboardIconVisibleKey = "dashboardIconVisible"
     private static let moduleClickBehaviorKey = "moduleClickBehavior"
-    private static let duoBarDashboardKey = "usesDuoBarDashboard"
     /// Read only to carry an upgrading Mac's Compact Health item over to the Dashboard.
     private static let legacyCompactHealthEnabledKey = "compactHealthEnabled"
     private static let groupedModulesKey = "groupedModules"
@@ -780,7 +783,7 @@ final class AppModel {
         // not asked for it. Hiding the icon is a deliberate choice made in Settings.
         self.dashboardIconVisible =
             defaults.object(forKey: Self.dashboardIconVisibleKey) as? Bool ?? true
-        self.usesDuoBarDashboard = defaults.bool(forKey: Self.duoBarDashboardKey)
+        self.usesDuoBarDashboard = DuoBarPreference.value(from: defaults)
         // Clicking a module item opens its own detail unless asked otherwise.
         self.moduleClickBehavior = ModuleClickBehavior(
             rawValue: defaults.string(forKey: Self.moduleClickBehaviorKey) ?? ""
