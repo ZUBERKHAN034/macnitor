@@ -3,7 +3,7 @@ import SwiftUI
 /// Compact live mark using DuoBar's measured ring, Wi-Fi, and lower-dot geometry.
 struct DuoBarGlyphView: View {
     let batteryLevel: Double?
-    let isCharging: Bool
+    let showsChargingBolt: Bool
     let volumeLevel: Double?
     let isMuted: Bool
     let networkAvailable: Bool
@@ -31,7 +31,7 @@ struct DuoBarGlyphView: View {
                     .symbolRenderingMode(.monochrome)
             }
 
-            if isCharging {
+            if showsChargingBolt {
                 Image(systemName: "bolt.fill")
                     .font(.system(size: ringDiameter * 0.75 * (50 / 1.16 / 230), weight: .bold))
                     .symbolRenderingMode(.monochrome)
@@ -79,7 +79,7 @@ struct DuoBarGlyphView: View {
 
         guard batteryLevel != nil, progress > 0 else { return }
         let activeArc: Path
-        if isCharging {
+        if showsChargingBolt {
             activeArc = arcPathSkippingChargingBolt(center: center, radius: radius, from: start, to: progressEnd)
         } else {
             activeArc = arcPath(center: center, radius: radius, from: start, to: progressEnd)

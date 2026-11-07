@@ -34,7 +34,7 @@ final class DashboardStatusItem: NSObject {
         let appearanceName: NSAppearance.Name
         let isDuoBar: Bool
         let batteryLevel: Double?
-        let isCharging: Bool
+        let showsChargingBolt: Bool
         let volumeLevel: Double?
         let isMuted: Bool
         let networkAvailable: Bool
@@ -73,7 +73,7 @@ final class DashboardStatusItem: NSObject {
         _ state: HealthState,
         isDuoBar: Bool = false,
         batteryLevel: Double? = nil,
-        isCharging: Bool = false,
+        showsChargingBolt: Bool = false,
         volumeLevel: Double? = nil,
         isMuted: Bool = false,
         networkAvailable: Bool = false,
@@ -87,7 +87,7 @@ final class DashboardStatusItem: NSObject {
             appearanceName: appearance.name,
             isDuoBar: isDuoBar,
             batteryLevel: batteryLevel,
-            isCharging: isCharging,
+            showsChargingBolt: showsChargingBolt,
             volumeLevel: volumeLevel,
             isMuted: isMuted,
             networkAvailable: networkAvailable,
@@ -103,7 +103,7 @@ final class DashboardStatusItem: NSObject {
                 let colorScheme: ColorScheme = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? .dark : .light
                 let renderer = ImageRenderer(content: DuoBarGlyphView(
                     batteryLevel: batteryLevel,
-                    isCharging: isCharging,
+                    showsChargingBolt: showsChargingBolt,
                     volumeLevel: volumeLevel,
                     isMuted: isMuted,
                     networkAvailable: networkAvailable,

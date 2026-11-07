@@ -326,38 +326,14 @@ struct DuoBarPopoverView: View {
     }
 
     private var batteryIcon: some View {
-        HStack(spacing: 1) {
-            Image(systemName: battery == nil ? "battery.0percent" : "battery.100percent")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(batteryIconColor)
-
-            if isBatteryConnected || isBatteryCharging {
-                Image(systemName: "bolt.fill")
-                    .font(.system(size: 8, weight: .bold))
-                    .foregroundStyle(batteryIconColor)
-                    .accessibilityHidden(true)
-            }
-        }
+        Image(systemName: battery == nil ? "battery.0percent" : "battery.100percent")
+        .font(.system(size: 14, weight: .medium))
+        .foregroundStyle(.secondary)
         .frame(width: 28, height: 28)
         .background(.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Battery")
         .accessibilityValue(batteryStatusText)
-    }
-
-    private var batteryIconColor: Color {
-        let state = BatteryChargeIconState.resolve(
-            isOnBattery: model.isOnBattery,
-            isCharging: isBatteryCharging,
-            isFullyCharged: isFullyCharged,
-            isSystemChargeLimitReached: isChargeLimitHolding,
-            isAtFullCapacity: (batteryPercent ?? 0) >= 100
-        )
-        switch state {
-        case .disconnected: return .secondary
-        case .connected: return .blue
-        case .fullyCharged: return .green
-        }
     }
 
     private var batteryStatusText: String {

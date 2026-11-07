@@ -135,7 +135,8 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
             model.healthState,
             isDuoBar: model.usesDuoBarDashboard,
             batteryLevel: battery?.normalized,
-            isCharging: battery?.detail["charging"] == 1,
+            showsChargingBolt: (model.isOnBattery == false || battery?.detail["charging"] == 1)
+                && battery?.detail["fullyCharged"] != 1,
             volumeLevel: model.duoBarVolume,
             isMuted: model.duoBarMuted,
             networkAvailable: NetworkInfo.primaryIPv4() != nil,
