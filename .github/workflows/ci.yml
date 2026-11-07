@@ -30,7 +30,8 @@ jobs:
 
   app:
     name: Macnitor.app (xcodebuild)
-    runs-on: macos-15
+    # Xcode 26 compiles the native SwiftUI glassEffect path used by Liquid Glass.
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v7
 
