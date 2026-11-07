@@ -28,6 +28,7 @@ final class DashboardStatusItem: NSObject {
     /// appearance is in here because a badged mark is drawn in the menu bar's own label
     /// colour and has to be redrawn when the Mac changes theme.
     private var lastRender: RenderInputs?
+    private var duoBarHostingView: NSHostingView<DuoBarGlyphView>?
 
     private struct RenderInputs: Equatable {
         let state: HealthState
@@ -98,26 +99,37 @@ final class DashboardStatusItem: NSObject {
         lastRender = inputs
         let isNormal = state == .normal
         if isDuoBar {
-            var renderedImage: CGImage?
-            appearance.performAsCurrentDrawingAppearance {
-                let colorScheme: ColorScheme = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? .dark : .light
-                let renderer = ImageRenderer(content: DuoBarGlyphView(
-                    batteryLevel: batteryLevel,
-                    showsChargingBolt: showsChargingBolt,
-                    volumeLevel: volumeLevel,
-                    isMuted: isMuted,
-                    networkAvailable: networkAvailable,
-                    wifiSignal: wifiSignal,
-                    bluetoothState: bluetoothState,
-                    healthSymbol: isNormal ? nil : state.symbolName
-                ).environment(\.colorScheme, colorScheme))
-                renderer.scale = 2
-                renderedImage = renderer.cgImage
-            }
-            if let renderedImage {
-                button.image = NSImage(cgImage: renderedImage, size: NSSize(width: 24, height: 24))
+            let glyph = DuoBarGlyphView(
+                batteryLevel: batteryLevel,
+                showsChargingBolt: showsChargingBolt,
+                volumeLevel: volumeLevel,
+                isMuted: isMuted,
+                networkAvailable: networkAvailable,
+                wifiSignal: wifiSignal,
+                bluetoothState: bluetoothState,
+                healthSymbol: isNormal ? nil : state.symbolName
+            )
+            if let duoBarHostingView {
+                duoBarHostingView.appearance = appearance
+                duoBarHostingView.rootView = glyph
+            } else {
+                button.image = nil
+                let hostingView = PassthroughGlyphHostingView(rootView: glyph)
+                hostingView.appearance = appearance
+                hostingView.translatesAutoresizingMaskIntoConstraints = false
+                hostingView.sizingOptions = []
+                button.addSubview(hostingView)
+                NSLayoutConstraint.activate([
+                    hostingView.centerXAnchor.constraint(equalTo: button.centerXAnchor),
+                    hostingView.centerYAnchor.constraint(equalTo: button.centerYAnchor),
+                    hostingView.widthAnchor.constraint(equalToConstant: 24),
+                    hostingView.heightAnchor.constraint(equalToConstant: 24)
+                ])
+                duoBarHostingView = hostingView
             }
         } else {
+            duoBarHostingView?.removeFromSuperview()
+            duoBarHostingView = nil
             button.image = MacnitorGlyph.menuBarImage(
                 badge: isNormal ? nil : state.symbolName,
                 tint: state.tint,
@@ -145,10 +157,16 @@ final class DashboardStatusItem: NSObject {
     }
 
     func remove() {
+        duoBarHostingView?.removeFromSuperview()
+        duoBarHostingView = nil
         NSStatusBar.system.removeStatusItem(item)
     }
 
     @objc private func clicked() {
         onClick?()
     }
+}
+
+private final class PassthroughGlyphHostingView: NSHostingView<DuoBarGlyphView> {
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
 }

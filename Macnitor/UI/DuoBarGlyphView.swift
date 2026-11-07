@@ -10,6 +10,10 @@ struct DuoBarGlyphView: View {
     let wifiSignal: DuoBarWiFiSignal
     let bluetoothState: DuoBarBluetoothState
     let healthSymbol: String?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var boltProgress: CGFloat = 0
+    @State private var boltGapProgress: CGFloat = 0
+    @State private var animatedBatteryProgress: CGFloat = 0
 
     private let iconSize: CGFloat = 24
     private let designScale: CGFloat = 24 / 32
@@ -21,22 +25,31 @@ struct DuoBarGlyphView: View {
         ZStack {
             Canvas { context, size in
                 drawRing(in: &context, size: size)
-                drawWiFi(in: &context, size: size)
                 drawBluetoothDots(in: &context, size: size)
             }
 
             if wifiSignal == .disconnected || wifiSignal == .unavailable {
-                Image(systemName: "wifi.slash")
-                    .font(.system(size: 9, weight: .medium))
+                Image(systemName: "network.slash")
+                    .font(.system(size: 9.3, weight: .semibold))
                     .symbolRenderingMode(.monochrome)
+                    .contentTransition(.symbolEffect(.replace))
+                    .transition(.opacity)
+            } else {
+                Canvas { context, size in
+                    drawWiFi(in: &context, size: size)
+                }
+                .id(wifiSignal)
+                .transition(.opacity)
             }
 
-            if showsChargingBolt {
+            if boltProgress > 0 {
                 Image(systemName: "bolt.fill")
                     .font(.system(size: ringDiameter * (50 / 1.16 / 230), weight: .bold))
                     .symbolRenderingMode(.monochrome)
                     .foregroundStyle(.primary)
                     .position(chargingBoltPosition)
+                    .opacity(boltProgress)
+                    .scaleEffect(0.76 + 0.24 * boltProgress)
             }
 
             if let healthSymbol {
@@ -50,6 +63,35 @@ struct DuoBarGlyphView: View {
         }
         .frame(width: iconSize, height: iconSize)
         .offset(y: 1)
+        .onAppear {
+            boltProgress = showsChargingBolt ? 1 : 0
+            boltGapProgress = showsChargingBolt ? 1 : 0
+            animatedBatteryProgress = CGFloat(batteryLevel ?? 0)
+        }
+        .onChange(of: batteryLevel) { level in
+            let target = CGFloat(level ?? 0)
+            guard !reduceMotion else {
+                animatedBatteryProgress = target
+                return
+            }
+            withAnimation(.easeInOut(duration: 0.35)) {
+                animatedBatteryProgress = target
+            }
+        }
+        .onChange(of: showsChargingBolt) { showing in
+            guard !reduceMotion else {
+                boltProgress = showing ? 1 : 0
+                boltGapProgress = showing ? 1 : 0
+                return
+            }
+            withAnimation(.easeOut(duration: showing ? 0.43 : 0.22)) {
+                boltProgress = showing ? 1 : 0
+            }
+            withAnimation(.easeOut(duration: showing ? 0.12 : 0.18).delay(showing ? 0.16 : 0)) {
+                boltGapProgress = showing ? 1 : 0
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: wifiSignal)
         .accessibilityHidden(true)
     }
 
@@ -71,32 +113,39 @@ struct DuoBarGlyphView: View {
         let center = CGPoint(x: size.width / 2, y: size.height / 2 + ringOffset)
         let start = 150.11
         let end = 389.89
-        let progress = min(max(batteryLevel ?? 0, 0), 1)
+        let progress = min(max(animatedBatteryProgress, 0), 1)
         let progressEnd = start + (end - start) * progress
         let radius = arcPathDiameter / 2
-        let track = arcPath(center: center, radius: radius, from: start, to: end)
+        let track = arcPathWithChargingGap(center: center, radius: radius, from: start, to: end)
         context.stroke(track, with: .color(.primary.opacity(batteryLevel == nil ? 0.22 : 0.28)), style: StrokeStyle(lineWidth: arcLineWidth, lineCap: .round))
 
         guard batteryLevel != nil, progress > 0 else { return }
         let activeArc: Path
-        if showsChargingBolt {
-            activeArc = arcPathSkippingChargingBolt(center: center, radius: radius, from: start, to: progressEnd)
-        } else {
-            activeArc = arcPath(center: center, radius: radius, from: start, to: progressEnd)
-        }
+        activeArc = arcPathWithChargingGap(center: center, radius: radius, from: start, to: progressEnd)
         context.stroke(activeArc, with: .color(.primary), style: StrokeStyle(lineWidth: arcLineWidth, lineCap: .round))
+    }
+
+    private func arcPathWithChargingGap(center: CGPoint, radius: CGFloat, from start: Double, to end: Double) -> Path {
+        guard boltGapProgress > 0 else { return arcPath(center: center, radius: radius, from: start, to: end) }
+        return arcPathSkippingChargingBolt(
+            center: center,
+            radius: radius,
+            from: start,
+            to: end,
+            gapHalfAngle: 25 * Double(boltGapProgress)
+        )
     }
 
     private func arcPathSkippingChargingBolt(
         center: CGPoint,
         radius: CGFloat,
         from start: Double,
-        to end: Double
+        to end: Double,
+        gapHalfAngle: Double
     ) -> Path {
         let gapCenter = 270.0
-        let halfGap = 11.0
-        let lower = gapCenter - halfGap
-        let upper = gapCenter + halfGap
+        let lower = gapCenter - gapHalfAngle
+        let upper = gapCenter + gapHalfAngle
         guard end > lower else { return arcPath(center: center, radius: radius, from: start, to: end) }
         var path = arcPath(center: center, radius: radius, from: start, to: min(end, lower))
         if end > upper {
