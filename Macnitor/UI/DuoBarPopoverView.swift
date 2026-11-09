@@ -15,13 +15,23 @@ struct DuoBarPopoverView: View {
     private var isChargeLimitHolding: Bool { (battery?.detail["systemChargeLimitReached"] ?? 0) > 0 }
     private var isFullyCharged: Bool { (battery?.detail["fullyCharged"] ?? 0) > 0 }
 
+    @State private var wifiNetworks: [DuoBarWiFiNetwork] = []
+    @State private var isScanningWiFi = false
+    @State private var wifiPasswordTarget: DuoBarWiFiNetwork?
+    @State private var wifiPassword = ""
+    @State private var isJoiningWiFi = false
+    @State private var wifiJoinFailed = false
+
+    @State private var bluetoothDevices: [DuoBarBluetoothDevice] = []
+    @State private var connectingBluetoothAddress: String?
+
     var body: some View {
         VStack(spacing: ExperienceSpacing.small) {
             networkRow
-            nearbyNetworksRow
+            wifiNetworksSection
             volumeRow
             batteryRow
-            bluetoothRow
+            bluetoothSection
             audioDeviceMenu(
                 title: "Audio Output",
                 symbol: "hifispeaker",
@@ -42,6 +52,8 @@ struct DuoBarPopoverView: View {
         .padding(12)
         .frame(width: DashboardPopoverView.width)
         .onAppear { model.onDuoBarPopoverOpened?() }
+        .task { await refreshWiFiNetworks() }
+        .task { refreshBluetoothDevices() }
     }
 
     private var networkRow: some View {
@@ -90,31 +102,178 @@ struct DuoBarPopoverView: View {
         .background(controlSurface(cornerRadius: 12))
     }
 
-    private var nearbyNetworksRow: some View {
-        Button {
-            model.onOpenWiFiSettings?()
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "wifi")
-                    .font(.system(size: 12, weight: .semibold))
-                    .frame(width: 18)
-                Text(String(localized: "duobar.nearbyNetworks", defaultValue: "Nearby Networks"))
-                    .font(.subheadline.weight(.medium))
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.tertiary)
+    private var wifiNetworksSection: some View {
+        VStack(spacing: 0) {
+            if model.duoBarWiFiPoweredOn == false {
+                sectionMessage("Wi-Fi off")
+            } else if isScanningWiFi && wifiNetworks.isEmpty {
+                HStack(spacing: 6) {
+                    ProgressView().controlSize(.small)
+                    Text("Scanning…")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+            } else if wifiNetworks.isEmpty {
+                sectionMessage("No networks found")
+            } else {
+                ScrollView(.vertical, showsIndicators: true) {
+                    VStack(spacing: 2) {
+                        ForEach(wifiNetworks) { network in
+                            wifiNetworkRow(network)
+                        }
+                    }
+                    .padding(.horizontal, 4)
+                }
+                .frame(maxHeight: 160)
             }
-            .contentShape(Rectangle())
+
+            Divider().padding(.vertical, 4)
+
+            Button {
+                model.onOpenWiFiSettings?()
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "wifi").font(.system(size: 11))
+                    Text("Wi-Fi Settings…").font(.caption.weight(.medium))
+                }
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
         .padding(.horizontal, 10)
-        .frame(height: 34)
+        .padding(.vertical, 8)
         .background(controlSurface(cornerRadius: 12))
-        .accessibilityHint(String(
-            localized: "duobar.nearbyNetworks.hint",
-            defaultValue: "Open Wi-Fi settings to view nearby networks"
-        ))
+    }
+
+    @ViewBuilder
+    private func wifiNetworkRow(_ network: DuoBarWiFiNetwork) -> some View {
+        let isCurrent = network.ssid == model.duoBarNetworkName
+        VStack(spacing: 0) {
+            Button {
+                handleWiFiTap(network)
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: wifiSignalSymbol(network))
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(network.signalBars >= 3 ? .secondary : .orange)
+                        .frame(width: 20)
+                    Text(network.ssid)
+                        .font(.subheadline.weight(isCurrent ? .semibold : .regular))
+                        .foregroundStyle(isCurrent ? .primary : .secondary)
+                        .lineLimit(1)
+                    Spacer(minLength: 4)
+                    if network.isSecured {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 9))
+                            .foregroundStyle(.tertiary)
+                    }
+                    if isCurrent && !isJoiningWiFi {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(Color.accentColor)
+                    } else if isJoiningWiFi && wifiPasswordTarget == network {
+                        ProgressView().controlSize(.mini)
+                    }
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+                .background(isCurrent ? Color.accentColor.opacity(0.1) : Color.clear, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            }
+            .buttonStyle(.plain)
+
+            if wifiPasswordTarget == network {
+                wifiPasswordForm(network)
+            }
+        }
+    }
+
+    private func wifiPasswordForm(_ network: DuoBarWiFiNetwork) -> some View {
+        VStack(spacing: 6) {
+            HStack(spacing: 6) {
+                SecureField("Password", text: $wifiPassword)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: 12))
+                    .onSubmit { joinNetwork(network) }
+                Button("Join") { joinNetwork(network) }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                    .font(.system(size: 11.5, weight: .semibold))
+                    .disabled(wifiPassword.isEmpty)
+            }
+            if wifiJoinFailed {
+                Text("Incorrect password")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.bottom, 7)
+    }
+
+    private func handleWiFiTap(_ network: DuoBarWiFiNetwork) {
+        wifiJoinFailed = false
+        guard network.ssid != model.duoBarNetworkName else { return }
+        if network.isSecured {
+            wifiPasswordTarget = network
+            wifiPassword = ""
+        } else {
+            Task { @MainActor in await join(network, password: nil) }
+        }
+    }
+
+    private func joinNetwork(_ network: DuoBarWiFiNetwork) {
+        Task { @MainActor in await join(network, password: wifiPassword.isEmpty ? nil : wifiPassword) }
+    }
+
+    private func join(_ network: DuoBarWiFiNetwork, password: String?) async {
+        isJoiningWiFi = true
+        wifiJoinFailed = false
+        let success: Bool
+        if let handler = model.onDuoBarJoinWiFi {
+            success = await handler(network.ssid, password)
+        } else {
+            success = false
+        }
+        isJoiningWiFi = false
+        if success {
+            wifiPasswordTarget = nil
+            wifiPassword = ""
+            model.onDuoBarRequestDetails?()
+        } else {
+            wifiJoinFailed = true
+        }
+    }
+
+    private func refreshWiFiNetworks() async {
+        isScanningWiFi = true
+        if let handler = model.onDuoBarScanWiFi {
+            wifiNetworks = await handler()
+        } else {
+            wifiNetworks = []
+        }
+        isScanningWiFi = false
+    }
+
+    private func wifiSignalSymbol(_ network: DuoBarWiFiNetwork) -> String {
+        switch network.signalBars {
+        case 4, 3: return "wifi"
+        case 2, 1: return "wifi.exclamationmark"
+        default: return "wifi.slash"
+        }
+    }
+
+    private func sectionMessage(_ text: String) -> some View {
+        Text(text)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
     }
 
     private var volumeRow: some View {
@@ -199,22 +358,105 @@ struct DuoBarPopoverView: View {
         .accessibilityHint("Open Battery settings")
     }
 
-    private var bluetoothRow: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "bluetooth")
-                .font(.system(size: 12, weight: .medium))
-                .frame(width: 18)
-            Text("Bluetooth")
-                .font(.caption.weight(.medium))
-            Spacer()
-            Text(bluetoothStatusText)
-                .font(.caption)
+    private var bluetoothSection: some View {
+        VStack(spacing: 0) {
+            if model.duoBarBluetooth == .off {
+                sectionMessage("Bluetooth off")
+            } else if model.duoBarBluetooth == .unavailable {
+                sectionMessage("Bluetooth unavailable")
+            } else if bluetoothDevices.isEmpty {
+                sectionMessage("No devices found")
+            } else {
+                ScrollView(.vertical, showsIndicators: true) {
+                    VStack(spacing: 2) {
+                        ForEach(bluetoothDevices) { device in
+                            bluetoothDeviceRow(device)
+                        }
+                    }
+                    .padding(.horizontal, 4)
+                }
+                .frame(maxHeight: 160)
+            }
+
+            Divider().padding(.vertical, 4)
+
+            Button {
+                model.onDuoBarOpenBluetoothSettings?()
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "gearshape").font(.system(size: 11))
+                    Text("Bluetooth Settings…").font(.caption.weight(.medium))
+                }
                 .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
         }
         .padding(.horizontal, 10)
-        .frame(height: 28)
+        .padding(.vertical, 8)
         .background(controlSurface(cornerRadius: 12))
-        .accessibilityElement(children: .combine)
+    }
+
+    private func bluetoothDeviceRow(_ device: DuoBarBluetoothDevice) -> some View {
+        let isConnecting = connectingBluetoothAddress == device.address
+        return Button {
+            toggleBluetooth(device)
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: device.iconName)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(device.isConnected ? Color.accentColor : .secondary)
+                    .frame(width: 20)
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(device.name)
+                        .font(.subheadline.weight(device.isConnected ? .semibold : .regular))
+                        .foregroundStyle(device.isConnected ? .primary : .secondary)
+                        .lineLimit(1)
+                    Text(device.isConnected ? "Connected" : "Not connected")
+                        .font(.caption2)
+                        .foregroundStyle(device.isConnected ? Color.accentColor : .secondary)
+                }
+
+                Spacer(minLength: 4)
+
+                if isConnecting {
+                    ProgressView().controlSize(.mini)
+                } else if device.isConnected {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(Color.accentColor)
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .background(device.isConnected ? Color.accentColor.opacity(0.08) : Color.clear, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func toggleBluetooth(_ device: DuoBarBluetoothDevice) {
+        guard connectingBluetoothAddress == nil else { return }
+        connectingBluetoothAddress = device.address
+        Task { @MainActor in
+            if device.isConnected {
+                if let handler = model.onDuoBarDisconnectBluetooth {
+                    _ = await handler(device.address)
+                }
+            } else {
+                if let handler = model.onDuoBarConnectBluetooth {
+                    _ = await handler(device.address)
+                }
+            }
+            connectingBluetoothAddress = nil
+            refreshBluetoothDevices()
+        }
+    }
+
+    private func refreshBluetoothDevices() {
+        bluetoothDevices = model.onDuoBarBluetoothDevices?() ?? []
     }
 
     private func audioDeviceMenu(
@@ -337,14 +579,6 @@ struct DuoBarPopoverView: View {
         case .medium: "Medium signal"
         case .weak: "Weak signal"
         case .disconnected: "Not connected"
-        case .unavailable: "Unavailable"
-        }
-    }
-
-    private var bluetoothStatusText: String {
-        switch model.duoBarBluetooth {
-        case .on: "On"
-        case .off: "Off"
         case .unavailable: "Unavailable"
         }
     }

@@ -166,6 +166,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self.menuBar.refresh()
         }
         model.onDuoBarRequestDetails = { [weak self] in self?.duoBarSystem.requestDetails() }
+        model.onDuoBarScanWiFi = { [weak self] in
+            guard let self else { return [] }
+            return await self.duoBarSystem.scanWiFiNetworks()
+        }
+        model.onDuoBarJoinWiFi = { [weak self] ssid, password in
+            guard let self else { return false }
+            return await self.duoBarSystem.joinWiFi(ssid: ssid, password: password)
+        }
+        model.onDuoBarBluetoothDevices = { [weak self] in
+            self?.duoBarSystem.bluetoothDevices() ?? []
+        }
+        model.onDuoBarConnectBluetooth = { [weak self] address in
+            guard let self else { return false }
+            return await self.duoBarSystem.connectBluetooth(address: address)
+        }
+        model.onDuoBarDisconnectBluetooth = { [weak self] address in
+            guard let self else { return false }
+            return await self.duoBarSystem.disconnectBluetooth(address: address)
+        }
+        model.onDuoBarOpenBluetoothSettings = {
+            if let url = URL(string: "x-apple.systempreferences:com.apple.BluetoothSettings") {
+                NSWorkspace.shared.open(url)
+            }
+        }
         duoBarAudio.onChange = { [weak self] state in
             guard let self else { return }
             self.model.duoBarVolume = state.volume

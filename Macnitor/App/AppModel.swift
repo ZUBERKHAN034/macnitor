@@ -47,6 +47,12 @@ final class AppModel {
     @ObservationIgnored var onDuoBarPopoverOpened: (() -> Void)?
     @ObservationIgnored var onDuoBarModeChanged: (() -> Void)?
     @ObservationIgnored var onDuoBarRequestDetails: (() -> Void)?
+    @ObservationIgnored var onDuoBarScanWiFi: (() async -> [DuoBarWiFiNetwork])?
+    @ObservationIgnored var onDuoBarJoinWiFi: ((String, String?) async -> Bool)?
+    @ObservationIgnored var onDuoBarBluetoothDevices: (() -> [DuoBarBluetoothDevice])?
+    @ObservationIgnored var onDuoBarConnectBluetooth: ((String) async -> Bool)?
+    @ObservationIgnored var onDuoBarDisconnectBluetooth: ((String) async -> Bool)?
+    @ObservationIgnored var onDuoBarOpenBluetoothSettings: (() -> Void)?
 
     /// Replaces the standard Dashboard mark and popover with DuoBar's compact status
     /// indicator and controls. The watched cards and their sampling remain unchanged.
