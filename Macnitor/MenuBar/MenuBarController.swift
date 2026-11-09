@@ -131,11 +131,19 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
     func refresh() {
         let accent = model.accentNSColor
         let battery = model.latest[.battery]
+        let showsChargingBolt = model.isOnBattery == false || battery?.detail["charging"] == 1
+        let batteryColor = DuoBarBatteryColor.resolve(
+            colorCodingEnabled: model.batteryColorCoding,
+            isCharging: showsChargingBolt,
+            isLowPowerModeEnabled: ProcessInfo.processInfo.isLowPowerModeEnabled,
+            batteryLevel: battery?.normalized
+        )
         logoItem?.update(
             model.healthState,
             isDuoBar: model.usesDuoBarDashboard,
             batteryLevel: battery?.normalized,
-            showsChargingBolt: model.isOnBattery == false || battery?.detail["charging"] == 1,
+            showsChargingBolt: showsChargingBolt,
+            batteryColor: batteryColor,
             volumeLevel: model.duoBarVolume,
             isMuted: model.duoBarMuted,
             networkAvailable: NetworkInfo.primaryIPv4() != nil,

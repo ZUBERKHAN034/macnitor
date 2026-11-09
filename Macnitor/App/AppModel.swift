@@ -58,6 +58,15 @@ final class AppModel {
         }
     }
 
+    /// Colours the DuoBar battery ring by its state: green while charging, yellow in
+    /// low power mode, and red below 20% charge. Off keeps the ring monochrome.
+    var batteryColorCoding: Bool {
+        didSet {
+            defaults.set(batteryColorCoding, forKey: DuoBarPreference.batteryColorCodingKey)
+            if batteryColorCoding != oldValue { onAppearanceChanged?() }
+        }
+    }
+
     private var batteryPowerHistory = BatteryPowerHistory()
 
     /// Consecutive provider attempts that returned no sample. Short interruptions keep
@@ -784,6 +793,7 @@ final class AppModel {
         self.dashboardIconVisible =
             defaults.object(forKey: Self.dashboardIconVisibleKey) as? Bool ?? true
         self.usesDuoBarDashboard = DuoBarPreference.value(from: defaults)
+        self.batteryColorCoding = DuoBarPreference.batteryColorCoding(from: defaults)
         // Clicking a module item opens its own detail unless asked otherwise.
         self.moduleClickBehavior = ModuleClickBehavior(
             rawValue: defaults.string(forKey: Self.moduleClickBehaviorKey) ?? ""

@@ -5584,6 +5584,30 @@
         "zh-Hans": { "stringUnit": { "state": "translated", "value": "使用电源适配器" } }
       }
     },
+    "duobar.batteryColorCoding": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Color battery by charge level" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Colorear la batería según el nivel de carga" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Colorer la batterie selon le niveau de charge" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Colorir a bateria conforme o nível de carga" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Цвет батареи по уровню заряда" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Pili şarj seviyesine göre renklendir" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "按电量水平为电池着色" } }
+      }
+    },
+    "duobar.batteryColorCoding.help": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Colors the ring green while charging, yellow in low power mode, and red below 20% charge." } },
+        "es": { "stringUnit": { "state": "translated", "value": "Colorea el anillo de verde al cargar, amarillo en modo de bajo consumo y rojo por debajo del 20% de carga." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Colore l’anneau en vert pendant la charge, en jaune en mode économie d’énergie et en rouge sous 20 % de charge." } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Colore o anel de verde ao carregar, amarelo no modo de baixo consumo e vermelho abaixo de 20% de carga." } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Окрашивает кольцо в зелёный при зарядке, жёлтый в режиме энергосбережения и красный при заряде ниже 20%." } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Şarj olurken halkayı yeşil, düşük güç modunda sarı ve %20'nin altında kırmızı yapar." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "充电时环为绿色，低电量模式为黄色，电量低于 20% 时为红色。" } }
+      }
+    },
     "duobar.nearbyNetworks": {
       "extractionState": "manual",
       "localizations": {

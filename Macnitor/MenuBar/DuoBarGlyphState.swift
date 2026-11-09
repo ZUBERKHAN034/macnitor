@@ -17,6 +17,28 @@ enum DuoBarBluetoothState: Equatable {
     case on, off, unavailable
 }
 
+/// How the battery ring is coloured when the DuoBar's colour coding is on. The
+/// monochrome role keeps the menu bar's own label colour.
+enum DuoBarBatteryColor: Equatable {
+    case monochrome
+    case charging
+    case lowPowerMode
+    case lowBattery
+
+    static func resolve(
+        colorCodingEnabled: Bool,
+        isCharging: Bool,
+        isLowPowerModeEnabled: Bool,
+        batteryLevel: Double?
+    ) -> DuoBarBatteryColor {
+        guard colorCodingEnabled else { return .monochrome }
+        if isCharging { return .charging }
+        if isLowPowerModeEnabled { return .lowPowerMode }
+        if let batteryLevel, batteryLevel < 0.2 { return .lowBattery }
+        return .monochrome
+    }
+}
+
 struct DuoBarGlyphState: Equatable {
     let batteryProgress: Double?
     let isCharging: Bool

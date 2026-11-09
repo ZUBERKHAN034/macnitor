@@ -33,4 +33,33 @@ final class DuoBarGlyphStateTests: XCTestCase {
         XCTAssertEqual(DuoBarGlyphState(batteryPercentage: nil, isCharging: false, wifi: .unavailable, bluetooth: .off).bluetoothDotCount, 0)
         XCTAssertEqual(DuoBarGlyphState(batteryPercentage: nil, isCharging: false, wifi: .unavailable, bluetooth: .unavailable).bluetoothDotCount, 1)
     }
+
+    func testBatteryColorCodingResolution() {
+        // Off never colours the ring.
+        XCTAssertEqual(
+            DuoBarBatteryColor.resolve(colorCodingEnabled: false, isCharging: true, isLowPowerModeEnabled: true, batteryLevel: 0.05),
+            .monochrome
+        )
+        // Charging wins over every other state.
+        XCTAssertEqual(
+            DuoBarBatteryColor.resolve(colorCodingEnabled: true, isCharging: true, isLowPowerModeEnabled: true, batteryLevel: 0.05),
+            .charging
+        )
+        XCTAssertEqual(
+            DuoBarBatteryColor.resolve(colorCodingEnabled: true, isCharging: false, isLowPowerModeEnabled: true, batteryLevel: 0.05),
+            .lowPowerMode
+        )
+        XCTAssertEqual(
+            DuoBarBatteryColor.resolve(colorCodingEnabled: true, isCharging: false, isLowPowerModeEnabled: false, batteryLevel: 0.19),
+            .lowBattery
+        )
+        XCTAssertEqual(
+            DuoBarBatteryColor.resolve(colorCodingEnabled: true, isCharging: false, isLowPowerModeEnabled: false, batteryLevel: 0.2),
+            .monochrome
+        )
+        XCTAssertEqual(
+            DuoBarBatteryColor.resolve(colorCodingEnabled: true, isCharging: false, isLowPowerModeEnabled: false, batteryLevel: nil),
+            .monochrome
+        )
+    }
 }

@@ -1,9 +1,11 @@
+import AppKit
 import SwiftUI
 
 /// Compact live mark using DuoBar's measured ring, Wi-Fi, and volume-dot geometry.
 struct DuoBarGlyphView: View {
     let batteryLevel: Double?
     let showsChargingBolt: Bool
+    let batteryColor: DuoBarBatteryColor
     let volumeLevel: Double?
     let isMuted: Bool
     let networkAvailable: Bool
@@ -184,6 +186,15 @@ struct DuoBarGlyphView: View {
         }
     }
 
+    private var batteryArcColor: Color {
+        switch batteryColor {
+        case .charging: return Color(nsColor: .systemGreen)
+        case .lowPowerMode: return Color(nsColor: .systemYellow)
+        case .lowBattery: return Color(nsColor: .systemRed)
+        case .monochrome: return .primary
+        }
+    }
+
     private var scaledRingDiameter: CGFloat { ringDiameter * designScale }
     private var arcLineWidth: CGFloat { ringDiameter * referenceStrokeRatio * designScale }
     private var arcPathDiameter: CGFloat { scaledRingDiameter - arcLineWidth }
@@ -211,7 +222,7 @@ struct DuoBarGlyphView: View {
         guard batteryLevel != nil, progress > 0 else { return }
         let activeArc: Path
         activeArc = arcPathWithChargingGap(center: center, radius: radius, from: start, to: progressEnd)
-        context.stroke(activeArc, with: .color(.primary), style: StrokeStyle(lineWidth: arcLineWidth, lineCap: .round))
+        context.stroke(activeArc, with: .color(batteryArcColor), style: StrokeStyle(lineWidth: arcLineWidth, lineCap: .round))
     }
 
     private func arcPathWithChargingGap(center: CGPoint, radius: CGFloat, from start: Double, to end: Double) -> Path {

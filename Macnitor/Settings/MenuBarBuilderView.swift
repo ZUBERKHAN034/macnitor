@@ -89,6 +89,15 @@ struct MenuBarBuilderView: View {
                 Text(String(localized: "duobar.replaceDashboard.help", defaultValue: "Shows live battery, network, and audio status in the menu bar. Clicking it opens DuoBar controls."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                if model.usesDuoBarDashboard {
+                    Toggle(
+                        String(localized: "duobar.batteryColorCoding", defaultValue: "Color battery by charge level"),
+                        isOn: $model.batteryColorCoding
+                    )
+                    Text(String(localized: "duobar.batteryColorCoding.help", defaultValue: "Colors the ring green while charging, yellow in low power mode, and red below 20% charge."))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 if let reason = model.dashboardIconHiddenBlockedReason {
                     Text(reason)
                         .font(.caption)
