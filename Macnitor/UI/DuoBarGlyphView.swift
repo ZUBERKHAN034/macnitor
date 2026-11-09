@@ -270,9 +270,9 @@ struct DuoBarGlyphView: View {
         let center = CGPoint(x: size.width / 2, y: size.height / 2 + ringOffset)
         let apex = CGPoint(x: center.x, y: center.y + diameter * 0.128157)
         let lineWidth = diameter * 0.060540
-        for (index, radiusRatio) in [0.268964, 0.155314].enumerated() {
+        for (radiusRatio, threshold) in [(0.268964, 2), (0.155314, 1)] {
             let path = wifiArc(center: apex, radius: diameter * radiusRatio)
-            let activation = min(max(Double(activeLevel) - Double(index), 0), 1)
+            let activation = min(max(Double(activeLevel) - Double(threshold), 0), 1)
             let opacity = 0.28 + (1 - 0.28) * activation
             context.stroke(path, with: .color(.primary.opacity(opacity)), style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round))
         }
