@@ -159,7 +159,7 @@ struct DuoBarPopoverView: View {
                 HStack(spacing: 8) {
                     Image(systemName: wifiSignalSymbol(network))
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(network.signalBars >= 3 ? .secondary : .orange)
+                        .foregroundStyle(network.signalBars >= 3 ? Color.secondary : Color.orange)
                         .frame(width: 20)
                     Text(network.ssid)
                         .font(.subheadline.weight(isCurrent ? .semibold : .regular))
