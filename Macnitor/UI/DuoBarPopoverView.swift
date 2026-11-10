@@ -783,25 +783,41 @@ struct DuoBarPopoverView: View {
 
     private func setLowPowerMode(_ enabled: Bool) {
         guard enabled != lowPowerModeEnabled, !isUpdatingLowPowerMode else { return }
+        lowPowerModeEnabled = enabled
         isUpdatingLowPowerMode = true
         Task {
-            let result = await Task.detached(priority: .userInitiated) {
+            let result = await Task.detached(priority: .userInitiated) { () -> (succeeded: Bool, error: String) in
                 let script = "do shell script \"/usr/bin/pmset -a lowpowermode \\(enabled ? 1 : 0)\" with administrator privileges"
                 let process = Process()
                 process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
                 process.arguments = ["-e", script]
+                let errorPipe = Pipe()
+                process.standardError = errorPipe
                 do {
                     try process.run()
                     process.waitUntilExit()
-                    return process.terminationStatus == 0
+                    let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
+                    let error = String(data: errorData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                    return (process.terminationStatus == 0, error)
                 } catch {
-                    return false
+                    return (false, error.localizedDescription)
                 }
             }.value
+
+            if result.succeeded {
+                for _ in 0..<20 {
+                    if ProcessInfo.processInfo.isLowPowerModeEnabled == enabled { break }
+                    try? await Task.sleep(for: .milliseconds(100))
+                }
+            }
+
             isUpdatingLowPowerMode = false
             lowPowerModeEnabled = ProcessInfo.processInfo.isLowPowerModeEnabled
-            if !result || lowPowerModeEnabled != enabled {
-                lowPowerModeError = String(localized: "Low Power Mode could not be changed. You can change it in Battery Settings.")
+            if !result.succeeded || lowPowerModeEnabled != enabled {
+                let message = result.error.isEmpty
+                    ? String(localized: "Low Power Mode could not be changed. You can change it in Battery Settings.")
+                    : result.error
+                lowPowerModeError = message
             }
         }
     }
