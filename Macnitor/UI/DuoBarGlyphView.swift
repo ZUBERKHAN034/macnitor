@@ -35,26 +35,18 @@ struct DuoBarGlyphView: View {
         return "\(Int((min(max(batteryLevel, 0), 1) * 100).rounded()))"
     }
 
+    private var indicatorFontSize: CGFloat {
+        scaledRingDiameter * (50 / 1.16 / 230)
+    }
+
+    /// Keep the digits within the same arc opening as the charging bolt.
     private var batteryPercentageFontSize: CGFloat {
-        switch batteryPercentageText?.count ?? 0 {
-        case 1: return 7
-        case 2: return 6.5
-        default: return 5.8
-        }
-    }
-
-    /// Calculate the opening from the displayed digits so the number clears the arc.
-    private var batteryPercentageGapHalfAngle: Double {
         guard let batteryPercentageText else { return 0 }
-        let font = NSFont.monospacedDigitSystemFont(ofSize: batteryPercentageFontSize, weight: .bold)
+        let font = NSFont.monospacedDigitSystemFont(ofSize: indicatorFontSize, weight: .bold)
         let textWidth = (batteryPercentageText as NSString).size(withAttributes: [.font: font]).width
-        let clearance = textWidth / 2 + arcLineWidth / 2 + 2
-        return Double(atan2(clearance, arcPathDiameter / 2) * 180 / .pi)
-    }
-
-    private var batteryPercentagePosition: CGPoint {
-        let position = chargingBoltPosition
-        return CGPoint(x: position.x, y: position.y + 1.25)
+        let availableWidth = 2 * ((arcPathDiameter / 2) * sin(25 * .pi / 180) - arcLineWidth / 2 - 0.4)
+        guard textWidth > availableWidth, textWidth > 0 else { return indicatorFontSize }
+        return indicatorFontSize * availableWidth / textWidth
     }
 
     var body: some View {
@@ -83,7 +75,7 @@ struct DuoBarGlyphView: View {
 
             if showsChargingBolt {
                 Image(systemName: "bolt.fill")
-                    .font(.system(size: scaledRingDiameter * (50 / 1.16 / 230), weight: .bold))
+                    .font(.system(size: indicatorFontSize, weight: .bold))
                     .symbolRenderingMode(.monochrome)
                     .foregroundStyle(.primary)
                     .position(chargingBoltPosition)
@@ -92,9 +84,9 @@ struct DuoBarGlyphView: View {
 
             if let batteryPercentageText, !showsChargingBolt {
                 Text(batteryPercentageText)
-                    .font(.system(size: batteryPercentageFontSize, weight: .bold, design: .rounded).monospacedDigit())
+                    .font(.system(size: batteryPercentageFontSize, weight: .bold).monospacedDigit())
                     .foregroundStyle(.primary)
-                    .position(batteryPercentagePosition)
+                    .position(chargingBoltPosition)
                     .transition(.opacity)
             }
 
@@ -237,7 +229,7 @@ struct DuoBarGlyphView: View {
         let progress = min(max(hasAppeared ? animatedBatteryProgress : initialProgress, 0), 1)
         let progressEnd = start + (end - start) * progress
         let radius = arcPathDiameter / 2
-        let gapHalfAngle = showsChargingBolt ? 25 : batteryPercentageGapHalfAngle
+        let gapHalfAngle = 25.0
         let track = arcPathWithGap(
             center: center,
             radius: radius,
