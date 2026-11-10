@@ -46,9 +46,15 @@ struct DuoBarGlyphView: View {
     /// Calculate the opening from the displayed digits so the number clears the arc.
     private var batteryPercentageGapHalfAngle: Double {
         guard let batteryPercentageText else { return 0 }
-        let textWidth = CGFloat(batteryPercentageText.count) * batteryPercentageFontSize * 0.62
-        let clearance = textWidth / 2 + arcLineWidth / 2 + 0.6
+        let font = NSFont.monospacedDigitSystemFont(ofSize: batteryPercentageFontSize, weight: .bold)
+        let textWidth = (batteryPercentageText as NSString).size(withAttributes: [.font: font]).width
+        let clearance = textWidth / 2 + arcLineWidth / 2 + 2
         return Double(atan2(clearance, arcPathDiameter / 2) * 180 / .pi)
+    }
+
+    private var batteryPercentagePosition: CGPoint {
+        let position = chargingBoltPosition
+        return CGPoint(x: position.x, y: position.y + 1.25)
     }
 
     var body: some View {
@@ -88,7 +94,7 @@ struct DuoBarGlyphView: View {
                 Text(batteryPercentageText)
                     .font(.system(size: batteryPercentageFontSize, weight: .bold, design: .rounded).monospacedDigit())
                     .foregroundStyle(.primary)
-                    .position(chargingBoltPosition)
+                    .position(batteryPercentagePosition)
                     .transition(.opacity)
             }
 
