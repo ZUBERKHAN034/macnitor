@@ -22,6 +22,7 @@ struct DuoBarPopoverView: View {
     @State private var wifiJoinFailed = false
     @State private var isWiFiExpanded = false
 
+    @State private var isBatteryExpanded = false
     @State private var isBluetoothExpanded = false
 
     private var bluetoothAudioOutputs: [DuoBarAudioOutput] {
@@ -37,6 +38,10 @@ struct DuoBarPopoverView: View {
             }
             volumeRow
             batteryRow
+            if isBatteryExpanded {
+                batteryDetailsSection
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
             bluetoothHeader
             if isBluetoothExpanded {
                 bluetoothSection
@@ -69,6 +74,7 @@ struct DuoBarPopoverView: View {
             Task { await refreshWiFiNetworks() }
         }
         .animation(.easeInOut(duration: 0.18), value: isWiFiExpanded)
+        .animation(.easeInOut(duration: 0.18), value: isBatteryExpanded)
         .animation(.easeInOut(duration: 0.18), value: isBluetoothExpanded)
     }
 
@@ -366,7 +372,9 @@ struct DuoBarPopoverView: View {
     }
 
     private var batteryRow: some View {
-        Button(action: openBatterySettings) {
+        Button {
+            isBatteryExpanded.toggle()
+        } label: {
             HStack(spacing: 9) {
                 batteryIcon
 
@@ -395,7 +403,7 @@ struct DuoBarPopoverView: View {
                     }
                 }
 
-                Image(systemName: "chevron.right")
+                Image(systemName: isBatteryExpanded ? "chevron.up" : "chevron.down")
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.tertiary)
             }
@@ -405,7 +413,80 @@ struct DuoBarPopoverView: View {
         .padding(.horizontal, 10)
         .frame(height: 52)
         .background(controlSurface(cornerRadius: 12))
-        .accessibilityHint("Open Battery settings")
+        .accessibilityLabel(Text("Battery"))
+        .accessibilityValue(isBatteryExpanded ? Text("Expanded") : Text("Collapsed"))
+    }
+
+    private var batteryDetailsSection: some View {
+        VStack(spacing: 0) {
+            if battery == nil {
+                sectionMessage("No internal battery")
+            } else {
+                batteryDetailRow(
+                    String(localized: "battery.status", defaultValue: "Status"),
+                    batteryStatusText
+                )
+                if let estimate = batteryEstimateText {
+                    batteryDetailRow(batteryEstimateLabel, estimate)
+                }
+                if let health = battery?.detail["healthPercent"] {
+                    batteryDetailRow(
+                        String(localized: "battery.health", defaultValue: "Health"),
+                        "\(Int(health.rounded()))%"
+                    )
+                }
+                if let cycles = battery?.detail["cycleCount"] {
+                    batteryDetailRow(
+                        String(localized: "battery.cycles", defaultValue: "Charge cycles"),
+                        "\(Int(cycles.rounded()))"
+                    )
+                }
+                if let temperature = battery?.detail["temperature"] {
+                    batteryDetailRow(
+                        String(localized: "battery.temp", defaultValue: "Temperature"),
+                        String(format: "%.1f°C", temperature)
+                    )
+                }
+            }
+
+            Divider().padding(.vertical, 6)
+
+            Button("Battery Settings…", action: openBatterySettings)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(controlSurface(cornerRadius: 12))
+    }
+
+    private func batteryDetailRow(_ title: String, _ value: String) -> some View {
+        HStack(spacing: 8) {
+            Text(title)
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 8)
+            Text(value)
+                .foregroundStyle(.primary)
+                .monospacedDigit()
+        }
+        .font(.caption)
+        .padding(.vertical, 4)
+    }
+
+    private var batteryEstimateLabel: String {
+        BatteryPowerStatus.resolve(battery?.detail ?? [:], isOnBattery: model.isOnBattery).estimateLabel
+            ?? String(localized: "battery.timeRemaining", defaultValue: "Time left")
+    }
+
+    private var batteryEstimateText: String? {
+        let status = BatteryPowerStatus.resolve(battery?.detail ?? [:], isOnBattery: model.isOnBattery)
+        guard status.estimateLabel != nil else { return nil }
+        guard let estimate = status.estimate(in: battery?.detail ?? [:]) else {
+            return String(localized: "battery.calculating", defaultValue: "Calculating…")
+        }
+        return DashboardFormat.duration(minutes: estimate)
     }
 
     private var bluetoothSection: some View {
@@ -608,7 +689,7 @@ struct DuoBarPopoverView: View {
     }
 
     private var batteryIcon: some View {
-        Image(systemName: battery == nil ? "battery.0percent" : "battery.100percent")
+        Image(systemName: batterySymbol)
         .font(.system(size: 14, weight: .medium))
         .foregroundStyle(.secondary)
         .frame(width: 28, height: 28)
@@ -619,19 +700,36 @@ struct DuoBarPopoverView: View {
     }
 
     private var batteryStatusText: String {
+        guard battery != nil else {
+            return String(localized: "No internal battery", defaultValue: "No internal battery")
+        }
         if isChargeLimitHolding {
             return String(localized: "battery.chargingOnHold", defaultValue: "Charging On Hold")
         }
+        if isFullyCharged {
+            return String(localized: "Fully charged", defaultValue: "Fully charged")
+        }
         if isBatteryCharging { return BatteryPowerStatus.charging.localizedName }
         if model.isOnBattery == true { return BatteryPowerStatus.onBattery.localizedName }
-        if isFullyCharged { return BatteryPowerStatus.pluggedIn.localizedName }
         return BatteryPowerStatus.pluggedIn.localizedName
     }
 
     private var batteryPowerSourceText: String? {
+        guard battery != nil else { return nil }
         if isBatteryConnected { return String(localized: "battery.usingAdapter", defaultValue: "Using Adapter") }
-        guard let minutes = battery?.detail["timeToEmpty"], minutes > 0 else { return nil }
-        return DashboardFormat.duration(minutes: minutes)
+        return batteryEstimateText
+    }
+
+    private var batterySymbol: String {
+        guard battery != nil else { return "battery.0percent" }
+        if isFullyCharged { return "battery.100percent" }
+        if isBatteryCharging { return "battery.100percent.bolt" }
+        switch batteryPercent ?? 0 {
+        case 76...100: "battery.100percent"
+        case 51...75: "battery.75percent"
+        case 26...50: "battery.50percent"
+        default: "battery.25percent"
+        }
     }
 
     private var wifiStatusText: String {

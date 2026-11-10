@@ -21270,6 +21270,78 @@
         }
       }
     },
+    "Battery Settings…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Battery Settings…" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Pil Ayarları…" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Настройки аккумулятора…" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Ajustes de batería…" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Réglages de la batterie…" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Ajustes da Bateria…" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "电池设置…" } }
+      }
+    },
+    "Collapsed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Collapsed" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Daraltıldı" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Свернуто" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Contraído" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Réduit" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Recolhido" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "已折叠" } }
+      }
+    },
+    "Expanded": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Expanded" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Genişletildi" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Развернуто" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Expandido" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Développé" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Expandido" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "已展开" } }
+      }
+    },
+    "Fully charged": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Fully charged" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Tam şarjlı" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Полностью заряжен" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Totalmente cargada" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Entièrement chargée" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Totalmente carregada" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "已充满" } }
+      }
+    },
+    "No internal battery": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No internal battery" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Dahili pil yok" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Нет встроенного аккумулятора" } },
+        "es": { "stringUnit": { "state": "translated", "value": "No hay batería interna" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Aucune batterie interne" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Sem bateria interna" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "无内置电池" } }
+      }
+    },
+    "duobar.statusItem.batteryTooltip": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Battery: %d%%" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Pil: %d%%" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Батарея: %d%%" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Batería: %d%%" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Batterie : %d%%" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Bateria: %d%%" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "电池：%d%%" } }
+      }
+    },
     "duobar.statusItem.help": {
       "extractionState": "manual",
       "localizations": {

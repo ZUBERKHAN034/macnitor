@@ -141,8 +141,21 @@ final class DashboardStatusItem: NSObject {
         button.contentTintColor = nil
         button.setAccessibilityValue(state.localizedName)
         // Hovering says what is wrong, or what a click does when nothing is.
+        let duoBarTooltip: String
+        if let batteryLevel {
+            let percentage = Int((batteryLevel * 100).rounded())
+            duoBarTooltip = String(
+                format: String(
+                    localized: "duobar.statusItem.batteryTooltip",
+                    defaultValue: "Battery: %d%%"
+                ),
+                percentage
+            )
+        } else {
+            duoBarTooltip = String(localized: "duobar.statusItem.help", defaultValue: "DuoBar: battery, network, and audio controls")
+        }
         button.toolTip = isDuoBar
-            ? String(localized: "duobar.statusItem.help", defaultValue: "DuoBar: battery, network, and audio controls")
+            ? duoBarTooltip
             : isNormal
             ? String(
                 localized: "dashboard.statusItem.help",
