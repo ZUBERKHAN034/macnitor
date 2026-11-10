@@ -42,11 +42,12 @@ struct DuoBarGlyphView: View {
     /// Keep the digits within the same arc opening as the charging bolt.
     private var batteryPercentageFontSize: CGFloat {
         guard let batteryPercentageText else { return 0 }
-        let font = NSFont.monospacedDigitSystemFont(ofSize: indicatorFontSize, weight: .bold)
+        let preferredFontSize = indicatorFontSize * 1.15
+        let font = NSFont.monospacedDigitSystemFont(ofSize: preferredFontSize, weight: .bold)
         let textWidth = (batteryPercentageText as NSString).size(withAttributes: [.font: font]).width
         let availableWidth = 2 * ((arcPathDiameter / 2) * sin(25 * .pi / 180) - arcLineWidth / 2 - 0.4)
-        guard textWidth > availableWidth, textWidth > 0 else { return indicatorFontSize }
-        return indicatorFontSize * availableWidth / textWidth
+        guard textWidth > availableWidth, textWidth > 0 else { return preferredFontSize }
+        return preferredFontSize * availableWidth / textWidth
     }
 
     var body: some View {
