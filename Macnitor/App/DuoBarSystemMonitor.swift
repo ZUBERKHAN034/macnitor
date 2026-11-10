@@ -29,27 +29,6 @@ struct DuoBarWiFiNetwork: Identifiable, Equatable {
     }
 }
 
-struct DuoBarBluetoothDevice: Identifiable, Equatable {
-    let name: String
-    let address: String
-    let isConnected: Bool
-
-    var id: String { address }
-
-    var iconName: String {
-        let lower = name.lowercased()
-        if lower.contains("airpods max") { return "airpodsmax" }
-        if lower.contains("airpods pro") { return "airpodspro" }
-        if lower.contains("airpods") { return "airpods" }
-        if lower.contains("mouse") { return "magicmouse" }
-        if lower.contains("trackpad") { return "trackpad" }
-        if lower.contains("keyboard") { return "keyboard" }
-        if lower.contains("phone") || lower.contains("iphone") { return "iphone" }
-        if lower.contains("ipad") { return "ipad" }
-        return "wave.3.right.circle"
-    }
-}
-
 @MainActor
 final class DuoBarSystemMonitor: NSObject, @preconcurrency CLLocationManagerDelegate {
     var onChange: ((DuoBarSystemState) -> Void)?
@@ -168,48 +147,6 @@ final class DuoBarSystemMonitor: NSObject, @preconcurrency CLLocationManagerDele
                 return false
             }
         }.value
-    }
-
-    func bluetoothDevices() -> [DuoBarBluetoothDevice] {
-        guard let controller = IOBluetoothHostController.default(),
-              controller.powerState == kBluetoothHCIPowerStateON,
-              let paired = IOBluetoothDevice.pairedDevices() as? [IOBluetoothDevice] else { return [] }
-        return paired
-            .compactMap { device -> DuoBarBluetoothDevice? in
-                guard let address = device.addressString, !address.isEmpty else { return nil }
-                let name = device.nameOrAddress ?? device.name ?? address
-                return DuoBarBluetoothDevice(name: name, address: address, isConnected: device.isConnected())
-            }
-            .sorted { a, b in
-                if a.isConnected != b.isConnected { return a.isConnected && !b.isConnected }
-                return a.name.localizedCaseInsensitiveCompare(b.name) == .orderedAscending
-            }
-    }
-
-    func connectBluetooth(address: String) async -> Bool {
-        await withCheckedContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
-                guard let device = IOBluetoothDevice(addressString: address) else {
-                    continuation.resume(returning: false)
-                    return
-                }
-                let result = device.openConnection()
-                continuation.resume(returning: result == kIOReturnSuccess || device.isConnected())
-            }
-        }
-    }
-
-    func disconnectBluetooth(address: String) async -> Bool {
-        await withCheckedContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
-                guard let device = IOBluetoothDevice(addressString: address) else {
-                    continuation.resume(returning: false)
-                    return
-                }
-                let result = device.closeConnection()
-                continuation.resume(returning: result == kIOReturnSuccess || !device.isConnected())
-            }
-        }
     }
 
     private func publish() { onChange?(state) }

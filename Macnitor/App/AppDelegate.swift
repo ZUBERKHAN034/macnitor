@@ -174,17 +174,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             guard let self else { return false }
             return await self.duoBarSystem.joinWiFi(ssid: ssid, password: password)
         }
-        model.onDuoBarBluetoothDevices = { [weak self] in
-            self?.duoBarSystem.bluetoothDevices() ?? []
-        }
-        model.onDuoBarConnectBluetooth = { [weak self] address in
-            guard let self else { return false }
-            return await self.duoBarSystem.connectBluetooth(address: address)
-        }
-        model.onDuoBarDisconnectBluetooth = { [weak self] address in
-            guard let self else { return false }
-            return await self.duoBarSystem.disconnectBluetooth(address: address)
-        }
         model.onDuoBarOpenBluetoothSettings = {
             if let url = URL(string: "x-apple.systempreferences:com.apple.BluetoothSettings") {
                 NSWorkspace.shared.open(url)

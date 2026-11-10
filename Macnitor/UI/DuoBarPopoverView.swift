@@ -23,9 +23,11 @@ struct DuoBarPopoverView: View {
     @State private var wifiJoinFailed = false
     @State private var isWiFiExpanded = false
 
-    @State private var bluetoothDevices: [DuoBarBluetoothDevice] = []
-    @State private var connectingBluetoothAddress: String?
     @State private var isBluetoothExpanded = false
+
+    private var bluetoothAudioOutputs: [DuoBarAudioOutput] {
+        model.duoBarAudioOutputs.filter(\.isBluetooth)
+    }
 
     var body: some View {
         VStack(spacing: ExperienceSpacing.small) {
@@ -64,10 +66,6 @@ struct DuoBarPopoverView: View {
         .onChange(of: model.duoBarWiFiPoweredOn) { _, poweredOn in
             guard poweredOn == true, isWiFiExpanded else { return }
             Task { await refreshWiFiNetworks() }
-        }
-        .onChange(of: model.duoBarBluetooth) { _, state in
-            guard state == .on, isBluetoothExpanded else { return }
-            refreshBluetoothDevices()
         }
         .animation(.easeInOut(duration: 0.18), value: isWiFiExpanded)
         .animation(.easeInOut(duration: 0.18), value: isBluetoothExpanded)
@@ -138,6 +136,30 @@ struct DuoBarPopoverView: View {
 
     private var wifiNetworksSection: some View {
         VStack(spacing: 0) {
+            HStack {
+                Text(String(localized: "duobar.nearbyNetworks", defaultValue: "Nearby Networks"))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                if isScanningWiFi {
+                    ProgressView()
+                        .controlSize(.small)
+                        .accessibilityLabel("Scanning…")
+                } else {
+                    Button {
+                        Task { await refreshWiFiNetworks() }
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.caption.weight(.medium))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(model.duoBarWiFiPoweredOn == false)
+                    .accessibilityLabel(Text("Refresh now"))
+                }
+            }
+            .padding(.horizontal, 4)
+            .padding(.bottom, 6)
+
             if model.duoBarWiFiPoweredOn == false {
                 sectionMessage("Wi-Fi off")
             } else if isScanningWiFi && wifiNetworks.isEmpty {
@@ -399,13 +421,13 @@ struct DuoBarPopoverView: View {
                 sectionMessage("Bluetooth off")
             } else if model.duoBarBluetooth == .unavailable {
                 sectionMessage("Bluetooth unavailable")
-            } else if bluetoothDevices.isEmpty {
-                sectionMessage("No devices found")
+            } else if bluetoothAudioOutputs.isEmpty {
+                sectionMessage("No output devices")
             } else {
                 ScrollView(.vertical, showsIndicators: true) {
                     VStack(spacing: 2) {
-                        ForEach(bluetoothDevices) { device in
-                            bluetoothDeviceRow(device)
+                        ForEach(bluetoothAudioOutputs) { output in
+                            bluetoothAudioOutputRow(output)
                         }
                     }
                     .padding(.horizontal, 4)
@@ -436,7 +458,6 @@ struct DuoBarPopoverView: View {
     private var bluetoothHeader: some View {
         Button {
             isBluetoothExpanded.toggle()
-            if isBluetoothExpanded { refreshBluetoothDevices() }
         } label: {
             HStack(spacing: 9) {
                 Image(systemName: "bluetooth")
@@ -476,32 +497,25 @@ struct DuoBarPopoverView: View {
         }
     }
 
-    private func bluetoothDeviceRow(_ device: DuoBarBluetoothDevice) -> some View {
-        let isConnecting = connectingBluetoothAddress == device.address
+    private func bluetoothAudioOutputRow(_ output: DuoBarAudioOutput) -> some View {
+        let isSelected = model.duoBarSelectedOutputUID == output.uid
         return Button {
-            toggleBluetooth(device)
+            model.onDuoBarOutputSelected?(output.uid)
         } label: {
             HStack(spacing: 8) {
-                Image(systemName: device.iconName)
+                Image(systemName: "headphones")
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(device.isConnected ? Color.accentColor : .secondary)
+                    .foregroundStyle(isSelected ? Color.accentColor : .secondary)
                     .frame(width: 20)
 
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(device.name)
-                        .font(.subheadline.weight(device.isConnected ? .semibold : .regular))
-                        .foregroundStyle(device.isConnected ? .primary : .secondary)
-                        .lineLimit(1)
-                    Text(device.isConnected ? "Connected" : "Not connected")
-                        .font(.caption2)
-                        .foregroundStyle(device.isConnected ? Color.accentColor : .secondary)
-                }
+                Text(output.name)
+                    .font(.subheadline.weight(isSelected ? .semibold : .regular))
+                    .foregroundStyle(isSelected ? .primary : .secondary)
+                    .lineLimit(1)
 
                 Spacer(minLength: 4)
 
-                if isConnecting {
-                    ProgressView().controlSize(.mini)
-                } else if device.isConnected {
+                if isSelected {
                     Image(systemName: "checkmark")
                         .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(Color.accentColor)
@@ -509,32 +523,10 @@ struct DuoBarPopoverView: View {
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
-            .background(device.isConnected ? Color.accentColor.opacity(0.08) : Color.clear, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .background(isSelected ? Color.accentColor.opacity(0.08) : Color.clear, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
         .buttonStyle(.plain)
-    }
-
-    private func toggleBluetooth(_ device: DuoBarBluetoothDevice) {
-        guard connectingBluetoothAddress == nil else { return }
-        connectingBluetoothAddress = device.address
-        Task { @MainActor in
-            if device.isConnected {
-                if let handler = model.onDuoBarDisconnectBluetooth {
-                    _ = await handler(device.address)
-                }
-            } else {
-                if let handler = model.onDuoBarConnectBluetooth {
-                    _ = await handler(device.address)
-                }
-            }
-            connectingBluetoothAddress = nil
-            refreshBluetoothDevices()
-        }
-    }
-
-    private func refreshBluetoothDevices() {
-        bluetoothDevices = model.onDuoBarBluetoothDevices?() ?? []
     }
 
     private func audioDeviceMenu(

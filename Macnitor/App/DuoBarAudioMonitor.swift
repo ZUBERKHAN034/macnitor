@@ -4,6 +4,7 @@ import Foundation
 struct DuoBarAudioOutput: Identifiable, Equatable {
     let uid: String
     let name: String
+    let isBluetooth: Bool
     var id: String { uid }
 }
 
@@ -195,8 +196,16 @@ final class DuoBarAudioMonitor {
             valueSize = UInt32(MemoryLayout<UInt32>.size)
             if AudioObjectGetPropertyData(device, &aliveAddress, 0, nil, &valueSize, &isAlive) == noErr,
                isAlive == 0 { return nil }
-            return DuoBarAudioOutput(uid: uid, name: name)
+            return DuoBarAudioOutput(uid: uid, name: name, isBluetooth: isBluetoothDevice(device))
         }.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    private func isBluetoothDevice(_ device: AudioDeviceID) -> Bool {
+        var address = propertyAddress(kAudioDevicePropertyTransportType, scope: kAudioObjectPropertyScopeGlobal)
+        var transport: UInt32 = 0
+        var size = UInt32(MemoryLayout<UInt32>.size)
+        guard AudioObjectGetPropertyData(device, &address, 0, nil, &size, &transport) == noErr else { return false }
+        return transport == kAudioDeviceTransportTypeBluetooth || transport == kAudioDeviceTransportTypeBluetoothLE
     }
 
     private func deviceUID(_ device: AudioDeviceID) -> String? {
