@@ -787,21 +787,12 @@ struct DuoBarPopoverView: View {
         isUpdatingLowPowerMode = true
         Task {
             let result = await Task.detached(priority: .userInitiated) { () -> (succeeded: Bool, error: String) in
-                let script = "on run argv\n    do shell script \"/usr/bin/pmset -a lowpowermode \" & (item 1 of argv) with administrator privileges\nend run"
-                let process = Process()
-                process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
-                process.arguments = ["-e", script, enabled ? "1" : "0"]
-                let errorPipe = Pipe()
-                process.standardError = errorPipe
-                do {
-                    try process.run()
-                    process.waitUntilExit()
-                    let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
-                    let error = String(data: errorData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-                    return (process.terminationStatus == 0, error)
-                } catch {
-                    return (false, error.localizedDescription)
-                }
+                var authorizationError: NSError?
+                let succeeded = DuoBarPowerAuthorization.shared().setLowPowerModeEnabled(
+                    enabled,
+                    error: &authorizationError
+                )
+                return (succeeded, authorizationError?.localizedDescription ?? "")
             }.value
 
             if result.succeeded {
