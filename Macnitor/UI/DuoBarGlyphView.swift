@@ -39,13 +39,14 @@ struct DuoBarGlyphView: View {
         scaledRingDiameter * (50 / 1.16 / 230)
     }
 
-    /// Keep the digits within the same arc opening as the charging bolt.
+    /// Fit the tightened digits within the centered battery-number arc opening.
     private var batteryPercentageFontSize: CGFloat {
         guard let batteryPercentageText else { return 0 }
-        let preferredFontSize = indicatorFontSize * 1.15
+        let preferredFontSize = indicatorFontSize * 1.28
         let font = NSFont.monospacedDigitSystemFont(ofSize: preferredFontSize, weight: .bold)
-        let textWidth = (batteryPercentageText as NSString).size(withAttributes: [.font: font]).width
-        let availableWidth = 2 * ((arcPathDiameter / 2) * sin(25 * .pi / 180) - arcLineWidth / 2 - 0.4)
+        let measuredWidth = (batteryPercentageText as NSString).size(withAttributes: [.font: font]).width
+        let textWidth = max(0, measuredWidth - CGFloat(batteryPercentageText.count - 1) * 0.35)
+        let availableWidth = 2 * ((arcPathDiameter / 2) * sin(28 * .pi / 180) - arcLineWidth / 2 - 0.4)
         guard textWidth > availableWidth, textWidth > 0 else { return preferredFontSize }
         return preferredFontSize * availableWidth / textWidth
     }
@@ -86,6 +87,7 @@ struct DuoBarGlyphView: View {
             if let batteryPercentageText, !showsChargingBolt {
                 Text(batteryPercentageText)
                     .font(.system(size: batteryPercentageFontSize, weight: .bold).monospacedDigit())
+                    .tracking(-0.35)
                     .foregroundStyle(.primary)
                     .position(chargingBoltPosition)
                     .transition(.opacity)
@@ -230,7 +232,7 @@ struct DuoBarGlyphView: View {
         let progress = min(max(hasAppeared ? animatedBatteryProgress : initialProgress, 0), 1)
         let progressEnd = start + (end - start) * progress
         let radius = arcPathDiameter / 2
-        let gapHalfAngle = 25.0
+        let gapHalfAngle = 28.0
         let track = arcPathWithGap(
             center: center,
             radius: radius,
