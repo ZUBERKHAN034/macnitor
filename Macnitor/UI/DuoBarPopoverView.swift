@@ -725,10 +725,10 @@ struct DuoBarPopoverView: View {
         if isFullyCharged { return "battery.100percent" }
         if isBatteryCharging { return "battery.100percent.bolt" }
         switch batteryPercent ?? 0 {
-        case 76...100: "battery.100percent"
-        case 51...75: "battery.75percent"
-        case 26...50: "battery.50percent"
-        default: "battery.25percent"
+        case 76...100: return "battery.100percent"
+        case 51...75: return "battery.75percent"
+        case 26...50: return "battery.50percent"
+        default: return "battery.25percent"
         }
     }
 
