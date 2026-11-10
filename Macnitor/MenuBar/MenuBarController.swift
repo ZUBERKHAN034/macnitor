@@ -131,7 +131,9 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
     func refresh() {
         let accent = model.accentNSColor
         let battery = model.latest[.battery]
-        let showsChargingBolt = (battery?.detail["charging"] ?? 0) > 0
+        // The power-source state changes as soon as the adapter is connected, while
+        // the charging detail can arrive on the next battery sample.
+        let showsChargingBolt = model.isOnBattery == false || (battery?.detail["charging"] ?? 0) > 0
         let batteryColor = DuoBarBatteryColor.resolve(
             colorCodingEnabled: model.batteryColorCoding,
             isCharging: showsChargingBolt,
