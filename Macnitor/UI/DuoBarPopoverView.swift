@@ -7,7 +7,6 @@ struct DuoBarPopoverView: View {
     @Bindable var model: AppModel
 
     private var battery: MetricSample? { model.latest[.battery] }
-    private var network: MetricSample? { model.latest[.network] }
     private var batteryPercent: Int? { battery.map { Int(($0.normalized * 100).rounded()) } }
     private var isNetworkConnected: Bool { NetworkInfo.primaryIPv4() != nil }
     private var isBatteryConnected: Bool { model.isOnBattery == false }
@@ -43,22 +42,24 @@ struct DuoBarPopoverView: View {
                 bluetoothSection
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
-            audioDeviceMenu(
-                title: "Audio Output",
-                symbol: "hifispeaker",
-                devices: model.duoBarAudioOutputs,
-                selectedUID: model.duoBarSelectedOutputUID,
-                emptyMessage: "No output devices",
-                onSelect: { model.onDuoBarOutputSelected?($0) }
-            )
-            audioDeviceMenu(
-                title: "Audio Input",
-                symbol: "mic",
-                devices: model.duoBarAudioInputs,
-                selectedUID: model.duoBarSelectedInputUID,
-                emptyMessage: "No input devices",
-                onSelect: { model.onDuoBarInputSelected?($0) }
-            )
+            HStack(spacing: ExperienceSpacing.small) {
+                audioDeviceMenu(
+                    title: "Audio Output",
+                    symbol: "hifispeaker",
+                    devices: model.duoBarAudioOutputs,
+                    selectedUID: model.duoBarSelectedOutputUID,
+                    emptyMessage: "No output devices",
+                    onSelect: { model.onDuoBarOutputSelected?($0) }
+                )
+                audioDeviceMenu(
+                    title: "Audio Input",
+                    symbol: "mic",
+                    devices: model.duoBarAudioInputs,
+                    selectedUID: model.duoBarSelectedInputUID,
+                    emptyMessage: "No input devices",
+                    onSelect: { model.onDuoBarInputSelected?($0) }
+                )
+            }
         }
         .padding(12)
         .frame(width: DashboardPopoverView.width)
@@ -86,19 +87,11 @@ struct DuoBarPopoverView: View {
                         Text("Wi-Fi")
                             .font(.subheadline.weight(.semibold))
                             .lineLimit(1)
-                        HStack(spacing: 6) {
-                            Text(networkDetail)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
-                            Spacer(minLength: 2)
-                            Text(networkSpeedText)
-                                .font(.caption.monospacedDigit())
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .fixedSize(horizontal: true, vertical: false)
-                        }
+                        Text(networkDetail)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -460,8 +453,9 @@ struct DuoBarPopoverView: View {
             isBluetoothExpanded.toggle()
         } label: {
             HStack(spacing: 9) {
-                Image(systemName: "bluetooth")
-                    .font(.system(size: 14, weight: .semibold))
+                BluetoothMark()
+                    .stroke(.secondary, style: StrokeStyle(lineWidth: 1.7, lineCap: .round, lineJoin: .round))
+                    .frame(width: 15, height: 20)
                     .frame(width: 28, height: 28)
                     .background(.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
 
@@ -573,6 +567,7 @@ struct DuoBarPopoverView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
+                        .minimumScaleFactor(0.75)
                 }
                 Spacer()
                 Image(systemName: "chevron.up.chevron.down")
@@ -585,6 +580,7 @@ struct DuoBarPopoverView: View {
         .menuIndicator(.hidden)
         .padding(.horizontal, 10)
         .frame(height: 42)
+        .frame(maxWidth: .infinity)
         .background(controlSurface(cornerRadius: 12))
         .accessibilityLabel(title)
     }
@@ -609,11 +605,6 @@ struct DuoBarPopoverView: View {
         if let name = model.duoBarNetworkName { return name }
         if isNetworkConnected { return "Connected" }
         return wifiStatusText
-    }
-
-    private var networkSpeedText: String {
-        guard let network else { return "↓— ↑—" }
-        return "↓\(DashboardFormat.rate(network.detail["down"] ?? 0)) ↑\(DashboardFormat.rate(network.detail["up"] ?? 0))"
     }
 
     private var batteryIcon: some View {
@@ -664,5 +655,31 @@ struct DuoBarPopoverView: View {
     private func openBatterySettings() {
         guard let url = URL(string: "x-apple.systempreferences:com.apple.Battery-Settings.extension") else { return }
         NSWorkspace.shared.open(url)
+    }
+}
+
+private struct BluetoothMark: Shape {
+    func path(in rect: CGRect) -> Path {
+        let centerX = rect.midX
+        let centerY = rect.midY
+        var path = Path()
+
+        path.move(to: CGPoint(x: centerX, y: rect.minY))
+        path.addLine(to: CGPoint(x: centerX, y: rect.maxY))
+
+        path.move(to: CGPoint(x: rect.minX, y: rect.minY + rect.height * 0.24))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + rect.height * 0.74))
+
+        path.move(to: CGPoint(x: rect.minX, y: rect.minY + rect.height * 0.76))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + rect.height * 0.26))
+
+        path.move(to: CGPoint(x: centerX, y: centerY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + rect.height * 0.26))
+        path.addLine(to: CGPoint(x: centerX, y: rect.minY))
+
+        path.move(to: CGPoint(x: centerX, y: centerY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + rect.height * 0.74))
+        path.addLine(to: CGPoint(x: centerX, y: rect.maxY))
+        return path
     }
 }
