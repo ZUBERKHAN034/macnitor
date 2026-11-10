@@ -23,6 +23,9 @@ struct DuoBarPopoverView: View {
     @State private var isWiFiExpanded = false
 
     @State private var isBatteryExpanded = false
+    @State private var lowPowerModeEnabled = ProcessInfo.processInfo.isLowPowerModeEnabled
+    @State private var isUpdatingLowPowerMode = false
+    @State private var lowPowerModeError: String?
     @State private var isBluetoothExpanded = false
 
     private var bluetoothAudioOutputs: [DuoBarAudioOutput] {
@@ -69,6 +72,9 @@ struct DuoBarPopoverView: View {
         .padding(12)
         .frame(width: DashboardPopoverView.width)
         .onAppear { model.onDuoBarPopoverOpened?() }
+        .onReceive(NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange)) { _ in
+            lowPowerModeEnabled = ProcessInfo.processInfo.isLowPowerModeEnabled
+        }
         .onChange(of: model.duoBarWiFiPoweredOn) { _, poweredOn in
             guard poweredOn == true, isWiFiExpanded else { return }
             Task { await refreshWiFiNetworks() }
@@ -422,6 +428,18 @@ struct DuoBarPopoverView: View {
             if battery == nil {
                 sectionMessage("No internal battery")
             } else {
+                Toggle("Low Power Mode", isOn: Binding(
+                    get: { lowPowerModeEnabled },
+                    set: { setLowPowerMode($0) }
+                ))
+                .font(.caption)
+                .toggleStyle(.switch)
+                .controlSize(.mini)
+                .disabled(isUpdatingLowPowerMode)
+                .padding(.vertical, 4)
+
+                Divider().padding(.vertical, 6)
+
                 batteryDetailRow(
                     String(localized: "battery.status", defaultValue: "Status"),
                     batteryStatusText
@@ -460,6 +478,14 @@ struct DuoBarPopoverView: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .background(controlSurface(cornerRadius: 12))
+        .alert("Couldn’t Change Low Power Mode", isPresented: Binding(
+            get: { lowPowerModeError != nil },
+            set: { if !$0 { lowPowerModeError = nil } }
+        )) {
+            Button("OK", role: .cancel) { lowPowerModeError = nil }
+        } message: {
+            Text(lowPowerModeError ?? "")
+        }
     }
 
     private func batteryDetailRow(_ title: String, _ value: String) -> some View {
@@ -753,6 +779,31 @@ struct DuoBarPopoverView: View {
     private func openBatterySettings() {
         guard let url = URL(string: "x-apple.systempreferences:com.apple.Battery-Settings.extension") else { return }
         NSWorkspace.shared.open(url)
+    }
+
+    private func setLowPowerMode(_ enabled: Bool) {
+        guard enabled != lowPowerModeEnabled, !isUpdatingLowPowerMode else { return }
+        isUpdatingLowPowerMode = true
+        Task {
+            let result = await Task.detached(priority: .userInitiated) {
+                let script = "do shell script \"/usr/bin/pmset -a lowpowermode \\(enabled ? 1 : 0)\" with administrator privileges"
+                let process = Process()
+                process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+                process.arguments = ["-e", script]
+                do {
+                    try process.run()
+                    process.waitUntilExit()
+                    return process.terminationStatus == 0
+                } catch {
+                    return false
+                }
+            }.value
+            isUpdatingLowPowerMode = false
+            lowPowerModeEnabled = ProcessInfo.processInfo.isLowPowerModeEnabled
+            if !result || lowPowerModeEnabled != enabled {
+                lowPowerModeError = String(localized: "Low Power Mode could not be changed. You can change it in Battery Settings.")
+            }
+        }
     }
 }
 

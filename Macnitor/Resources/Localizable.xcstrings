@@ -22364,6 +22364,42 @@
           }
         }
       }
+    },
+    "Low Power Mode": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Low Power Mode" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Düşük Güç Modu" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Режим энергосбережения" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Modo de bajo consumo" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Mode économie d’énergie" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Modo Pouca Energia" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "低电量模式" } }
+      }
+    },
+    "Couldn’t Change Low Power Mode": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Couldn’t Change Low Power Mode" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Düşük Güç Modu Değiştirilemedi" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Не удалось изменить режим энергосбережения" } },
+        "es": { "stringUnit": { "state": "translated", "value": "No se pudo cambiar el modo de bajo consumo" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Impossible de modifier le mode économie d’énergie" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Não foi possível alterar el Modo Pouca Energia" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "无法更改低电量模式" } }
+      }
+    },
+    "Low Power Mode could not be changed. You can change it in Battery Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Low Power Mode could not be changed. You can change it in Battery Settings." } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Düşük Güç Modu değiştirilemedi. Pil Ayarları’ndan değiştirebilirsiniz." } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Не удалось изменить режим энергосбережения. Измените его в настройках аккумулятора." } },
+        "es": { "stringUnit": { "state": "translated", "value": "No se pudo cambiar el modo de bajo consumo. Puedes cambiarlo en los ajustes de batería." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Le mode économie d’énergie n’a pas pu être modifié. Vous pouvez le changer dans les réglages de la batterie." } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Não foi possível alterar o Modo Pouca Energia. Você pode alterá-lo nos Ajustes da Bateria." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "无法更改低电量模式。你可以在电池设置中更改。" } }
+      }
     }
   },
   "version": "1.0"
