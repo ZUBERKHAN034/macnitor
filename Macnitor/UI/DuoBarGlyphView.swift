@@ -65,6 +65,14 @@ struct DuoBarGlyphView: View {
                     .scaleEffect(0.76 + 0.24 * boltProgress)
             }
 
+            if let batteryLevel {
+                Text("\(Int((min(max(batteryLevel, 0), 1) * 100).rounded()))")
+                    .font(.system(size: 5, weight: .bold, design: .rounded).monospacedDigit())
+                    .foregroundStyle(.primary)
+                    .position(chargingBoltPosition)
+                    .opacity(1 - boltProgress)
+            }
+
             if let healthSymbol {
                 Image(systemName: healthSymbol)
                     .font(.system(size: 6, weight: .bold))

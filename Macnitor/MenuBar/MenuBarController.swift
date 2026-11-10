@@ -131,7 +131,7 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
     func refresh() {
         let accent = model.accentNSColor
         let battery = model.latest[.battery]
-        let showsChargingBolt = model.isOnBattery == false || battery?.detail["charging"] == 1
+        let showsChargingBolt = (battery?.detail["charging"] ?? 0) > 0
         let batteryColor = DuoBarBatteryColor.resolve(
             colorCodingEnabled: model.batteryColorCoding,
             isCharging: showsChargingBolt,
