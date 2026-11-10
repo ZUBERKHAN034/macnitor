@@ -454,8 +454,8 @@ struct DuoBarPopoverView: View {
         } label: {
             HStack(spacing: 9) {
                 BluetoothMark()
-                    .stroke(.secondary, style: StrokeStyle(lineWidth: 1.7, lineCap: .round, lineJoin: .round))
-                    .frame(width: 15, height: 20)
+                    .stroke(.secondary, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
+                    .frame(width: 11, height: 16)
                     .frame(width: 28, height: 28)
                     .background(.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
 
@@ -661,25 +661,14 @@ struct DuoBarPopoverView: View {
 private struct BluetoothMark: Shape {
     func path(in rect: CGRect) -> Path {
         let centerX = rect.midX
-        let centerY = rect.midY
         var path = Path()
 
-        path.move(to: CGPoint(x: centerX, y: rect.minY))
+        path.move(to: CGPoint(x: rect.minX, y: rect.minY + rect.height * 0.25))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + rect.height * 0.75))
         path.addLine(to: CGPoint(x: centerX, y: rect.maxY))
-
-        path.move(to: CGPoint(x: rect.minX, y: rect.minY + rect.height * 0.24))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + rect.height * 0.74))
-
-        path.move(to: CGPoint(x: rect.minX, y: rect.minY + rect.height * 0.76))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + rect.height * 0.26))
-
-        path.move(to: CGPoint(x: centerX, y: centerY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + rect.height * 0.26))
         path.addLine(to: CGPoint(x: centerX, y: rect.minY))
-
-        path.move(to: CGPoint(x: centerX, y: centerY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + rect.height * 0.74))
-        path.addLine(to: CGPoint(x: centerX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + rect.height * 0.25))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + rect.height * 0.75))
         return path
     }
 }
