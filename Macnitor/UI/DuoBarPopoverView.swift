@@ -21,17 +21,26 @@ struct DuoBarPopoverView: View {
     @State private var wifiPassword = ""
     @State private var isJoiningWiFi = false
     @State private var wifiJoinFailed = false
+    @State private var isWiFiExpanded = false
 
     @State private var bluetoothDevices: [DuoBarBluetoothDevice] = []
     @State private var connectingBluetoothAddress: String?
+    @State private var isBluetoothExpanded = false
 
     var body: some View {
         VStack(spacing: ExperienceSpacing.small) {
             networkRow
-            wifiNetworksSection
+            if isWiFiExpanded {
+                wifiNetworksSection
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
             volumeRow
             batteryRow
-            bluetoothSection
+            bluetoothHeader
+            if isBluetoothExpanded {
+                bluetoothSection
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
             audioDeviceMenu(
                 title: "Audio Output",
                 symbol: "hifispeaker",
@@ -52,38 +61,57 @@ struct DuoBarPopoverView: View {
         .padding(12)
         .frame(width: DashboardPopoverView.width)
         .onAppear { model.onDuoBarPopoverOpened?() }
-        .task { await refreshWiFiNetworks() }
-        .task { refreshBluetoothDevices() }
+        .onChange(of: model.duoBarWiFiPoweredOn) { _, poweredOn in
+            guard poweredOn == true, isWiFiExpanded else { return }
+            Task { await refreshWiFiNetworks() }
+        }
+        .onChange(of: model.duoBarBluetooth) { _, state in
+            guard state == .on, isBluetoothExpanded else { return }
+            refreshBluetoothDevices()
+        }
+        .animation(.easeInOut(duration: 0.18), value: isWiFiExpanded)
+        .animation(.easeInOut(duration: 0.18), value: isBluetoothExpanded)
     }
 
     private var networkRow: some View {
         HStack(spacing: 9) {
-            Image(systemName: networkSymbol, variableValue: wifiStrengthVariable)
-                .font(.system(size: 14, weight: .semibold))
-                .symbolRenderingMode(.hierarchical)
-                .frame(width: 28, height: 28)
-                .background(.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .accessibilityValue(wifiStatusText)
+            Button(action: toggleWiFiSection) {
+                HStack(spacing: 9) {
+                    Image(systemName: networkSymbol, variableValue: wifiStrengthVariable)
+                        .font(.system(size: 14, weight: .semibold))
+                        .symbolRenderingMode(.hierarchical)
+                        .frame(width: 28, height: 28)
+                        .background(.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .accessibilityValue(wifiStatusText)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Network")
-                    .font(.subheadline.weight(.semibold))
-                    .lineLimit(1)
-                HStack(spacing: 6) {
-                    Text(networkDetail)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                    Spacer(minLength: 2)
-                    Text(networkSpeedText)
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .fixedSize(horizontal: true, vertical: false)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Wi-Fi")
+                            .font(.subheadline.weight(.semibold))
+                            .lineLimit(1)
+                        HStack(spacing: 6) {
+                            Text(networkDetail)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                            Spacer(minLength: 2)
+                            Text(networkSpeedText)
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .fixedSize(horizontal: true, vertical: false)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Image(systemName: isWiFiExpanded ? "chevron.up" : "chevron.down")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.tertiary)
                 }
+                .contentShape(Rectangle())
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Wi-Fi"))
 
             if let wifiPoweredOn = model.duoBarWiFiPoweredOn {
                 Toggle("Wi-Fi", isOn: Binding(
@@ -100,6 +128,12 @@ struct DuoBarPopoverView: View {
         .padding(.horizontal, 10)
         .frame(height: 52)
         .background(controlSurface(cornerRadius: 12))
+    }
+
+    private func toggleWiFiSection() {
+        isWiFiExpanded.toggle()
+        guard isWiFiExpanded else { return }
+        Task { await refreshWiFiNetworks() }
     }
 
     private var wifiNetworksSection: some View {
@@ -251,6 +285,7 @@ struct DuoBarPopoverView: View {
     }
 
     private func refreshWiFiNetworks() async {
+        guard !isScanningWiFi else { return }
         isScanningWiFi = true
         if let handler = model.onDuoBarScanWiFi {
             wifiNetworks = await handler()
@@ -396,6 +431,49 @@ struct DuoBarPopoverView: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .background(controlSurface(cornerRadius: 12))
+    }
+
+    private var bluetoothHeader: some View {
+        Button {
+            isBluetoothExpanded.toggle()
+            if isBluetoothExpanded { refreshBluetoothDevices() }
+        } label: {
+            HStack(spacing: 9) {
+                Image(systemName: "bluetooth")
+                    .font(.system(size: 14, weight: .semibold))
+                    .frame(width: 28, height: 28)
+                    .background(.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Bluetooth")
+                        .font(.subheadline.weight(.semibold))
+                    bluetoothStatusLabel
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer(minLength: 4)
+
+                Image(systemName: isBluetoothExpanded ? "chevron.up" : "chevron.down")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, 10)
+            .frame(height: 52)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .background(controlSurface(cornerRadius: 12))
+        .accessibilityLabel(Text("Bluetooth"))
+    }
+
+    @ViewBuilder
+    private var bluetoothStatusLabel: some View {
+        switch model.duoBarBluetooth {
+        case .on: Text("On")
+        case .off: Text("Off")
+        case .unavailable: Text("Unavailable")
+        }
     }
 
     private func bluetoothDeviceRow(_ device: DuoBarBluetoothDevice) -> some View {

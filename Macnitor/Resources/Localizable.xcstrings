@@ -21552,6 +21552,42 @@
         }
       }
     },
+    "Bluetooth": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Bluetooth" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Bluetooth" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Bluetooth" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Bluetooth" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Bluetooth" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Bluetooth" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "蓝牙" } }
+      }
+    },
+    "Off": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Off" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Kapalı" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Выключено" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Desactivado" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Désactivé" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Desligado" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "关闭" } }
+      }
+    },
+    "On": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "On" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Açık" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Включено" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Activado" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Activé" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Ligado" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "开启" } }
+      }
+    },
     "Wi-Fi": {
       "extractionState": "manual",
       "localizations": {
