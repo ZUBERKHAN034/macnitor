@@ -431,6 +431,13 @@ struct DuoBarPopoverView: View {
                 Image(systemName: isBatteryExpanded ? "chevron.up" : "chevron.down")
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.tertiary)
+
+                Toggle("", isOn: .constant(false))
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                    .controlSize(.mini)
+                    .hidden()
+                    .accessibilityHidden(true)
             }
             .contentShape(Rectangle())
         }
@@ -628,10 +635,10 @@ struct DuoBarPopoverView: View {
                     .renderingMode(.template)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(width: 14, height: 16)
+                    .frame(width: 18, height: 20)
             } else {
                 Image(systemName: "bluetooth")
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.system(size: 18, weight: .medium))
             }
         }
         .foregroundStyle(.secondary)
