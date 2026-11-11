@@ -404,37 +404,30 @@ struct DuoBarPopoverView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Battery")
                             .font(.subheadline.weight(.semibold))
-                        HStack(spacing: 4) {
-                            Text(batteryStatusText)
-                            if isBatteryConnected, battery != nil {
-                                Text("|")
-                                Text(String(localized: "battery.usingAdapter", defaultValue: "Using Adapter"))
-                            }
-                            if let batteryEstimateText {
-                                Text("|")
-                                Text(batteryEstimateText)
-                            }
-                        }
+                        Text(batteryStatusText)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-
-                    Image(systemName: isBatteryExpanded ? "chevron.up" : "chevron.down")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.tertiary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
 
-            Text(batteryPercent.map { "\($0)%" } ?? "—")
-                .font(.caption.monospacedDigit())
-                .foregroundStyle(.secondary)
-                .frame(minWidth: 42, alignment: .center)
+            HStack(spacing: 9) {
+                Text(batteryPercent.map { "\($0)%" } ?? "—")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .frame(minWidth: 42, alignment: .trailing)
+
+                Image(systemName: isBatteryExpanded ? "chevron.up" : "chevron.down")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .accessibilityHidden(true)
         }
         .padding(.horizontal, 10)
         .frame(height: 52)
@@ -449,24 +442,37 @@ struct DuoBarPopoverView: View {
             if battery == nil {
                 sectionMessage("No internal battery")
             } else {
-                Toggle("Low Power Mode", isOn: Binding(
-                    get: { lowPowerModeEnabled },
-                    set: { setLowPowerMode($0) }
-                ))
-                .font(.caption)
-                .toggleStyle(.switch)
-                .controlSize(.mini)
-                .disabled(isUpdatingLowPowerMode)
+                HStack(spacing: 8) {
+                    Image(systemName: "bolt.badge.clock.fill")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(lowPowerModeEnabled ? Color.yellow : Color.secondary)
+                    Text("Low Power Mode")
+                        .font(.caption.weight(.semibold))
+                    Spacer()
+                    Toggle("Low Power Mode", isOn: Binding(
+                        get: { lowPowerModeEnabled },
+                        set: { setLowPowerMode($0) }
+                    ))
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                    .controlSize(.mini)
+                    .disabled(isUpdatingLowPowerMode)
+                }
                 .padding(.vertical, 4)
 
                 Divider().padding(.vertical, 6)
 
                 batteryDetailRow(
-                    String(localized: "battery.status", defaultValue: "Status"),
-                    batteryStatusText
+                    String(localized: "battery.powerSource", defaultValue: "Power Source"),
+                    batteryPowerSource
                 )
                 if let estimate = batteryEstimateText {
-                    batteryDetailRow(batteryEstimateLabel, estimate)
+                    batteryDetailRow(
+                        isBatteryCharging
+                            ? String(localized: "battery.untilFull", defaultValue: "Until Full")
+                            : String(localized: "battery.remaining", defaultValue: "Remaining"),
+                        estimate
+                    )
                 }
                 if let health = battery?.detail["healthPercent"] {
                     batteryDetailRow(
@@ -522,9 +528,10 @@ struct DuoBarPopoverView: View {
         .padding(.vertical, 4)
     }
 
-    private var batteryEstimateLabel: String {
-        BatteryPowerStatus.resolve(battery?.detail ?? [:], isOnBattery: model.isOnBattery).estimateLabel
-            ?? String(localized: "battery.timeRemaining", defaultValue: "Time left")
+    private var batteryPowerSource: String {
+        isBatteryConnected
+            ? String(localized: "battery.powerAdapter", defaultValue: "Power Adapter")
+            : String(localized: "battery.batteryPower", defaultValue: "Battery Power")
     }
 
     private var batteryEstimateText: String? {

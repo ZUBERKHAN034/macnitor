@@ -5867,6 +5867,66 @@
         }
       }
     },
+    "battery.powerSource": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "new", "value": "Power Source" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Fuente de alimentación" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Source d’alimentation" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Fonte de alimentação" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Источник питания" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Güç Kaynağı" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "电源" } }
+      }
+    },
+    "battery.powerAdapter": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "new", "value": "Power Adapter" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Adaptador de corriente" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Adaptateur secteur" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Adaptador de energia" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Адаптер питания" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Güç Adaptörü" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "电源适配器" } }
+      }
+    },
+    "battery.batteryPower": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "new", "value": "Battery Power" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Batería" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Batterie" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Bateria" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Питание от аккумулятора" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Pil Gücü" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "电池供电" } }
+      }
+    },
+    "battery.untilFull": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "new", "value": "Until Full" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Hasta completar" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Jusqu’à la charge complète" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Até carga completa" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "До полной зарядки" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Tam doluma kadar" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "充满前" } }
+      }
+    },
+    "battery.remaining": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "new", "value": "Remaining" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Restante" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Restant" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Restante" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Осталось" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Kalan" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "剩余" } }
+      }
+    },
     "battery.status": {
       "extractionState": "extracted_with_value",
       "localizations": {
