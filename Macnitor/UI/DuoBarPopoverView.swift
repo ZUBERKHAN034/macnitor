@@ -422,8 +422,8 @@ struct DuoBarPopoverView: View {
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.tertiary)
 
-                Spacer()
-                    .frame(width: 42)
+                Color.clear
+                    .frame(width: 42, height: 1)
 
                 Text(batteryPercent.map { "\($0)%" } ?? "—")
                     .font(.caption.monospacedDigit())
