@@ -36,17 +36,17 @@ struct DuoBarPopoverView: View {
             networkRow
             if isWiFiExpanded {
                 wifiNetworksSection
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .transition(.opacity.animation(.easeInOut(duration: 0.18)))
             }
             bluetoothHeader
             if isBluetoothExpanded {
                 bluetoothSection
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .transition(.opacity.animation(.easeInOut(duration: 0.18)))
             }
             batteryRow
             if isBatteryExpanded {
                 batteryDetailsSection
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .transition(.opacity.animation(.easeInOut(duration: 0.18)))
             }
             volumeRow
             HStack(spacing: ExperienceSpacing.small) {
@@ -82,9 +82,6 @@ struct DuoBarPopoverView: View {
             guard poweredOn == true, isWiFiExpanded else { return }
             Task { await refreshWiFiNetworks() }
         }
-        .animation(.easeInOut(duration: 0.18), value: isWiFiExpanded)
-        .animation(.easeInOut(duration: 0.18), value: isBatteryExpanded)
-        .animation(.easeInOut(duration: 0.18), value: isBluetoothExpanded)
     }
 
     private var networkRow: some View {
@@ -413,8 +410,6 @@ struct DuoBarPopoverView: View {
                         .minimumScaleFactor(0.8)
                 }
 
-                Spacer(minLength: 4)
-
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(batteryPercent.map { "\($0)%" } ?? "—")
                         .font(.caption.monospacedDigit())
@@ -427,6 +422,7 @@ struct DuoBarPopoverView: View {
                             .minimumScaleFactor(0.8)
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .trailing)
 
                 Image(systemName: isBatteryExpanded ? "chevron.up" : "chevron.down")
                     .font(.caption2.weight(.semibold))
