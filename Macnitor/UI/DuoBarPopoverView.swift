@@ -729,7 +729,7 @@ struct DuoBarPopoverView: View {
         if model.duoBarWiFiSignal == .disconnected || model.duoBarWiFiSignal == .unavailable {
             return wifiStatusText
         }
-        switch model.duoBarNetworkNameAvailability {
+        return switch model.duoBarNetworkNameAvailability {
         case .notRequested: String(localized: "Getting Wi-Fi name…")
         case .requestingPermission: String(localized: "Requesting Location Access…")
         case .permissionRequired: String(localized: "Location Access Required")
