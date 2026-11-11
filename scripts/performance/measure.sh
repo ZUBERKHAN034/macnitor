@@ -6,7 +6,7 @@ zmodload zsh/datetime
 usage() {
   cat <<'EOF'
 Usage:
-  measure.sh --app <Mectrics.app> [options]
+  measure.sh --app <Macnitor.app> [options]
   measure.sh --pid <pid> [options]
 
 Options:
@@ -95,10 +95,10 @@ preferences_had_domain=false
 version=unknown
 if [[ -n "$app_path" ]]; then
   app_path=${app_path:A}
-  app_binary="$app_path/Contents/MacOS/Mectrics"
+  app_binary="$app_path/Contents/MacOS/Macnitor"
   info_plist="$app_path/Contents/Info.plist"
   [[ -x "$app_binary" && -f "$info_plist" ]] || {
-    echo "Not a runnable Mectrics app: $app_path" >&2
+    echo "Not a runnable Macnitor app: $app_path" >&2
     exit 66
   }
   version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$info_plist")
@@ -138,7 +138,7 @@ cleanup() {
     # The preferences daemon can still be flushing the exiting process's writes.
     # Restoring before it settles leaves the run's keys behind.
     for _ in {1..30}; do
-      pgrep -x Mectrics >/dev/null 2>&1 || break
+      pgrep -x Macnitor >/dev/null 2>&1 || break
       sleep 0.1
     done
     sleep 1
@@ -177,7 +177,7 @@ trap cleanup EXIT INT TERM
 if [[ -n "$app_path" ]]; then
   isolated_home="$output_dir/home"
   mkdir -p "$isolated_home"
-  preferences_backup_dir=$(mktemp -d "${TMPDIR:-/tmp}/mectrics-preferences.XXXXXX")
+  preferences_backup_dir=$(mktemp -d "${TMPDIR:-/tmp}/macnitor-preferences.XXXXXX")
   preferences_backup="$preferences_backup_dir/com.mectrics.app.plist"
   if defaults export com.mectrics.app "$preferences_backup" >/dev/null 2>&1; then
     preferences_had_domain=true
@@ -196,9 +196,9 @@ if [[ -n "$app_path" ]]; then
   # profile replaces those placeholders with real JSON, passed as old-style plist data
   # (`<hex>`) so it still never touches the user's domain. Frameworks may still persist
   # bookkeeping through cfprefsd, so cleanup restores the exact pre-run snapshot.
-  alert_rules=__mectrics_performance_empty__
-  system_alert_rules=__mectrics_performance_empty__
-  enabled_components=__mectrics_performance_empty__
+  alert_rules=__macnitor_performance_empty__
+  system_alert_rules=__macnitor_performance_empty__
+  enabled_components=__macnitor_performance_empty__
   if [[ -n "$profile_path" ]]; then
     profile_value() {
       jq -e -c ".$1" "$profile_path" 2>/dev/null | xxd -p | tr -d '\n'
@@ -217,11 +217,11 @@ if [[ -n "$app_path" ]]; then
     cp "$profile_path" "$output_dir/profile.json"
   fi
 
-  # Launched through LaunchServices so the run can be handed a `mectrics://` route the
+  # Launched through LaunchServices so the run can be handed a `macnitor://` route the
   # way a user's click would deliver one. A second copy would answer that route and
   # skew the measurement, so the run refuses to start beside an existing process.
-  pgrep -x Mectrics >/dev/null 2>&1 && {
-    echo "Another Mectrics is already running; quit it before measuring" >&2
+  pgrep -x Macnitor >/dev/null 2>&1 && {
+    echo "Another Macnitor is already running; quit it before measuring" >&2
     exit 69
   }
   /usr/bin/open -a "$app_path" \
@@ -240,17 +240,17 @@ if [[ -n "$app_path" ]]; then
     -systemAlertRules "$system_alert_rules" \
     -enabledComponents "$enabled_components"
   sleep 3
-  launched_pid=$(pgrep -x Mectrics | head -1)
+  launched_pid=$(pgrep -x Macnitor | head -1)
   [[ -n "$launched_pid" ]] || {
-    echo "Mectrics exited during launch; see $output_dir/app.stderr" >&2
+    echo "Macnitor exited during launch; see $output_dir/app.stderr" >&2
     exit 70
   }
   target_pid=$launched_pid
   if [[ -n "$settings_pane" ]]; then
-    /usr/bin/open -a "$app_path" "mectrics://$settings_pane"
+    /usr/bin/open -a "$app_path" "macnitor://$settings_pane"
     sleep 3
     kill -0 "$target_pid" 2>/dev/null || {
-      echo "Mectrics exited while opening Settings" >&2
+      echo "Macnitor exited while opening Settings" >&2
       exit 70
     }
   fi
