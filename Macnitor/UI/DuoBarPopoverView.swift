@@ -38,17 +38,17 @@ struct DuoBarPopoverView: View {
                 wifiNetworksSection
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
-            volumeRow
-            batteryRow
-            if isBatteryExpanded {
-                batteryDetailsSection
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            }
             bluetoothHeader
             if isBluetoothExpanded {
                 bluetoothSection
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
+            batteryRow
+            if isBatteryExpanded {
+                batteryDetailsSection
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+            volumeRow
             HStack(spacing: ExperienceSpacing.small) {
                 audioDeviceMenu(
                     title: "Audio Output",
