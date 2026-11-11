@@ -646,7 +646,7 @@ struct DuoBarPopoverView: View {
         case .unavailable: String(localized: "Unavailable")
         case .on:
             let connectedDevices = model.duoBarBluetoothDevices.filter(\.isConnected)
-            return switch connectedDevices.count {
+            switch connectedDevices.count {
             case 0: String(localized: "Not connected", defaultValue: "Not connected")
             case 1: connectedDevices[0].name
             default: String.localizedStringWithFormat(
