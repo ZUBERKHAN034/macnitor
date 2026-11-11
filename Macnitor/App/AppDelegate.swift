@@ -164,7 +164,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self.model.duoBarNetworkName = state.networkName
             self.model.duoBarNetworkNameAvailability = state.networkNameAvailability
             self.model.duoBarBluetooth = state.bluetooth
+            self.model.duoBarBluetoothDevices = state.bluetoothDevices
             self.menuBar.refresh()
+        }
+        model.onDuoBarBluetoothPowerChanged = { [weak self] enabled in
+            self?.duoBarSystem.setBluetoothPower(enabled)
+        }
+        model.onDuoBarBluetoothRefresh = { [weak self] in
+            self?.duoBarSystem.refreshBluetooth()
+        }
+        model.onDuoBarBluetoothDeviceConnectionChanged = { [weak self] address, connected in
+            guard let self else { return false }
+            return await self.duoBarSystem.setBluetoothDeviceConnection(
+                address: address,
+                connected: connected
+            )
         }
         model.onDuoBarRequestDetails = { [weak self] in self?.duoBarSystem.requestDetails() }
         model.onDuoBarScanWiFi = { [weak self] in

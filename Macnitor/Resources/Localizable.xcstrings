@@ -21636,6 +21636,126 @@
         "zh-Hans": { "stringUnit": { "state": "translated", "value": "蓝牙" } }
       }
     },
+    "Bluetooth disabled": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Bluetooth disabled" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Bluetooth kapalı" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Bluetooth выключен" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Bluetooth desactivado" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Bluetooth désactivé" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Bluetooth desativado" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "蓝牙已关闭" } }
+      }
+    },
+    "Bluetooth power": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Bluetooth power" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Bluetooth gücü" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Питание Bluetooth" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Alimentación de Bluetooth" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Alimentation Bluetooth" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Energia do Bluetooth" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "蓝牙电源" } }
+      }
+    },
+    "Bluetooth Settings…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Bluetooth Settings…" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Bluetooth Ayarları…" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Настройки Bluetooth…" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Ajustes de Bluetooth…" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Réglages Bluetooth…" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Ajustes de Bluetooth…" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "蓝牙设置…" } }
+      }
+    },
+    "Bluetooth unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Bluetooth unavailable" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Bluetooth kullanılamıyor" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Bluetooth недоступен" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Bluetooth no disponible" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Bluetooth indisponible" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Bluetooth indisponível" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "蓝牙不可用" } }
+      }
+    },
+    "%d devices": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%d devices" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "%d aygıt" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "%d устройств" } },
+        "es": { "stringUnit": { "state": "translated", "value": "%d dispositivos" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "%d appareils" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "%d dispositivos" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "%d 台设备" } }
+      }
+    },
+    "Connected": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Connected" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Bağlı" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Подключено" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Conectado" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Connecté" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Conectado" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "已连接" } }
+      }
+    },
+    "No devices found": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No devices found" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Aygıt bulunamadı" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Устройства не найдены" } },
+        "es": { "stringUnit": { "state": "translated", "value": "No se encontraron dispositivos" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Aucun appareil trouvé" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Nenhum dispositivo encontrado" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "未找到设备" } }
+      }
+    },
+    "Not connected": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Not connected" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Bağlı değil" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Не подключено" } },
+        "es": { "stringUnit": { "state": "translated", "value": "No conectado" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Non connecté" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Não conectado" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "未连接" } }
+      }
+    },
+    "Turn Bluetooth off": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Turn Bluetooth off" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Bluetooth'u kapat" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Выключить Bluetooth" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Desactivar Bluetooth" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Désactiver Bluetooth" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Desativar Bluetooth" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "关闭蓝牙" } }
+      }
+    },
+    "Turn Bluetooth on": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Turn Bluetooth on" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Bluetooth'u aç" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Включить Bluetooth" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Activar Bluetooth" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Activer Bluetooth" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Ativar Bluetooth" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "开启蓝牙" } }
+      }
+    },
     "Off": {
       "extractionState": "manual",
       "localizations": {

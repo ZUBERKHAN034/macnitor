@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import MetricsKit
 
@@ -27,10 +28,8 @@ struct DuoBarPopoverView: View {
     @State private var isUpdatingLowPowerMode = false
     @State private var lowPowerModeError: String?
     @State private var isBluetoothExpanded = false
-
-    private var bluetoothAudioOutputs: [DuoBarAudioOutput] {
-        model.duoBarAudioOutputs.filter(\.isBluetooth)
-    }
+    @State private var connectingBluetoothAddress: String?
+    @State private var hoveredBluetoothAddress: String?
 
     var body: some View {
         VStack(spacing: ExperienceSpacing.small) {
@@ -538,16 +537,16 @@ struct DuoBarPopoverView: View {
     private var bluetoothSection: some View {
         VStack(spacing: 0) {
             if model.duoBarBluetooth == .off {
-                sectionMessage("Bluetooth off")
+                sectionMessage(String(localized: "Bluetooth disabled"))
             } else if model.duoBarBluetooth == .unavailable {
-                sectionMessage("Bluetooth unavailable")
-            } else if bluetoothAudioOutputs.isEmpty {
-                sectionMessage("No output devices")
+                sectionMessage(String(localized: "Bluetooth unavailable"))
+            } else if model.duoBarBluetoothDevices.isEmpty {
+                sectionMessage(String(localized: "No devices found"))
             } else {
                 ScrollView(.vertical, showsIndicators: true) {
                     VStack(spacing: 2) {
-                        ForEach(bluetoothAudioOutputs) { output in
-                            bluetoothAudioOutputRow(output)
+                        ForEach(model.duoBarBluetoothDevices) { device in
+                            bluetoothDeviceRow(device)
                         }
                     }
                     .padding(.horizontal, 4)
@@ -573,70 +572,121 @@ struct DuoBarPopoverView: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .background(controlSurface(cornerRadius: 12))
+        .onAppear { model.onDuoBarBluetoothRefresh?() }
     }
 
     private var bluetoothHeader: some View {
-        Button {
-            isBluetoothExpanded.toggle()
-        } label: {
-            HStack(spacing: 9) {
-                BluetoothMark()
-                    .stroke(.secondary, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
-                    .frame(width: 11, height: 16)
-                    .frame(width: 28, height: 28)
-                    .background(.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        HStack(spacing: 9) {
+            Button {
+                isBluetoothExpanded.toggle()
+                if isBluetoothExpanded { model.onDuoBarBluetoothRefresh?() }
+            } label: {
+                HStack(spacing: 9) {
+                    bluetoothIcon
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Bluetooth")
-                        .font(.subheadline.weight(.semibold))
-                    bluetoothStatusLabel
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Bluetooth")
+                            .font(.subheadline.weight(.semibold))
+                        Text(bluetoothSummary)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Image(systemName: isBluetoothExpanded ? "chevron.up" : "chevron.down")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Bluetooth"))
+
+            if model.duoBarBluetooth != .unavailable {
+                Toggle("Bluetooth power", isOn: Binding(
+                    get: { model.duoBarBluetooth == .on },
+                    set: { model.onDuoBarBluetoothPowerChanged?($0) }
+                ))
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.mini)
+                .accessibilityLabel(Text("Bluetooth power"))
+                .help(String(localized: model.duoBarBluetooth == .on ? "Turn Bluetooth off" : "Turn Bluetooth on"))
+            }
+        }
+        .padding(.horizontal, 10)
+        .frame(height: 52)
+        .background(controlSurface(cornerRadius: 12))
+    }
+
+    private var bluetoothIcon: some View {
+        Group {
+            if let image = NSImage(named: NSImage.Name("NSBluetoothTemplate")) {
+                Image(nsImage: image)
+                    .renderingMode(.template)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 14, height: 16)
+            } else {
+                Image(systemName: "bluetooth")
+                    .font(.system(size: 14, weight: .medium))
+            }
+        }
+        .foregroundStyle(.secondary)
+        .frame(width: 28, height: 28)
+        .background(.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .accessibilityHidden(true)
+    }
+
+    private var bluetoothSummary: String {
+        switch model.duoBarBluetooth {
+        case .off: String(localized: "Bluetooth disabled", defaultValue: "Bluetooth disabled")
+        case .unavailable: String(localized: "Unavailable")
+        case .on:
+            let connectedDevices = model.duoBarBluetoothDevices.filter(\.isConnected)
+            switch connectedDevices.count {
+            case 0: String(localized: "Not connected", defaultValue: "Not connected")
+            case 1: connectedDevices[0].name
+            default: String.localizedStringWithFormat(
+                String(localized: "%d devices", defaultValue: "%d devices"),
+                connectedDevices.count
+            )
+            }
+        }
+    }
+
+    private func bluetoothDeviceRow(_ device: DuoBarBluetoothDevice) -> some View {
+        let isBusy = connectingBluetoothAddress == device.address
+        let isHovered = hoveredBluetoothAddress == device.address
+        return Button {
+            connectOrDisconnectBluetoothDevice(device)
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: device.iconSymbol)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(device.isConnected ? Color.accentColor : Color.secondary)
+                    .frame(width: 20)
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(device.name)
+                        .font(.subheadline.weight(device.isConnected ? .semibold : .regular))
+                        .foregroundStyle(device.isConnected ? .primary : .secondary)
+                        .lineLimit(1)
+                    Text(String(localized: device.isConnected ? "Connected" : "Not connected"))
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(device.isConnected ? Color.accentColor : Color.secondary)
+                        .lineLimit(1)
                 }
 
                 Spacer(minLength: 4)
 
-                Image(systemName: isBluetoothExpanded ? "chevron.up" : "chevron.down")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.tertiary)
-            }
-            .padding(.horizontal, 10)
-            .frame(height: 52)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .background(controlSurface(cornerRadius: 12))
-        .accessibilityLabel(Text("Bluetooth"))
-    }
-
-    @ViewBuilder
-    private var bluetoothStatusLabel: some View {
-        switch model.duoBarBluetooth {
-        case .on: Text("On")
-        case .off: Text("Off")
-        case .unavailable: Text("Unavailable")
-        }
-    }
-
-    private func bluetoothAudioOutputRow(_ output: DuoBarAudioOutput) -> some View {
-        let isSelected = model.duoBarSelectedOutputUID == output.uid
-        return Button {
-            model.onDuoBarOutputSelected?(output.uid)
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "headphones")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(isSelected ? Color.accentColor : .secondary)
-                    .frame(width: 20)
-
-                Text(output.name)
-                    .font(.subheadline.weight(isSelected ? .semibold : .regular))
-                    .foregroundStyle(isSelected ? .primary : .secondary)
-                    .lineLimit(1)
-
-                Spacer(minLength: 4)
-
-                if isSelected {
+                if isBusy {
+                    ProgressView()
+                        .controlSize(.mini)
+                        .frame(width: 16, height: 16)
+                } else if device.isConnected {
                     Image(systemName: "checkmark")
                         .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(Color.accentColor)
@@ -644,10 +694,30 @@ struct DuoBarPopoverView: View {
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
-            .background(isSelected ? Color.accentColor.opacity(0.08) : Color.clear, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .background(
+                device.isConnected
+                    ? Color.accentColor.opacity(isHovered ? 0.15 : 0.08)
+                    : (isHovered ? Color.primary.opacity(0.05) : Color.clear),
+                in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+            )
             .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
         .buttonStyle(.plain)
+        .onHover { hoveredBluetoothAddress = $0 ? device.address : nil }
+    }
+
+    private func connectOrDisconnectBluetoothDevice(_ device: DuoBarBluetoothDevice) {
+        guard connectingBluetoothAddress == nil else { return }
+        connectingBluetoothAddress = device.address
+        Task { @MainActor in
+            _ = await model.onDuoBarBluetoothDeviceConnectionChanged?(
+                device.address,
+                !device.isConnected
+            )
+            try? await Task.sleep(for: .milliseconds(600))
+            model.onDuoBarBluetoothRefresh?()
+            connectingBluetoothAddress = nil
+        }
     }
 
     private func audioDeviceMenu(
@@ -838,20 +908,5 @@ struct DuoBarPopoverView: View {
                 lowPowerModeError = message
             }
         }
-    }
-}
-
-private struct BluetoothMark: Shape {
-    func path(in rect: CGRect) -> Path {
-        let centerX = rect.midX
-        var path = Path()
-
-        path.move(to: CGPoint(x: rect.minX, y: rect.minY + rect.height * 0.25))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + rect.height * 0.75))
-        path.addLine(to: CGPoint(x: centerX, y: rect.maxY))
-        path.addLine(to: CGPoint(x: centerX, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + rect.height * 0.25))
-        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + rect.height * 0.75))
-        return path
     }
 }

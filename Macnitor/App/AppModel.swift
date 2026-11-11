@@ -40,11 +40,15 @@ final class AppModel {
     var duoBarNetworkName: String?
     var duoBarNetworkNameAvailability: DuoBarNetworkNameAvailability = .notRequested
     var duoBarBluetooth: DuoBarBluetoothState = .unavailable
+    var duoBarBluetoothDevices: [DuoBarBluetoothDevice] = []
     @ObservationIgnored var onDuoBarVolumeChanged: ((Double) -> Void)?
     @ObservationIgnored var onDuoBarMuteChanged: ((Bool) -> Void)?
     @ObservationIgnored var onDuoBarOutputSelected: ((String) -> Void)?
     @ObservationIgnored var onDuoBarInputSelected: ((String) -> Void)?
     @ObservationIgnored var onDuoBarWiFiPowerChanged: ((Bool) -> Void)?
+    @ObservationIgnored var onDuoBarBluetoothPowerChanged: ((Bool) -> Void)?
+    @ObservationIgnored var onDuoBarBluetoothRefresh: (() -> Void)?
+    @ObservationIgnored var onDuoBarBluetoothDeviceConnectionChanged: ((String, Bool) async -> Bool)?
     @ObservationIgnored var onDuoBarPopoverOpened: (() -> Void)?
     @ObservationIgnored var onDuoBarModeChanged: (() -> Void)?
     @ObservationIgnored var onDuoBarRequestDetails: (() -> Void)?

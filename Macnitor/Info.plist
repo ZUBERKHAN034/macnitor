@@ -36,8 +36,12 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.utilities</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Macnitor uses Bluetooth to show paired devices and manage their connections in DuoBar.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>© 2026 Macnitor</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Macnitor uses your location permission only when you open DuoBar details to read the connected Wi-Fi network name.</string>
 	<key>SUEnableAutomaticChecks</key>
 	<false/>
 	<key>SUEnableSystemProfiling</key>
