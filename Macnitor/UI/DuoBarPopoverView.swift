@@ -394,53 +394,57 @@ struct DuoBarPopoverView: View {
     }
 
     private var batteryRow: some View {
-        Button {
-            isBatteryExpanded.toggle()
-        } label: {
-            HStack(spacing: 9) {
-                batteryIcon
+        HStack(spacing: 9) {
+            Button {
+                isBatteryExpanded.toggle()
+            } label: {
+                HStack(spacing: 9) {
+                    batteryIcon
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Battery")
-                        .font(.subheadline.weight(.semibold))
-                    Text(batteryStatusText)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                }
-
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text(batteryPercent.map { "\($0)%" } ?? "—")
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(.secondary)
-                    if let batteryPowerSourceText {
-                        Text(batteryPowerSourceText)
-                            .font(.caption2)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Battery")
+                            .font(.subheadline.weight(.semibold))
+                        Text(batteryStatusText)
+                            .font(.caption)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text(batteryPercent.map { "\($0)%" } ?? "—")
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                        if let batteryPowerSourceText {
+                            Text(batteryPowerSourceText)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                        }
+                    }
+
+                    Image(systemName: isBatteryExpanded ? "chevron.up" : "chevron.down")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.tertiary)
                 }
-                .frame(maxWidth: .infinity, alignment: .trailing)
-
-                Image(systemName: isBatteryExpanded ? "chevron.up" : "chevron.down")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.tertiary)
-
-                Toggle("", isOn: .constant(false))
-                    .labelsHidden()
-                    .toggleStyle(.switch)
-                    .controlSize(.mini)
-                    .hidden()
-                    .accessibilityHidden(true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
             }
-            .contentShape(Rectangle())
+            .buttonStyle(.plain)
+
+            Toggle("", isOn: .constant(false))
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.mini)
+                .hidden()
+                .accessibilityHidden(true)
         }
-        .buttonStyle(.plain)
         .padding(.horizontal, 10)
         .frame(height: 52)
         .background(controlSurface(cornerRadius: 12))
+        .accessibilityElement(children: .contain)
         .accessibilityLabel(Text("Battery"))
         .accessibilityValue(isBatteryExpanded ? Text("Expanded") : Text("Collapsed"))
     }
