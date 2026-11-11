@@ -369,7 +369,7 @@ struct DuoBarPopoverView: View {
                 .disabled(!model.duoBarMuteSettable)
                 .help(model.duoBarMuted ? "Unmute output" : "Mute output")
 
-                Text("Volume")
+                Text(String(localized: "duobar.sound", defaultValue: "Sound"))
                     .font(.subheadline.weight(.semibold))
                 Spacer()
                 Text(model.duoBarVolume.map { "\(Int(($0 * 100).rounded()))%" } ?? "—")
@@ -405,10 +405,10 @@ struct DuoBarPopoverView: View {
                         Text("Battery")
                             .font(.subheadline.weight(.semibold))
                         Text(batteryStatusText)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -417,15 +417,18 @@ struct DuoBarPopoverView: View {
             }
             .buttonStyle(.plain)
 
-            HStack(spacing: 9) {
+            HStack(spacing: 0) {
+                Image(systemName: isBatteryExpanded ? "chevron.up" : "chevron.down")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+
+                Spacer()
+                    .frame(width: 42)
+
                 Text(batteryPercent.map { "\($0)%" } ?? "—")
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
                     .frame(minWidth: 42, alignment: .trailing)
-
-                Image(systemName: isBatteryExpanded ? "chevron.up" : "chevron.down")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.tertiary)
             }
             .accessibilityHidden(true)
         }

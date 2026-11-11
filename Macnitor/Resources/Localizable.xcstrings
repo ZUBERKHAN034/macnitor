@@ -5608,6 +5608,18 @@
         "zh-Hans": { "stringUnit": { "state": "translated", "value": "充电时环为绿色，低电量模式为黄色，电量低于 20% 时为红色。" } }
       }
     },
+    "duobar.sound": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "new", "value": "Sound" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Sonido" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Son" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Som" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Звук" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Ses" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "声音" } }
+      }
+    },
     "duobar.nearbyNetworks": {
       "extractionState": "manual",
       "localizations": {
