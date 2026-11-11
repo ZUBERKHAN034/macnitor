@@ -410,6 +410,10 @@ struct DuoBarPopoverView: View {
                                 Text("|")
                                 Text(String(localized: "battery.usingAdapter", defaultValue: "Using Adapter"))
                             }
+                            if let batteryEstimateText {
+                                Text("|")
+                                Text(batteryEstimateText)
+                            }
                         }
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -427,18 +431,10 @@ struct DuoBarPopoverView: View {
             }
             .buttonStyle(.plain)
 
-            VStack(alignment: .center, spacing: 2) {
-                Text(batteryPercent.map { "\($0)%" } ?? "—")
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
-                if let batteryEstimateText {
-                    Text(batteryEstimateText)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                }
-            }
+            Text(batteryPercent.map { "\($0)%" } ?? "—")
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.secondary)
+                .frame(minWidth: 42, alignment: .center)
         }
         .padding(.horizontal, 10)
         .frame(height: 52)
