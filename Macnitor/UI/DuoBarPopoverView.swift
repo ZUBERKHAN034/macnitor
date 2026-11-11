@@ -411,26 +411,30 @@ struct DuoBarPopoverView: View {
                             .minimumScaleFactor(0.8)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Image(systemName: isBatteryExpanded ? "chevron.up" : "chevron.down")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.tertiary)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
 
-            HStack(spacing: 0) {
-                Image(systemName: isBatteryExpanded ? "chevron.up" : "chevron.down")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.tertiary)
-
-                Color.clear
-                    .frame(width: 42, height: 1)
-
-                Text(batteryPercent.map { "\($0)%" } ?? "—")
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
-                    .frame(minWidth: 42, alignment: .trailing)
-            }
-            .accessibilityHidden(true)
+            Toggle("", isOn: .constant(false))
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.mini)
+                .hidden()
+                .accessibilityHidden(true)
+        }
+        .frame(maxWidth: .infinity)
+        .overlay(alignment: .trailing) {
+            Text(batteryPercent.map { "\($0)%" } ?? "—")
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.secondary)
+                .frame(width: 44, alignment: .trailing)
+                .accessibilityHidden(true)
+                .allowsHitTesting(false)
         }
         .padding(.horizontal, 10)
         .frame(height: 52)
