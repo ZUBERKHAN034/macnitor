@@ -412,19 +412,6 @@ struct DuoBarPopoverView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text(batteryPercent.map { "\($0)%" } ?? "—")
-                            .font(.caption.monospacedDigit())
-                            .foregroundStyle(.secondary)
-                        if let batteryPowerSourceText {
-                            Text(batteryPowerSourceText)
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.8)
-                        }
-                    }
-
                     Image(systemName: isBatteryExpanded ? "chevron.up" : "chevron.down")
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(.tertiary)
@@ -434,12 +421,18 @@ struct DuoBarPopoverView: View {
             }
             .buttonStyle(.plain)
 
-            Toggle("", isOn: .constant(false))
-                .labelsHidden()
-                .toggleStyle(.switch)
-                .controlSize(.mini)
-                .hidden()
-                .accessibilityHidden(true)
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(batteryPercent.map { "\($0)%" } ?? "—")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                if let batteryPowerSourceText {
+                    Text(batteryPowerSourceText)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+            }
         }
         .padding(.horizontal, 10)
         .frame(height: 52)
