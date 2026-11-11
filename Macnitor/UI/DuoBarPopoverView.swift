@@ -641,18 +641,23 @@ struct DuoBarPopoverView: View {
     }
 
     private var bluetoothSummary: String {
-        return switch model.duoBarBluetooth {
-        case .off: String(localized: "Bluetooth disabled", defaultValue: "Bluetooth disabled")
-        case .unavailable: String(localized: "Unavailable")
+        switch model.duoBarBluetooth {
+        case .off:
+            return String(localized: "Bluetooth disabled", defaultValue: "Bluetooth disabled")
+        case .unavailable:
+            return String(localized: "Unavailable")
         case .on:
             let connectedDevices = model.duoBarBluetoothDevices.filter(\.isConnected)
             switch connectedDevices.count {
-            case 0: String(localized: "Not connected", defaultValue: "Not connected")
-            case 1: connectedDevices[0].name
-            default: String.localizedStringWithFormat(
-                String(localized: "%d devices", defaultValue: "%d devices"),
-                connectedDevices.count
-            )
+            case 0:
+                return String(localized: "Not connected", defaultValue: "Not connected")
+            case 1:
+                return connectedDevices[0].name
+            default:
+                return String.localizedStringWithFormat(
+                    String(localized: "%d devices", defaultValue: "%d devices"),
+                    connectedDevices.count
+                )
             }
         }
     }
