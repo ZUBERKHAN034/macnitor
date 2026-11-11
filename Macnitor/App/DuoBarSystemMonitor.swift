@@ -44,6 +44,8 @@ final class DuoBarSystemMonitor: NSObject, @preconcurrency CLLocationManagerDele
     private let location = CLLocationManager()
     private let path = NWPathMonitor()
     private let queue = DispatchQueue(label: "app.macnitor.duobar-network", qos: .utility)
+    private var latestPath: NWPath?
+    private var detailRefreshTimer: Timer?
     private var bluetoothObservers: [NSObjectProtocol] = []
     private var activationObserver: NSObjectProtocol?
     private var state = DuoBarSystemState()
@@ -64,9 +66,17 @@ final class DuoBarSystemMonitor: NSObject, @preconcurrency CLLocationManagerDele
             Task { @MainActor in self?.requestLocationWhenActive() }
         }
         path.pathUpdateHandler = { [weak self] path in
-            Task { @MainActor in self?.updateNetwork(isConnected: path.status == .satisfied) }
+            Task { @MainActor in
+                self?.latestPath = path
+                self?.updateNetwork(path: path)
+            }
         }
         path.start(queue: queue)
+        let timer = Timer(timeInterval: 15, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.updateNetwork() }
+        }
+        detailRefreshTimer = timer
+        RunLoop.main.add(timer, forMode: .common)
         let center = NotificationCenter.default
         bluetoothObservers = [
             .IOBluetoothHostControllerPoweredOn,
@@ -77,13 +87,17 @@ final class DuoBarSystemMonitor: NSObject, @preconcurrency CLLocationManagerDele
             }
         }
         updateBluetooth()
-        updateNetwork(isConnected: path.currentPath.status == .satisfied)
+        updateNetwork()
     }
 
     func stop() {
         guard isStarted else { return }
         isStarted = false
         path.cancel()
+        detailRefreshTimer?.invalidate()
+        detailRefreshTimer = nil
+        isSSIDReadingEnabled = false
+        isWaitingForActivation = false
         bluetoothObservers.forEach(NotificationCenter.default.removeObserver)
         bluetoothObservers.removeAll()
         if let activationObserver {
@@ -102,7 +116,7 @@ final class DuoBarSystemMonitor: NSObject, @preconcurrency CLLocationManagerDele
             publish()
             requestLocationWhenActive()
         }
-        updateNetwork(isConnected: path.currentPath.status == .satisfied, readSSID: true)
+        updateNetwork(readSSID: true)
     }
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
@@ -118,7 +132,7 @@ final class DuoBarSystemMonitor: NSObject, @preconcurrency CLLocationManagerDele
             return
         }
         isWaitingForActivation = false
-        updateNetwork(isConnected: path.currentPath.status == .satisfied, readSSID: true)
+        updateNetwork(readSSID: true)
     }
 
     private func requestLocationWhenActive() {
@@ -129,11 +143,13 @@ final class DuoBarSystemMonitor: NSObject, @preconcurrency CLLocationManagerDele
         isWaitingForActivation = false
         didRequestLocation = true
         location.requestWhenInUseAuthorization()
-        updateNetwork(isConnected: path.currentPath.status == .satisfied, readSSID: true)
+        updateNetwork(readSSID: true)
     }
 
-    private func updateNetwork(isConnected: Bool, readSSID: Bool = false) {
-        let currentPath = path.currentPath
+    private func updateNetwork(path observedPath: NWPath? = nil, readSSID: Bool = false) {
+        let currentPath = observedPath ?? latestPath ?? path.currentPath
+        let isConnected = currentPath.status == .satisfied
+        latestPath = currentPath
         let activeWiFiInterface = currentPath.availableInterfaces.first {
             $0.type == .wifi && currentPath.usesInterfaceType(.wifi)
         }
@@ -148,27 +164,31 @@ final class DuoBarSystemMonitor: NSObject, @preconcurrency CLLocationManagerDele
             rssi: interface?.rssiValue()
         )
 
-        switch location.authorizationStatus {
-        case .authorizedAlways, .authorized:
-            if interface?.powerOn() == true {
-                if readSSID || isSSIDReadingEnabled {
-                    let name = interface?.ssid()?.trimmingCharacters(in: .whitespacesAndNewlines)
-                    state.networkName = name?.isEmpty == false ? name : nil
-                    state.networkNameAvailability = state.networkName == nil ? .unavailable : .notRequested
-                }
+        if readSSID || isSSIDReadingEnabled {
+            if isWiFiConnected {
+                let name = interface?.ssid()?.trimmingCharacters(in: .whitespacesAndNewlines)
+                state.networkName = name?.isEmpty == false ? name : nil
             } else {
                 state.networkName = nil
-                state.networkNameAvailability = .notRequested
             }
-        case .denied, .restricted:
+
+            if state.networkName != nil {
+                state.networkNameAvailability = .notRequested
+            } else {
+                switch location.authorizationStatus {
+                case .authorizedAlways, .authorized:
+                    state.networkNameAvailability = .unavailable
+                case .denied, .restricted:
+                    state.networkNameAvailability = .permissionRequired
+                case .notDetermined:
+                    state.networkNameAvailability = didRequestLocation ? .requestingPermission : .notRequested
+                @unknown default:
+                    state.networkNameAvailability = .unavailable
+                }
+            }
+        } else if !isWiFiConnected {
             state.networkName = nil
-            state.networkNameAvailability = .permissionRequired
-        case .notDetermined:
-            state.networkName = nil
-            state.networkNameAvailability = didRequestLocation ? .requestingPermission : .notRequested
-        @unknown default:
-            state.networkName = nil
-            state.networkNameAvailability = .unavailable
+            state.networkNameAvailability = .notRequested
         }
         publish()
     }

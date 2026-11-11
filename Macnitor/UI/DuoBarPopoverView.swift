@@ -71,7 +71,11 @@ struct DuoBarPopoverView: View {
         }
         .padding(12)
         .frame(width: DashboardPopoverView.width)
-        .onAppear { model.onDuoBarPopoverOpened?() }
+        .onAppear {
+            // Wait for the accessory app and popover to activate before asking for
+            // Location access, as DuoBar does for its status popover.
+            DispatchQueue.main.async { model.onDuoBarPopoverOpened?() }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange)) { _ in
             lowPowerModeEnabled = ProcessInfo.processInfo.isLowPowerModeEnabled
         }

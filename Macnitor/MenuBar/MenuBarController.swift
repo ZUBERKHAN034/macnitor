@@ -297,6 +297,9 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
             return
         }
         if model.usesDuoBarDashboard {
+            // Match DuoBar's permission flow: an accessory app must activate before
+            // Core Location can present the one-time Location Services prompt.
+            NSApp.activate(ignoringOtherApps: true)
             show(
                 DuoBarPopoverView(model: model),
                 as: .dashboard,
