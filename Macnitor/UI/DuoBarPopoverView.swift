@@ -420,7 +420,7 @@ struct DuoBarPopoverView: View {
             }
             .buttonStyle(.plain)
 
-            Toggle("", isOn: .constant(false))
+            Toggle("Wi-Fi", isOn: .constant(false))
                 .labelsHidden()
                 .toggleStyle(.switch)
                 .controlSize(.mini)
