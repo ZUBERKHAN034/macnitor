@@ -641,7 +641,7 @@ struct DuoBarPopoverView: View {
     }
 
     private var bluetoothSummary: String {
-        switch model.duoBarBluetooth {
+        return switch model.duoBarBluetooth {
         case .off: String(localized: "Bluetooth disabled", defaultValue: "Bluetooth disabled")
         case .unavailable: String(localized: "Unavailable")
         case .on:
