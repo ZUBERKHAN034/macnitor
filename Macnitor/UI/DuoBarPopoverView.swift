@@ -2,6 +2,10 @@ import AppKit
 import SwiftUI
 import MetricsKit
 
+private enum DuoBarRowLayout {
+    static let trailingAccessoryWidth: CGFloat = 40
+}
+
 /// DuoBar controls arranged in compact status rows while retaining Macnitor's selected
 /// Dashboard surface and material.
 struct DuoBarPopoverView: View {
@@ -126,6 +130,11 @@ struct DuoBarPopoverView: View {
                 .controlSize(.mini)
                 .accessibilityLabel("Wi-Fi power")
                 .help(wifiPoweredOn ? "Turn Wi-Fi off" : "Turn Wi-Fi on")
+                .frame(width: DuoBarRowLayout.trailingAccessoryWidth, alignment: .trailing)
+            } else {
+                Color.clear
+                    .frame(width: DuoBarRowLayout.trailingAccessoryWidth)
+                    .accessibilityHidden(true)
             }
         }
         .padding(.horizontal, 10)
@@ -375,6 +384,7 @@ struct DuoBarPopoverView: View {
                 Text(model.duoBarVolume.map { "\(Int(($0 * 100).rounded()))%" } ?? "—")
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
+                    .frame(width: DuoBarRowLayout.trailingAccessoryWidth, alignment: .trailing)
             }
 
             Slider(
@@ -420,21 +430,11 @@ struct DuoBarPopoverView: View {
             }
             .buttonStyle(.plain)
 
-            Toggle("Wi-Fi", isOn: .constant(false))
-                .labelsHidden()
-                .toggleStyle(.switch)
-                .controlSize(.mini)
-                .hidden()
-                .accessibilityHidden(true)
-        }
-        .frame(maxWidth: .infinity)
-        .overlay(alignment: .trailing) {
             Text(batteryPercent.map { "\($0)%" } ?? "—")
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.secondary)
-                .frame(width: 44, alignment: .trailing)
+                .frame(width: DuoBarRowLayout.trailingAccessoryWidth, alignment: .trailing)
                 .accessibilityHidden(true)
-                .allowsHitTesting(false)
         }
         .padding(.horizontal, 10)
         .frame(height: 52)
@@ -630,6 +630,11 @@ struct DuoBarPopoverView: View {
                 .controlSize(.mini)
                 .accessibilityLabel(Text("Bluetooth power"))
                 .help(String(localized: model.duoBarBluetooth == .on ? "Turn Bluetooth off" : "Turn Bluetooth on"))
+                .frame(width: DuoBarRowLayout.trailingAccessoryWidth, alignment: .trailing)
+            } else {
+                Color.clear
+                    .frame(width: DuoBarRowLayout.trailingAccessoryWidth)
+                    .accessibilityHidden(true)
             }
         }
         .padding(.horizontal, 10)
