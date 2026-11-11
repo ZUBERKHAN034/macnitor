@@ -404,11 +404,17 @@ struct DuoBarPopoverView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Battery")
                             .font(.subheadline.weight(.semibold))
-                        Text(batteryStatusText)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
+                        HStack(spacing: 4) {
+                            Text(batteryStatusText)
+                            if isBatteryConnected, battery != nil {
+                                Text("|")
+                                Text(String(localized: "battery.usingAdapter", defaultValue: "Using Adapter"))
+                            }
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -421,12 +427,12 @@ struct DuoBarPopoverView: View {
             }
             .buttonStyle(.plain)
 
-            VStack(alignment: .trailing, spacing: 2) {
+            VStack(alignment: .center, spacing: 2) {
                 Text(batteryPercent.map { "\($0)%" } ?? "—")
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
-                if let batteryPowerSourceText {
-                    Text(batteryPowerSourceText)
+                if let batteryEstimateText {
+                    Text(batteryEstimateText)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -840,12 +846,6 @@ struct DuoBarPopoverView: View {
         if isBatteryCharging { return BatteryPowerStatus.charging.localizedName }
         if model.isOnBattery == true { return BatteryPowerStatus.onBattery.localizedName }
         return BatteryPowerStatus.pluggedIn.localizedName
-    }
-
-    private var batteryPowerSourceText: String? {
-        guard battery != nil else { return nil }
-        if isBatteryConnected { return String(localized: "battery.usingAdapter", defaultValue: "Using Adapter") }
-        return batteryEstimateText
     }
 
     private var batterySymbol: String {
