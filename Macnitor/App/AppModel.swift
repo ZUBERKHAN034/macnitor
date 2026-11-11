@@ -38,6 +38,7 @@ final class AppModel {
     var duoBarWiFiPoweredOn: Bool?
     var duoBarWiFiSignal: DuoBarWiFiSignal = .unavailable
     var duoBarNetworkName: String?
+    var duoBarNetworkNameAvailability: DuoBarNetworkNameAvailability = .notRequested
     var duoBarBluetooth: DuoBarBluetoothState = .unavailable
     @ObservationIgnored var onDuoBarVolumeChanged: ((Double) -> Void)?
     @ObservationIgnored var onDuoBarMuteChanged: ((Bool) -> Void)?
@@ -50,6 +51,7 @@ final class AppModel {
     @ObservationIgnored var onDuoBarScanWiFi: (() async -> [DuoBarWiFiNetwork])?
     @ObservationIgnored var onDuoBarJoinWiFi: ((String, String?) async -> Bool)?
     @ObservationIgnored var onDuoBarOpenBluetoothSettings: (() -> Void)?
+    @ObservationIgnored var onDuoBarOpenLocationSettings: (() -> Void)?
 
     /// Replaces the standard Dashboard mark and popover with DuoBar's compact status
     /// indicator and controls. The watched cards and their sampling remain unchanged.

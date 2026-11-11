@@ -22400,6 +22400,78 @@
         "pt-BR": { "stringUnit": { "state": "translated", "value": "Não foi possível alterar o Modo Pouca Energia. Você pode alterá-lo nos Ajustes da Bateria." } },
         "zh-Hans": { "stringUnit": { "state": "translated", "value": "无法更改低电量模式。你可以在电池设置中更改。" } }
       }
+    },
+    "Getting Wi-Fi name…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Getting Wi-Fi name…" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Wi-Fi adı alınıyor…" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Получение имени сети Wi-Fi…" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Obteniendo el nombre de la red Wi-Fi…" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Récupération du nom du réseau Wi-Fi…" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Obtendo o nome da rede Wi-Fi…" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "正在获取 Wi-Fi 名称…" } }
+      }
+    },
+    "Requesting Location Access…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Requesting Location Access…" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Konum erişimi isteniyor…" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Запрашивается доступ к геопозиции…" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Solicitando acceso a la ubicación…" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Demande d’accès à la position…" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Solicitando acesso à localização…" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "正在请求位置访问权限…" } }
+      }
+    },
+    "Location Access Required": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Location Access Required" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Konum Erişimi Gerekli" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Требуется доступ к геопозиции" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Se necesita acceso a la ubicación" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Accès à la position requis" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Acesso à Localização Necessário" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "需要位置访问权限" } }
+      }
+    },
+    "Wi-Fi name unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Wi-Fi name unavailable" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Wi-Fi adı kullanılamıyor" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Имя сети Wi-Fi недоступно" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Nombre de la red Wi-Fi no disponible" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Nom du réseau Wi-Fi indisponible" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Nome da rede Wi-Fi indisponível" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "Wi-Fi 名称不可用" } }
+      }
+    },
+    "Location access is needed to show Wi-Fi names.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Location access is needed to show Wi-Fi names." } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Wi-Fi adlarını göstermek için konum erişimi gerekir." } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Для отображения имён сетей Wi-Fi нужен доступ к геопозиции." } },
+        "es": { "stringUnit": { "state": "translated", "value": "Se necesita acceso a la ubicación para mostrar los nombres de las redes Wi-Fi." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "L’accès à la position est nécessaire pour afficher les noms des réseaux Wi-Fi." } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "O acesso à localização é necessário para mostrar os nomes das redes Wi-Fi." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "需要位置访问权限才能显示 Wi-Fi 名称。" } }
+      }
+    },
+    "Open Location Settings…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Open Location Settings…" } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Konum Ayarları’nı Aç…" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Открыть настройки геопозиции…" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Abrir ajustes de ubicación…" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Ouvrir les réglages de localisation…" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Abrir Ajustes de Localização…" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "打开位置设置…" } }
+      }
     }
   },
   "version": "1.0"

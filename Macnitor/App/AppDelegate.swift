@@ -162,6 +162,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self.model.duoBarWiFiPoweredOn = state.wifiPoweredOn
             self.model.duoBarWiFiSignal = state.wifi
             self.model.duoBarNetworkName = state.networkName
+            self.model.duoBarNetworkNameAvailability = state.networkNameAvailability
             self.model.duoBarBluetooth = state.bluetooth
             self.menuBar.refresh()
         }
@@ -178,6 +179,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if let url = URL(string: "x-apple.systempreferences:com.apple.BluetoothSettings") {
                 NSWorkspace.shared.open(url)
             }
+        }
+        model.onDuoBarOpenLocationSettings = {
+            let locationSettingsURL = URL(string: "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_LocationServices")
+            if let locationSettingsURL, NSWorkspace.shared.open(locationSettingsURL) { return }
+            NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/System Settings.app"))
         }
         duoBarAudio.onChange = { [weak self] state in
             guard let self else { return }
