@@ -194,7 +194,6 @@ struct DuoBarPopoverView: View {
                 sectionMessage("Wi-Fi off")
             } else if isScanningWiFi && wifiNetworks.isEmpty {
                 HStack(spacing: 6) {
-                    ProgressView().controlSize(.small)
                     Text("Scanning…")
                         .font(.caption)
                         .foregroundStyle(.secondary)

@@ -131,7 +131,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.duoBarAudio.setMuted(muted)
         }
         model.onOpenWiFiSettings = {
-            if let url = URL(string: "x-apple.systempreferences:com.apple.WiFi-Settings.extension") {
+            if let url = URL(string: "x-apple.systempreferences:com.apple.wifi-settings-extension") {
                 NSWorkspace.shared.open(url)
             }
         }
