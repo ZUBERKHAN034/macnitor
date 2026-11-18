@@ -219,13 +219,11 @@ struct DuoBarPopoverView: View {
             Button {
                 model.onOpenWiFiSettings?()
             } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "wifi").font(.system(size: 11))
-                    Text("Wi-Fi Settings…").font(.caption.weight(.medium))
-                }
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
+                Text("Wi-Fi Settings…")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
         }
@@ -574,13 +572,11 @@ struct DuoBarPopoverView: View {
             Button {
                 model.onDuoBarOpenBluetoothSettings?()
             } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "gearshape").font(.system(size: 11))
-                    Text("Bluetooth Settings…").font(.caption.weight(.medium))
-                }
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
+                Text("Bluetooth Settings…")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
         }
