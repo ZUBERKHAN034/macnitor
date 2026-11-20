@@ -174,22 +174,6 @@ struct DuoBarPopoverView: View {
             .padding(.horizontal, 4)
             .padding(.bottom, 6)
 
-            if model.duoBarNetworkNameAvailability == .permissionRequired
-                || model.duoBarNetworkNameAvailability == .requestingPermission {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Location access is needed to show Wi-Fi names.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Button("Open Location Settings…") {
-                        model.onDuoBarOpenLocationSettings?()
-                    }
-                    .font(.caption.weight(.medium))
-                    .buttonStyle(.plain)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.vertical, 8)
-            }
-
             if model.duoBarWiFiPoweredOn == false {
                 sectionMessage("Wi-Fi off")
             } else if isScanningWiFi && wifiNetworks.isEmpty {
@@ -826,8 +810,8 @@ struct DuoBarPopoverView: View {
         }
         return switch model.duoBarNetworkNameAvailability {
         case .notRequested: String(localized: "Getting Wi-Fi name…")
-        case .requestingPermission: String(localized: "Requesting Location Access…")
-        case .permissionRequired: String(localized: "Location Access Required")
+        case .requestingPermission: String(localized: "Getting Wi-Fi name…")
+        case .permissionRequired: String(localized: "Wi-Fi name unavailable")
         case .unavailable: String(localized: "Wi-Fi name unavailable")
         }
     }

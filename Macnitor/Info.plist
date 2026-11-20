@@ -41,7 +41,7 @@
 	<key>NSHumanReadableCopyright</key>
 	<string>© 2026 Macnitor</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Macnitor uses your location permission only when you open DuoBar details to read the connected Wi-Fi network name.</string>
+	<string>Macnitor uses location permission to read the connected Wi-Fi network name in DuoBar.</string>
 	<key>SUEnableAutomaticChecks</key>
 	<false/>
 	<key>SUEnableSystemProfiling</key>

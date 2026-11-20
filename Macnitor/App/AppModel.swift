@@ -55,7 +55,6 @@ final class AppModel {
     @ObservationIgnored var onDuoBarScanWiFi: (() async -> [DuoBarWiFiNetwork])?
     @ObservationIgnored var onDuoBarJoinWiFi: ((String, String?) async -> Bool)?
     @ObservationIgnored var onDuoBarOpenBluetoothSettings: (() -> Void)?
-    @ObservationIgnored var onDuoBarOpenLocationSettings: (() -> Void)?
 
     /// Replaces the standard Dashboard mark and popover with DuoBar's compact status
     /// indicator and controls. The watched cards and their sampling remain unchanged.

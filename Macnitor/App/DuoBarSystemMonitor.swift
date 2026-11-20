@@ -96,6 +96,7 @@ final class DuoBarSystemMonitor: NSObject, @preconcurrency CLLocationManagerDele
         guard !isStarted else { return }
         isStarted = true
         location.delegate = self
+        isSSIDReadingEnabled = true
         activationObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didBecomeActiveNotification,
             object: NSApp,
@@ -134,7 +135,14 @@ final class DuoBarSystemMonitor: NSObject, @preconcurrency CLLocationManagerDele
         bluetoothRefreshTimer = bluetoothTimer
         RunLoop.main.add(bluetoothTimer, forMode: .common)
         updateBluetooth()
-        updateNetwork()
+        if location.authorizationStatus == .notDetermined, !didRequestLocation {
+            isWaitingForActivation = true
+            state.networkNameAvailability = .requestingPermission
+            publish()
+            requestLocationWhenActive()
+        } else {
+            updateNetwork(readSSID: true)
+        }
     }
 
     func stop() {
@@ -162,15 +170,9 @@ final class DuoBarSystemMonitor: NSObject, @preconcurrency CLLocationManagerDele
         location.delegate = nil
     }
 
-    /// Called only when the details popover opens. Location is requested at most once.
+    /// Enables a fresh SSID read when the details popover opens.
     func requestDetails() {
         isSSIDReadingEnabled = true
-        if location.authorizationStatus == .notDetermined, !didRequestLocation {
-            isWaitingForActivation = true
-            state.networkNameAvailability = .requestingPermission
-            publish()
-            requestLocationWhenActive()
-        }
         updateNetwork(readSSID: true)
     }
 
