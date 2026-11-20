@@ -288,6 +288,19 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
 
     private func toggleDashboardPopover() {
         guard let button = logoItem?.item.button else { return }
+        if popoverKind == .dashboard {
+            if isPopoverClosing {
+                // AppKit can start dismissing a transient popover before delivering
+                // the click on its status item. Consume that click instead of
+                // queuing a presentation that would reopen it after the dismissal.
+                pendingPresentation = nil
+                return
+            }
+            if popover.isShown {
+                closePopover()
+                return
+            }
+        }
         if PopoverToggleDecision.shouldCloseCurrentPopover(
             isShown: popover.isShown,
             isClosing: isPopoverClosing,
