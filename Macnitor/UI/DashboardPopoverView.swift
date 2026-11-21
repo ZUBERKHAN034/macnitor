@@ -83,9 +83,12 @@ struct DashboardPopoverView: View {
         .clipped()
         .overlay(alignment: .top) {
             if !isSettingsPreview {
-                DashboardPopoverTip(fillOpacity: model.dashboardBackgroundOpacity)
-                    .frame(width: 30, height: 18)
-                    .offset(y: -18)
+                DashboardPopoverTip(
+                    fillOpacity: model.dashboardBackgroundOpacity,
+                    appearance: model.dashboardAppearance
+                )
+                    .frame(width: 26, height: 14)
+                    .offset(y: -14)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
             }
@@ -1756,14 +1759,44 @@ struct DashboardCardBackground: View {
 /// top-edge seam while preserving the translucent material.
 private struct DashboardPopoverTip: View {
     let fillOpacity: Double
+    let appearance: DashboardAppearance
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
+    @ViewBuilder
     var body: some View {
-        DashboardPopoverTipShape()
-            .fill(.ultraThinMaterial)
-            .overlay {
-                DashboardPopoverTipShape()
-                    .fill(Color.black.opacity(fillOpacity))
+        let shape = DashboardPopoverTipShape()
+        switch appearance {
+        case .regular:
+            shape.fill(Color.primary.opacity(fillOpacity))
+        case .liquidGlass:
+            if reduceTransparency {
+                shape
+                    .fill(Color(nsColor: .controlBackgroundColor))
+                    .overlay { shape.fill(Color.black.opacity(fillOpacity)) }
+            } else {
+                glassTip(shape: shape)
             }
+        }
+    }
+
+    @ViewBuilder
+    private func glassTip(shape: DashboardPopoverTipShape) -> some View {
+        #if compiler(>=6.2)
+        if #available(macOS 26.0, *) {
+            shape
+                .fill(.clear)
+                .glassEffect(.clear, in: shape)
+                .overlay { shape.fill(Color.black.opacity(fillOpacity)) }
+        } else {
+            shape
+                .fill(.clear)
+                .overlay { shape.fill(Color.black.opacity(fillOpacity)) }
+        }
+        #else
+        shape
+            .fill(.clear)
+            .overlay { shape.fill(Color.black.opacity(fillOpacity)) }
+        #endif
     }
 }
 
@@ -1771,7 +1804,11 @@ private struct DashboardPopoverTipShape: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
         path.move(to: CGPoint(x: rect.minX, y: rect.maxY))
-        path.addLine(to: CGPoint(x: rect.midX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.midX - 2, y: rect.minY + 3))
+        path.addQuadCurve(
+            to: CGPoint(x: rect.midX + 2, y: rect.minY + 3),
+            control: CGPoint(x: rect.midX, y: rect.minY)
+        )
         path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
         path.closeSubpath()
         return path
