@@ -73,7 +73,7 @@ struct DashboardPopoverView: View {
         .background {
             if !isSettingsPreview {
                 RoundedRectangle(cornerRadius: ExperienceRadius.panel, style: .continuous)
-                    .fill(.ultraThinMaterial)
+                    .fill(.regularMaterial)
             }
         }
         // The grid and a detail are two depths of one place, so they slide the way a
@@ -1767,7 +1767,9 @@ private struct DashboardPopoverTip: View {
         let shape = DashboardPopoverTipShape()
         switch appearance {
         case .regular:
-            shape.fill(Color.primary.opacity(fillOpacity))
+            shape
+                .fill(.regularMaterial)
+                .overlay { shape.fill(Color.primary.opacity(fillOpacity)) }
         case .liquidGlass:
             if reduceTransparency {
                 shape
