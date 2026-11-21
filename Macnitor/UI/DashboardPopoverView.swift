@@ -64,7 +64,8 @@ struct DashboardPopoverView: View {
             DashboardCardBackground(
                 fillOpacity: model.dashboardBackgroundOpacity,
                 appearance: model.dashboardAppearance,
-                cornerRadius: ExperienceRadius.panel
+                cornerRadius: ExperienceRadius.panel,
+                showsBorder: false
             )
         }
         // The grid and a detail are two depths of one place, so they slide the way a
@@ -1646,6 +1647,7 @@ struct DashboardCardBackground: View {
     var fillOpacity = ExperienceSurface.subtleFillOpacity
     var appearance: DashboardAppearance = .regular
     var cornerRadius = ExperienceRadius.panel
+    var showsBorder = true
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
@@ -1657,7 +1659,7 @@ struct DashboardCardBackground: View {
             shape
                 .fill(Color.primary.opacity(fillOpacity))
                 .overlay {
-                    if contrast == .increased {
+                    if showsBorder && contrast == .increased {
                         shape.strokeBorder(
                             Color.primary.opacity(ExperienceSurface.increasedBorderOpacity),
                             lineWidth: ExperienceSpacing.hairline
@@ -1720,13 +1722,16 @@ struct DashboardCardBackground: View {
         shape.fill(Color.black.opacity(fillOpacity))
     }
 
+    @ViewBuilder
     private func border(shape: RoundedRectangle) -> some View {
-        shape.strokeBorder(
-            Color.primary.opacity(
-                contrast == .increased ? ExperienceSurface.increasedBorderOpacity : 0.13
-            ),
-            lineWidth: ExperienceSpacing.hairline
-        )
+        if showsBorder {
+            shape.strokeBorder(
+                Color.primary.opacity(
+                    contrast == .increased ? ExperienceSurface.increasedBorderOpacity : 0.13
+                ),
+                lineWidth: ExperienceSpacing.hairline
+            )
+        }
     }
 }
 
