@@ -29,8 +29,9 @@ jobs:
         run: swift test
 
   app:
-    name: Mectrics.app (xcodebuild)
-    runs-on: macos-15
+    name: Macnitor.app (xcodebuild)
+    # Xcode 26 compiles the native SwiftUI glassEffect path used by Liquid Glass.
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v7
 
@@ -49,9 +50,10 @@ jobs:
       - name: Build
         run: |
           xcodebuild build \
-            -project Mectrics.xcodeproj \
-            -scheme Mectrics \
+            -project Macnitor.xcodeproj \
+            -scheme Macnitor \
             -configuration Debug \
+            -derivedDataPath build/ci-derived \
             -destination 'platform=macOS' \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
@@ -59,11 +61,22 @@ jobs:
             CODE_SIGN_ENTITLEMENTS="" \
             DEVELOPMENT_TEAM=""
 
+      - name: Package app build
+        run: ditto -c -k --sequesterRsrc --keepParent build/ci-derived/Build/Products/Debug/Macnitor.app Macnitor-Debug.zip
+
+      - name: Upload app build
+        uses: actions/upload-artifact@v7
+        with:
+          path: Macnitor-Debug.zip
+          archive: false
+          retention-days: 14
+
       - name: Test app logic
         run: |
           xcodebuild test \
-            -project Mectrics.xcodeproj \
-            -scheme Mectrics \
+            -project Macnitor.xcodeproj \
+            -scheme Macnitor \
+            -derivedDataPath build/ci-derived \
             -destination 'platform=macOS' \
             ENABLE_CODE_COVERAGE=NO \
             CODE_SIGNING_ALLOWED=NO \
@@ -83,7 +96,7 @@ jobs:
 
       - name: Generated output must not be committed
         run: |
-          if git ls-files | grep -E '^(Mectrics\.xcodeproj/|DerivedData/|\.build/|.*\.DS_Store$)'; then
+          if git ls-files | grep -E '^(Macnitor\.xcodeproj/|DerivedData/|\.build/|.*\.DS_Store$)'; then
             echo "::error::Generated or OS output is committed. project.yml is the source of the Xcode project."
             exit 1
           fi
