@@ -81,6 +81,15 @@ struct DashboardPopoverView: View {
         // popover's own height follows: AppKit animates a content-size change while
         // `animates` is on, which it is unless the system asks for less motion.
         .clipped()
+        .overlay(alignment: .top) {
+            if !isSettingsPreview {
+                DashboardPopoverTip(fillOpacity: model.dashboardBackgroundOpacity)
+                    .frame(width: 30, height: 18)
+                    .offset(y: -18)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+        }
         .onAppear {
             systemInfo = DashboardSystemInfo.read()
         }
@@ -1740,6 +1749,32 @@ struct DashboardCardBackground: View {
                 lineWidth: ExperienceSpacing.hairline
             )
         }
+    }
+}
+
+/// Continues the Dashboard surface into the native popover arrow, hiding the exposed
+/// top-edge seam while preserving the translucent material.
+private struct DashboardPopoverTip: View {
+    let fillOpacity: Double
+
+    var body: some View {
+        DashboardPopoverTipShape()
+            .fill(.ultraThinMaterial)
+            .overlay {
+                DashboardPopoverTipShape()
+                    .fill(Color.black.opacity(fillOpacity))
+            }
+    }
+}
+
+private struct DashboardPopoverTipShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.midX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.closeSubpath()
+        return path
     }
 }
 
