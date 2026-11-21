@@ -68,6 +68,14 @@ struct DashboardPopoverView: View {
                 showsBorder: false
             )
         }
+        // Blur sharp window edges showing through the transparent Dashboard surface,
+        // matching the clean backdrop around DuoBar's popover tip.
+        .background {
+            if !isSettingsPreview {
+                RoundedRectangle(cornerRadius: ExperienceRadius.panel, style: .continuous)
+                    .fill(.ultraThinMaterial)
+            }
+        }
         // The grid and a detail are two depths of one place, so they slide the way a
         // push and a pop do rather than being swapped out from under the pointer. The
         // popover's own height follows: AppKit animates a content-size change while
